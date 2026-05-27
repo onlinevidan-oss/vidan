@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VIDAN Shop
 
-## Getting Started
+Дөрвөн Өлзий ХХК-ийн VIDAN брэндийн онлайн худалдааны платформ.
 
-First, run the development server:
+## 🛠 Технологи
+
+- **Next.js 16** (App Router) + React 19
+- **Tailwind CSS 4** (CSS-first `@theme`)
+- **Supabase** (Postgres + Auth + Storage + Realtime)
+- **TypeScript**, **Zustand**, **React Hook Form**, **Zod**
+- **pnpm** package manager
+
+## 🚀 Эхлүүлэх
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local
+# .env.local-д Supabase credentials оруулах
+
+pnpm dev --port 3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Дараа нь http://localhost:3100 руу нэвтэрнэ.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 Бүтэц
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (customer)/        # public store route group
+│   │   ├── layout.tsx
+│   │   └── page.tsx        # home
+│   ├── globals.css         # Tailwind 4 @theme + base
+│   └── layout.tsx          # root
+├── components/
+│   ├── ui/                 # Logo, button primitives
+│   ├── customer/           # Header, Footer, ProductCard
+│   └── admin/              # (Phase 2-д)
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts       # browser client
+│   │   ├── server.ts       # server client
+│   │   └── middleware.ts   # session refresh helper
+│   ├── utils.ts            # cn, formatMnt, formatPhone
+│   └── sample-data.ts      # түр sample data
+└── proxy.ts                # Next.js 16 proxy (admin protection)
+```
 
-## Learn More
+## 🎨 VIDAN брэндийн өнгө
 
-To learn more about Next.js, take a look at the following resources:
+`globals.css` дотор `@theme` directive ашиглан Tailwind 4-д шууд тохируулсан:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **brand-{50,100,200,500,600,700,900}** — улаан өнгөний шат
+- **lime-{50,100,300,500,600,700}** — лайм навч
+- **cream, cream-100** — дулаан дэвсгэр
+- **ink-{100,200,300,500,700,800,900}** — текст ба сүүдэр
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Жишээ: `bg-brand-600 text-white hover:bg-brand-700`
 
-## Deploy on Vercel
+## 📚 Phase progress
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [x] **Phase 0** — Setup (Next.js 16, Tailwind 4, Supabase packages, pnpm)
+- [x] **Phase 1** — Customer home page (React component-аар хувирсан)
+- [ ] **Phase 2** — Supabase project + DB schema
+- [ ] **Phase 3** — Phone OTP auth (Mobicom SMS)
+- [ ] **Phase 4** — Admin auth + RBAC
+- [ ] **Phase 5** — Каталог + product detail
+- [ ] **Phase 6** — Сагс + checkout
+- [ ] **Phase 7** — QPay интеграц
+- [ ] **Phase 8** — Order management
+- [ ] **Phase 9** — Reports
+- [ ] **Phase 10** — Promotions
+- [ ] **Phase 11** — Notifications
+- [ ] **Phase 12** — Production deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚠️ Next.js 16 онцлогууд
+
+- `middleware.ts` → `proxy.ts` (deprecated)
+- `params` ба `searchParams` нь `Promise<>` болсон — `await` хэрэгтэй
+- `PageProps<'/route'>` ба `LayoutProps<'/route'>` глобал helper байгаа
+- Tailwind 4 нь `@theme` directive ашигладаг (config файл байхгүй)

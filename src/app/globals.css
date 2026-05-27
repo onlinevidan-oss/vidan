@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================================
+   VIDAN BRAND TOKENS — Tailwind 4 @theme directive
+   ============================================================ */
+@theme {
+  /* Brand red */
+  --color-brand-50:  #fef5f5;
+  --color-brand-100: #fde6e6;
+  --color-brand-200: #fbc4c4;
+  --color-brand-500: #e12b2a;
+  --color-brand-600: #d72327;
+  --color-brand-700: #b81e22;
+  --color-brand-900: #8a1316;
+
+  /* Brand lime */
+  --color-lime-50:  #f8fbe8;
+  --color-lime-100: #f0f7d8;
+  --color-lime-300: #d6e88a;
+  --color-lime-500: #b5d33d;
+  --color-lime-600: #9bc233;
+  --color-lime-700: #7ea127;
+
+  /* Warm neutrals */
+  --color-cream:    #fbf7f0;
+  --color-cream-100:#f5efe3;
+  --color-ink-100:  #f3efe7;
+  --color-ink-200:  #e6e1d8;
+  --color-ink-300:  #c8c0b6;
+  --color-ink-500:  #7a7166;
+  --color-ink-700:  #423a33;
+  --color-ink-800:  #2a221c;
+  --color-ink-900:  #1a1410;
+
+  /* Status */
+  --color-info:    #2e7eda;
+  --color-info-bg: #e8f1fc;
+  --color-warn:    #e89823;
+  --color-warn-bg: #fdf2dc;
+  --color-success: #2da764;
+  --color-success-bg:#e3f5ea;
+
+  /* Typography */
+  --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  /* Shadows */
+  --shadow-brand-sm: 0 1px 3px rgb(20 15 10 / 0.06);
+  --shadow-brand-md: 0 6px 18px rgb(138 19 22 / 0.08);
+  --shadow-brand-lg: 0 16px 40px rgb(138 19 22 / 0.15);
+
+  /* Radius */
+  --radius-card: 14px;
+  --radius-card-lg: 16px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   BASE — layer-д оруулна
+   Tailwind 4 utility-уудыг override хийхгүйн тулд @layer base дотор.
+   ============================================================ */
+@layer base {
+  html, body {
+    font-family: var(--font-sans);
+    color: var(--color-ink-900);
+    background: var(--color-cream);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
+  button { font-family: inherit; cursor: pointer; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Reusable display font helper — utility layer */
+@layer utilities {
+  .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
