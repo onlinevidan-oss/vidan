@@ -1,7 +1,24 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
+import { createClient } from "@/lib/supabase/server";
+import { UserMenu } from "@/components/customer/UserMenu";
 
-export function Header() {
+export async function Header() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile: { full_name: string | null; phone: string | null } | null = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", user.id)
+      .maybeSingle();
+    profile = data;
+  }
+
   return (
     <header className="sticky top-0 z-50 bg-white shadow-[var(--shadow-brand-sm)]">
       <div className="mx-auto max-w-[1240px] px-5">
@@ -36,12 +53,20 @@ export function Header() {
                 3
               </span>
             </Link>
-            <Link
-              href="/login"
-              className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 hover:-translate-y-0.5"
-            >
-              Нэвтрэх
-            </Link>
+
+            {user ? (
+              <UserMenu
+                name={profile?.full_name ?? null}
+                phone={profile?.phone ?? user.phone ?? null}
+              />
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-700 hover:-translate-y-0.5"
+              >
+                Нэвтрэх
+              </Link>
+            )}
           </div>
         </div>
 
