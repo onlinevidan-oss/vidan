@@ -136,16 +136,40 @@ function PhoneStep({
     return d.length > 4 ? `${d.slice(0, 4)} ${d.slice(4)}` : d;
   }
 
+  const supabase = createClient();
+
+  async function signInWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+      },
+    });
+  }
+
   return (
     <>
       <h2 className="font-display mb-2 text-[28px] font-black leading-tight tracking-tight">
         Нэвтрэх
       </h2>
-      <p className="mb-7 text-sm leading-relaxed text-ink-700">
-        Утасны дугаараа оруулна уу. Бид{" "}
-        <strong className="font-bold text-brand-700">SMS</strong>-р
-        баталгаажуулах код илгээх болно.
+      <p className="mb-6 text-sm leading-relaxed text-ink-700">
+        Утасны дугаараа эсвэл Google бүртгэлээ ашиглан нэвтэрнэ үү.
       </p>
+
+      {/* Google sign-in */}
+      <button
+        onClick={signInWithGoogle}
+        className="mb-5 flex w-full items-center justify-center gap-3 rounded-[12px] border-[1.5px] border-ink-200 bg-white px-4 py-3.5 text-[14px] font-bold text-ink-900 transition hover:-translate-y-0.5 hover:border-ink-300 hover:bg-cream"
+      >
+        <GoogleIcon />
+        Google-аар үргэлжлүүлэх
+      </button>
+
+      <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase text-ink-500">
+        <span className="h-px flex-1 bg-ink-200" />
+        эсвэл
+        <span className="h-px flex-1 bg-ink-200" />
+      </div>
 
       <div className="mb-5">
         <label className="mb-2 block text-[13px] font-bold text-ink-700">
@@ -350,5 +374,31 @@ function SuccessStep() {
       </p>
       <div className="text-xs text-ink-500">Нүүр хуудас руу шилжиж байна…</div>
     </div>
+  );
+}
+
+/* ============================================================
+   Google official "G" logo (SVG)
+   ============================================================ */
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"
+      />
+    </svg>
   );
 }
