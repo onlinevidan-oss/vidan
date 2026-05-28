@@ -1,14 +1,26 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ProductCard } from "@/components/customer/ProductCard";
-import { bestSellers, categories, newArrivals } from "@/lib/sample-data";
+import {
+  getCategoriesWithProductCount,
+  getFeaturedProducts,
+  getNewArrivals,
+} from "@/lib/queries/products";
 
-export default function HomePage() {
+export const revalidate = 60; // ISR: 1 минут
+
+export default async function HomePage() {
+  // Параллель татна — нэг round-trip
+  const [categories, featured, newArrivals] = await Promise.all([
+    getCategoriesWithProductCount(),
+    getFeaturedProducts(4),
+    getNewArrivals(4),
+  ]);
+
   return (
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
-        {/* main hero */}
         <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-br from-brand-700 to-brand-500 p-8 md:p-12 text-white min-h-[340px] flex flex-col justify-center">
           <span className="mb-4 inline-flex w-max items-center gap-1.5 rounded-full bg-lime-500 px-3.5 py-1.5 text-xs font-bold text-ink-900 shadow-md">
             🌱 Үндэсний үйлдвэрлэл · 1998 оноос
@@ -38,10 +50,9 @@ export default function HomePage() {
           />
         </div>
 
-        {/* side cards */}
         <div className="flex flex-col gap-4">
           <Link
-            href="/products?category=baby"
+            href="/products?category=baby-food"
             className="relative flex min-h-[162px] flex-col justify-between rounded-[14px] bg-gradient-to-br from-lime-600 to-lime-700 p-6 text-ink-900"
           >
             <div>
@@ -75,7 +86,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============ CATEGORIES ============ */}
+      {/* ============ CATEGORIES (DB) ============ */}
       <section className="my-12">
         <div className="mb-5 flex items-end justify-between">
           <div>
@@ -96,24 +107,24 @@ export default function HomePage() {
         <div className="grid grid-cols-3 gap-3 md:grid-cols-6">
           {categories.map((c) => (
             <Link
-              key={c.name}
-              href={`/products?category=${encodeURIComponent(c.name)}`}
+              key={c.id}
+              href={`/products?category=${c.slug}`}
               className="group relative overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white p-5 text-center transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-md)]"
             >
               <span className="absolute left-0 right-0 top-0 h-1 origin-left scale-x-0 bg-lime-500 transition group-hover:scale-x-100" />
-              <div className="text-4xl">{c.emoji}</div>
+              <div className="text-4xl">{c.emoji ?? "🫙"}</div>
               <div className="mt-2 text-[13px] font-bold text-ink-900">
-                {c.name}
+                {c.name_mn}
               </div>
               <div className="mt-0.5 text-[11px] text-ink-500">
-                {c.count} бүтээгдэхүүн
+                {c.product_count} бүтээгдэхүүн
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ============ BEST SELLERS ============ */}
+      {/* ============ FEATURED (DB) ============ */}
       <section className="my-12">
         <div className="mb-5 flex items-end justify-between">
           <div>
@@ -132,7 +143,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {bestSellers.map((p) => (
+          {featured.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
@@ -158,7 +169,7 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* ============ NEW ARRIVALS ============ */}
+      {/* ============ NEW ARRIVALS (DB) ============ */}
       <section className="my-12">
         <div className="mb-5 flex items-end justify-between">
           <div>

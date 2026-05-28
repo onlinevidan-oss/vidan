@@ -1,15 +1,16 @@
 /**
  * Supabase SERVER client
  * - Use in Server Components, Route Handlers, Server Actions
- * - Reads/writes cookies via next/headers
+ * - Type-safe via Database types
  */
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -23,8 +24,8 @@ export async function createClient() {
               cookieStore.set(name, value, options),
             );
           } catch {
-            // Server Component-аас дуудагдаж байх үед setAll болохгүй.
-            // Middleware session-ыг шинэчилж байгаа тул асуудалгүй.
+            // Server Component-аас дуудагдаж байх үед setAll болохгүй —
+            // proxy дотор session-ыг шинэчилнэ.
           }
         },
       },
