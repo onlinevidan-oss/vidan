@@ -1,8 +1,11 @@
+"use client";
+
+import Link from "next/link";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta, getProductTag } from "@/lib/product-meta";
+import { useCart } from "@/stores/cart";
 import type { Database } from "@/lib/supabase/database.types";
 
-/** Supabase products row + joined category */
 export type ProductRow = Database["public"]["Tables"]["products"]["Row"] & {
   category?: { name_mn: string | null; slug: string } | null;
 };
@@ -16,9 +19,24 @@ const TAG_STYLES = {
 export function ProductCard({ product }: { product: ProductRow }) {
   const meta = getProductMeta(product.sku);
   const { tag, tagText } = getProductTag(product);
+  const addItem = useCart((s) => s.addItem);
+
+  function handleAdd(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    addItem({
+      productId: product.id,
+      sku: product.sku,
+      name: product.name_mn,
+      price: product.price,
+    });
+  }
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-lg)]">
+    <Link
+      href={`/products/${product.slug}`}
+      className="group flex flex-col overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-lg)]"
+    >
       <div
         className={`relative grid aspect-square place-items-center text-[80px] ${meta.bg}`}
       >
@@ -30,7 +48,13 @@ export function ProductCard({ product }: { product: ProductRow }) {
             {tagText}
           </span>
         )}
-        <button className="absolute right-2.5 top-2.5 grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 backdrop-blur transition hover:bg-brand-100 hover:text-brand-600">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          className="absolute right-2.5 top-2.5 grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 backdrop-blur transition hover:bg-brand-100 hover:text-brand-600"
+        >
           ♡
         </button>
       </div>
@@ -56,11 +80,15 @@ export function ProductCard({ product }: { product: ProductRow }) {
               </span>
             )}
           </div>
-          <button className="grid h-[38px] w-[38px] place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700">
+          <button
+            onClick={handleAdd}
+            className="grid h-[38px] w-[38px] place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
+            title="Сагсанд нэмэх"
+          >
             +
           </button>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

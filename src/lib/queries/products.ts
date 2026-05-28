@@ -42,18 +42,13 @@ export async function getCategories() {
 
 export async function getCategoriesWithProductCount() {
   const supabase = await createClient();
-  // Note: product_count хэвийн query-ээр query хийх боломжтой
-  // (RLS-ийн дор зөвхөн active product-ыг тоолно)
   const [{ data: cats }, { data: prods }] = await Promise.all([
     supabase
       .from("categories")
       .select("id, name_mn, slug, emoji, color_gradient")
       .eq("is_active", true)
       .order("sort_order"),
-    supabase
-      .from("products")
-      .select("category_id")
-      .eq("is_active", true),
+    supabase.from("products").select("category_id").eq("is_active", true),
   ]);
 
   const countByCategory = new Map<string, number>();
@@ -70,4 +65,78 @@ export async function getCategoriesWithProductCount() {
     ...c,
     product_count: countByCategory.get(c.id) ?? 0,
   }));
+}
+
+// =========================================================
+// Catalog (Phase 5)
+// =========================================================
+
+export type ProductSort = "newest" | "price-asc" | "price-desc" | "name";
+
+export async function getProducts(opts: {
+  categorySlug?: string;
+  isNew?: boolean;
+  saleOnly?: boolean;
+  search?: string;
+  sort?: ProductSort;
+  limit?: number;
+} = {}) {
+  const supabase = await createClient();
+
+  let q = supabase
+    .from("products")
+    .select("*, category:categories!inner(id, name_mn, slug, color_gradient)")
+    .eq("is_active", true);
+
+  if (opts.categorySlug) {
+    q = q.eq("category.slug", opts.categorySlug);
+  }
+  if (opts.isNew) q = q.eq("is_new", true);
+  if (opts.saleOnly) q = q.not("old_price", "is", null);
+  if (opts.search && opts.search.trim()) {
+    q = q.ilike("name_mn", `%${opts.search.trim()}%`);
+  }
+
+  switch (opts.sort) {
+    case "price-asc":  q = q.order("price", { ascending: true }); break;
+    case "price-desc": q = q.order("price", { ascending: false }); break;
+    case "name":       q = q.order("name_mn", { ascending: true }); break;
+    case "newest":
+    default:           q = q.order("created_at", { ascending: false });
+  }
+
+  if (opts.limit) q = q.limit(opts.limit);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getProductBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, category:categories(id, name_mn, slug, emoji, color_gradient)")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getRelatedProducts(
+  categoryId: string,
+  excludeId: string,
+  limit = 4,
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, category:categories(name_mn, slug, color_gradient)")
+    .eq("is_active", true)
+    .eq("category_id", categoryId)
+    .neq("id", excludeId)
+    .limit(limit);
+  if (error) throw error;
+  return data ?? [];
 }

@@ -2,6 +2,18 @@ import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/server";
 import { UserMenu } from "@/components/customer/UserMenu";
+import { CartButton } from "@/components/customer/CartButton";
+
+function CatChip({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-full px-3.5 py-2 text-[13px] font-medium text-ink-700 transition hover:bg-lime-100 hover:text-lime-700"
+    >
+      {label}
+    </Link>
+  );
+}
 
 export async function Header() {
   const supabase = await createClient();
@@ -53,16 +65,7 @@ export async function Header() {
             >
               ♡
             </button>
-            <Link
-              href="/cart"
-              title="Сагс"
-              className="relative grid h-11 w-11 place-items-center rounded-xl bg-ink-100 text-lg transition hover:bg-lime-100"
-            >
-              🛒
-              <span className="absolute -right-1 -top-1 min-w-[20px] rounded-full bg-brand-600 px-1.5 py-0.5 text-[11px] font-bold text-white ring-2 ring-white">
-                3
-              </span>
-            </Link>
+            <CartButton />
 
             {user ? (
               <UserMenu
@@ -83,29 +86,15 @@ export async function Header() {
 
         <nav className="border-t border-ink-200 overflow-x-auto">
           <div className="flex gap-2 py-2.5 whitespace-nowrap">
-            {[
-              ["Бүгд", true],
-              ["🥒 Даршилсан ногоо", false],
-              ["🫙 Чанамал, компот", false],
-              ["🍎 Алимны нухаш", false],
-              ["👶 Хүүхдийн тэжээл", false],
-              ["🥗 Ногооны салат", false],
-              ["🎁 Бэлгийн багц", false],
-              ["🔥 Хямдрал", false],
-              ["⭐ Шинэ", false],
-            ].map(([label, active]) => (
-              <a
-                key={label as string}
-                href="#"
-                className={
-                  active
-                    ? "rounded-full bg-brand-100 px-3.5 py-2 text-[13px] font-semibold text-brand-700"
-                    : "rounded-full px-3.5 py-2 text-[13px] font-medium text-ink-700 transition hover:bg-lime-100 hover:text-lime-700"
-                }
-              >
-                {label}
-              </a>
-            ))}
+            <CatChip href="/products" label="Бүгд" />
+            <CatChip href="/products?category=darshilsan"  label="🥒 Даршилсан ногоо" />
+            <CatChip href="/products?category=jam"         label="🫙 Чанамал" />
+            <CatChip href="/products?category=compote"     label="🥤 Компот" />
+            <CatChip href="/products?category=apple-puree" label="🍎 Алимны нухаш" />
+            <CatChip href="/products?category=baby-food"   label="👶 Хүүхдийн тэжээл" />
+            <CatChip href="/products?category=gift-pack"   label="🎁 Бэлгийн багц" />
+            <CatChip href="/products?sale=true"            label="🔥 Хямдрал" />
+            <CatChip href="/products?new=true"             label="⭐ Шинэ" />
           </div>
         </nav>
       </div>
