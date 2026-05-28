@@ -1,6 +1,5 @@
 /**
- * Supabase session refresh helper for Next.js middleware
- * - Calls supabase.auth.getUser() to refresh session cookies
+ * Supabase session refresh helper + /admin/* protection
  */
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
@@ -34,15 +33,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // /admin/* хуудаснууд хамгаалагдсан — нэвтрээгүй бол /admin/login руу
+  // /admin/* хуудаснууд хамгаалагдсан
   const path = request.nextUrl.pathname;
-  if (
-    path.startsWith("/admin") &&
-    path !== "/admin/login" &&
-    !user
-  ) {
+  if (path.startsWith("/admin") && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
+    url.pathname = "/login";
+    url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
 

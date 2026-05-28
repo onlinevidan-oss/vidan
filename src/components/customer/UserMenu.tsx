@@ -6,9 +6,11 @@ import { formatPhone } from "@/lib/utils";
 export function UserMenu({
   name,
   phone,
+  isStaff,
 }: {
   name: string | null;
   phone: string | null;
+  isStaff?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -57,6 +59,17 @@ export function UserMenu({
             )}
           </div>
           <nav className="flex flex-col p-1.5">
+            {isStaff && (
+              <>
+                <a
+                  href="/admin"
+                  className="rounded-lg bg-ink-900 px-3 py-2 text-sm font-bold text-lime-500 transition hover:bg-ink-800"
+                >
+                  ⚙️ Backoffice
+                </a>
+                <div className="my-1 h-px bg-ink-100" />
+              </>
+            )}
             <a
               href="/account"
               className="rounded-lg px-3 py-2 text-sm text-ink-700 transition hover:bg-ink-100 hover:text-brand-700"

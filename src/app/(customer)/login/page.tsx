@@ -5,17 +5,21 @@ import Image from "next/image";
 
 export const metadata = { title: "Нэвтрэх | VIDAN" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: PageProps<"/login">) {
+  const params = await searchParams;
+  const next = typeof params.next === "string" ? params.next : "/";
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect("/");
+  if (user) redirect(next);
 
   return (
     <div className="-mx-5 grid min-h-[calc(100vh-200px)] md:grid-cols-2">
-      {/* Left brand panel */}
       <aside className="relative hidden overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-12 text-white md:flex md:flex-col md:justify-between">
         <Image src="/vidan-logo.png" alt="VIDAN" width={134} height={60} />
         <div className="relative z-10">
@@ -55,9 +59,8 @@ export default async function LoginPage() {
         />
       </aside>
 
-      {/* Right form */}
       <section className="flex items-center justify-center p-8 md:p-12">
-        <LoginForm />
+        <LoginForm next={next} />
       </section>
     </div>
   );

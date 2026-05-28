@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Step = "phone" | "otp" | "success";
 
-export function LoginForm() {
+export function LoginForm({ next = "/" }: { next?: string }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -65,7 +65,7 @@ export function LoginForm() {
     }
     setStep("success");
     setTimeout(() => {
-      router.push("/");
+      router.push(next);
       router.refresh();
     }, 1200);
   }
@@ -87,6 +87,7 @@ export function LoginForm() {
           isValid={isPhoneValid}
           loading={loading}
           error={error}
+          next={next}
           onSubmit={sendOtp}
         />
       )}
@@ -122,6 +123,7 @@ function PhoneStep({
   isValid,
   loading,
   error,
+  next,
   onSubmit,
 }: {
   phone: string;
@@ -129,6 +131,7 @@ function PhoneStep({
   isValid: boolean;
   loading: boolean;
   error: string | null;
+  next: string;
   onSubmit: () => void;
 }) {
   function format(v: string) {
@@ -142,7 +145,7 @@ function PhoneStep({
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }

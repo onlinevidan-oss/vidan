@@ -10,13 +10,23 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   let profile: { full_name: string | null; phone: string | null } | null = null;
+  let isStaff = false;
   if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("id", user.id)
-      .maybeSingle();
-    profile = data;
+    const [{ data: p }, { data: s }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("staff")
+        .select("id")
+        .eq("id", user.id)
+        .eq("is_active", true)
+        .maybeSingle(),
+    ]);
+    profile = p;
+    isStaff = !!s;
   }
 
   return (
@@ -58,6 +68,7 @@ export async function Header() {
               <UserMenu
                 name={profile?.full_name ?? null}
                 phone={profile?.phone ?? user.phone ?? null}
+                isStaff={isStaff}
               />
             ) : (
               <Link
