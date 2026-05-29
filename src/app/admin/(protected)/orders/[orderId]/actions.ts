@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/database.types";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
 const VALID = ["new", "preparing", "shipping", "delivered", "cancelled"] as const;
 
@@ -15,7 +18,7 @@ export async function updateOrderStatus(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Not authenticated" };
 
-  const update: Record<string, unknown> = { status };
+  const update: OrderUpdate = { status };
   if (status === "delivered") update.delivered_at = new Date().toISOString();
   if (status === "cancelled") {
     update.cancelled_at = new Date().toISOString();
