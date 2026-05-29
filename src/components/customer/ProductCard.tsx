@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta, getProductTag } from "@/lib/product-meta";
 import { useCart } from "@/stores/cart";
@@ -8,6 +9,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 export type ProductRow = Database["public"]["Tables"]["products"]["Row"] & {
   category?: { name_mn: string | null; slug: string } | null;
+  images?: { url: string; sort_order: number | null }[] | null;
 };
 
 const TAG_STYLES = {
@@ -20,6 +22,12 @@ export function ProductCard({ product }: { product: ProductRow }) {
   const meta = getProductMeta(product.sku);
   const { tag, tagText } = getProductTag(product);
   const addItem = useCart((s) => s.addItem);
+
+  // Эхний (sort_order хамгийн бага) бодит зураг
+  const sortedImages = [...(product.images ?? [])].sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+  const firstImage = sortedImages[0]?.url;
 
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
@@ -38,12 +46,24 @@ export function ProductCard({ product }: { product: ProductRow }) {
       className="group flex flex-col overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-lg)]"
     >
       <div
-        className={`relative grid aspect-square place-items-center text-[80px] ${meta.bg}`}
+        className={`relative grid aspect-square place-items-center overflow-hidden ${
+          firstImage ? "bg-cream-100" : meta.bg
+        }`}
       >
-        {meta.emoji}
+        {firstImage ? (
+          <Image
+            src={firstImage}
+            alt={product.name_mn}
+            fill
+            className="object-cover transition group-hover:scale-105"
+            sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+          />
+        ) : (
+          <span className="text-[80px]">{meta.emoji}</span>
+        )}
         {tag && (
           <span
-            className={`absolute left-2.5 top-2.5 rounded-md px-2.5 py-1 text-[11px] font-extrabold tracking-wide ${TAG_STYLES[tag]}`}
+            className={`absolute left-2.5 top-2.5 z-10 rounded-md px-2.5 py-1 text-[11px] font-extrabold tracking-wide ${TAG_STYLES[tag]}`}
           >
             {tagText}
           </span>
@@ -53,7 +73,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
             e.preventDefault();
             e.stopPropagation();
           }}
-          className="absolute right-2.5 top-2.5 grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 backdrop-blur transition hover:bg-brand-100 hover:text-brand-600"
+          className="absolute right-2.5 top-2.5 z-10 grid h-[34px] w-[34px] place-items-center rounded-full bg-white/90 backdrop-blur transition hover:bg-brand-100 hover:text-brand-600"
         >
           ♡
         </button>

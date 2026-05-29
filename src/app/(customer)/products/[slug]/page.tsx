@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { AddToCartBlock } from "@/components/customer/AddToCartBlock";
+import { ProductGallery } from "@/components/customer/ProductGallery";
 import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
 import { getProductMeta, getProductTag } from "@/lib/product-meta";
 import { formatMnt } from "@/lib/utils";
@@ -35,6 +36,9 @@ export default async function ProductDetailPage({
     product.old_price && product.old_price > product.price
       ? Math.round(((product.old_price - product.price) / product.old_price) * 100)
       : null;
+  const images = [...(product.images ?? [])].sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
 
   return (
     <div className="my-6">
@@ -60,25 +64,33 @@ export default async function ProductDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
         {/* Image side */}
-        <div className="space-y-3">
-          <div
-            className={`relative grid aspect-square place-items-center rounded-[20px] text-[180px] ${meta.bg}`}
-          >
-            {meta.emoji}
-            {tag && (
-              <span
-                className={`absolute left-5 top-5 rounded-lg px-3 py-1.5 text-xs font-extrabold tracking-wide ${
-                  tag === "discount"
-                    ? "bg-brand-600 text-white"
-                    : tag === "new"
-                      ? "bg-lime-600 text-ink-900"
-                      : "bg-ink-900 text-lime-500"
-                }`}
-              >
-                {tagText}
-              </span>
-            )}
-          </div>
+        <div>
+          {images.length > 0 ? (
+            <ProductGallery
+              images={images.map((i) => ({ url: i.url, alt: product.name_mn }))}
+              tag={tag}
+              tagText={tagText}
+            />
+          ) : (
+            <div
+              className={`relative grid aspect-square place-items-center overflow-hidden rounded-[20px] text-[180px] ${meta.bg}`}
+            >
+              {meta.emoji}
+              {tag && (
+                <span
+                  className={`absolute left-5 top-5 rounded-lg px-3 py-1.5 text-xs font-extrabold tracking-wide ${
+                    tag === "discount"
+                      ? "bg-brand-600 text-white"
+                      : tag === "new"
+                        ? "bg-lime-600 text-ink-900"
+                        : "bg-ink-900 text-lime-500"
+                  }`}
+                >
+                  {tagText}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Info side */}

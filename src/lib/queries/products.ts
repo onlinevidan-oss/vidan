@@ -1,13 +1,25 @@
 /**
- * Бүтээгдэхүүний query-үүд (Server-side ашиглах)
+ * Бүтээгдэхүүний query-үүд (Server-side)
  */
 import { createClient } from "@/lib/supabase/server";
+
+const PRODUCT_SELECT = `
+  *,
+  category:categories(id, name_mn, slug, color_gradient),
+  images:product_images(id, url, sort_order)
+`;
+
+const PRODUCT_SELECT_WITH_INNER_CAT = `
+  *,
+  category:categories!inner(id, name_mn, slug, color_gradient),
+  images:product_images(id, url, sort_order)
+`;
 
 export async function getFeaturedProducts(limit = 4) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, category:categories(name_mn, slug, color_gradient)")
+    .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .eq("is_featured", true)
     .order("created_at", { ascending: false })
@@ -20,7 +32,7 @@ export async function getNewArrivals(limit = 4) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, category:categories(name_mn, slug, color_gradient)")
+    .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .eq("is_new", true)
     .order("created_at", { ascending: false })
@@ -68,7 +80,7 @@ export async function getCategoriesWithProductCount() {
 }
 
 // =========================================================
-// Catalog (Phase 5)
+// Catalog
 // =========================================================
 
 export type ProductSort = "newest" | "price-asc" | "price-desc" | "name";
@@ -85,12 +97,10 @@ export async function getProducts(opts: {
 
   let q = supabase
     .from("products")
-    .select("*, category:categories!inner(id, name_mn, slug, color_gradient)")
+    .select(PRODUCT_SELECT_WITH_INNER_CAT)
     .eq("is_active", true);
 
-  if (opts.categorySlug) {
-    q = q.eq("category.slug", opts.categorySlug);
-  }
+  if (opts.categorySlug) q = q.eq("category.slug", opts.categorySlug);
   if (opts.isNew) q = q.eq("is_new", true);
   if (opts.saleOnly) q = q.not("old_price", "is", null);
   if (opts.search && opts.search.trim()) {
@@ -116,7 +126,11 @@ export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, category:categories(id, name_mn, slug, emoji, color_gradient)")
+    .select(`
+      *,
+      category:categories(id, name_mn, slug, emoji, color_gradient),
+      images:product_images(id, url, sort_order)
+    `)
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();
@@ -132,7 +146,7 @@ export async function getRelatedProducts(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("products")
-    .select("*, category:categories(name_mn, slug, color_gradient)")
+    .select(PRODUCT_SELECT)
     .eq("is_active", true)
     .eq("category_id", categoryId)
     .neq("id", excludeId)
