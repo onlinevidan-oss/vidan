@@ -44,7 +44,7 @@ export default async function AdminOrders({
   let q = supabase
     .from("orders")
     .select(
-      "id, order_number, total, status, payment_method, created_at, user:profiles(full_name, phone), items:order_items(quantity)",
+      "id, order_number, total, status, payment_method, created_at, user:profiles(full_name, phone), address:addresses(label, district, khoroo, detail), items:order_items(quantity)",
     )
     .order("created_at", { ascending: false })
     .limit(50);
@@ -94,6 +94,7 @@ export default async function AdminOrders({
                   <tr className="bg-[#faf8f3]">
                     <Th>№</Th>
                     <Th>Хэрэглэгч</Th>
+                    <Th>Хүргэх хаяг</Th>
                     <Th>Бараа</Th>
                     <Th>Дүн</Th>
                     <Th>Төлбөр</Th>
@@ -105,6 +106,7 @@ export default async function AdminOrders({
                 <tbody>
                   {orders.map((o) => {
                     const userObj = o.user as { full_name: string | null; phone: string | null } | null;
+                    const addr = o.address as { label: string | null; district: string | null; khoroo: string | null; detail: string | null } | null;
                     const itemCount = (o.items as { quantity: number }[]).reduce((s, i) => s + i.quantity, 0);
                     return (
                       <tr key={o.id} className="border-t border-ink-100 hover:bg-cream">
@@ -121,6 +123,22 @@ export default async function AdminOrders({
                           <div className="text-xs text-ink-500">
                             {userObj?.phone ? formatPhone(userObj.phone) : "—"}
                           </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {addr ? (
+                            <div className="max-w-[260px]">
+                              {addr.label && (
+                                <div className="inline-block rounded bg-lime-100 px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-lime-700">
+                                  {addr.label}
+                                </div>
+                              )}
+                              <div className="mt-1 text-xs leading-snug text-ink-700">
+                                {[addr.district, addr.khoroo, addr.detail].filter(Boolean).join(", ")}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-ink-500">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-ink-500">{itemCount} ш</td>
                         <td className="px-4 py-3 font-display font-bold">
