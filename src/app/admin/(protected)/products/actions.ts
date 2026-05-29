@@ -3,10 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { slugify } from "@/lib/utils";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProductInsert = Database["public"]["Tables"]["products"]["Insert"];
 type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
+
+/** URL slug-ийг найдвартай болгох — Cyrillic → Latin, ямар ч хор тэмдэгт хасах */
+function normalizeSlug(input: string, fallback: string): string {
+  let s = slugify(input);
+  if (!s) s = slugify(fallback);
+  return s || `product-${Date.now()}`;
+}
 
 export type ProductFormPayload = {
   sku: string;
@@ -40,7 +48,7 @@ export async function createProduct(
     sku: payload.sku.trim(),
     name_mn: payload.name_mn.trim(),
     name_en: payload.name_en?.trim() || null,
-    slug: payload.slug.trim(),
+    slug: normalizeSlug(payload.slug, payload.name_mn),
     category_id: payload.category_id,
     short_description: payload.short_description?.trim() || null,
     description: payload.description?.trim() || null,
@@ -80,7 +88,7 @@ export async function updateProduct(
     sku: payload.sku.trim(),
     name_mn: payload.name_mn.trim(),
     name_en: payload.name_en?.trim() || null,
-    slug: payload.slug.trim(),
+    slug: normalizeSlug(payload.slug, payload.name_mn),
     category_id: payload.category_id,
     short_description: payload.short_description?.trim() || null,
     description: payload.description?.trim() || null,

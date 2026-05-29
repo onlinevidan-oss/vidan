@@ -12,6 +12,7 @@ import {
   type ProductFormPayload,
 } from "@/app/admin/(protected)/products/actions";
 import { uploadProductImage } from "@/lib/storage";
+import { slugify } from "@/lib/utils";
 
 type Category = { id: string; name_mn: string };
 type Image = { id: string; url: string };
@@ -68,17 +69,24 @@ export function ProductForm({
     setV((prev) => ({ ...prev, [key]: value }));
   }
 
-  // Auto-slug from name
+  // Auto-slug from name (Cyrillic → Latin transliteration)
+  // Create mode: always regenerate as user types
+  // Edit mode: don't auto-replace (admin might have customized)
   function onNameChange(name: string) {
     update("name_mn", name);
-    if (mode === "create" && !v.slug) {
-      const slug = name
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9Ѐ-ӿ\s-]/g, "")
-        .replace(/\s+/g, "-");
-      update("slug", slug);
+    if (mode === "create") {
+      update("slug", slugify(name));
     }
+  }
+
+  // Slug field manual edits get normalized (replace invalid chars)
+  function onSlugChange(value: string) {
+    // Allow user to type freely but normalize invalid chars
+    const cleaned = value
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+    update("slug", cleaned);
   }
 
   function addTag() {
@@ -185,7 +193,7 @@ export function ProductForm({
               <input
                 type="text"
                 value={v.slug}
-                onChange={(e) => update("slug", e.target.value)}
+                onChange={(e) => onSlugChange(e.target.value)}
                 placeholder="produktiin-ner"
                 className={inputCls}
               />
