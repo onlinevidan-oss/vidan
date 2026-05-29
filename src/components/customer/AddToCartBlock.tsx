@@ -9,9 +9,11 @@ export function AddToCartBlock({
   product: {
     id: string;
     sku: string;
+    slug: string;
     name: string;
     price: number;
     inStock: boolean;
+    imageUrl?: string | null;
   };
 }) {
   const [qty, setQty] = useState(1);
@@ -23,8 +25,10 @@ export function AddToCartBlock({
       {
         productId: product.id,
         sku: product.sku,
+        slug: product.slug,
         name: product.name,
         price: product.price,
+        imageUrl: product.imageUrl ?? null,
       },
       qty,
     );

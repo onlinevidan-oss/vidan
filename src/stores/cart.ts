@@ -11,9 +11,11 @@ import { persist } from "zustand/middleware";
 export type CartItem = {
   productId: string;
   sku: string;
+  slug: string;
   name: string;
   price: number;
   quantity: number;
+  imageUrl?: string | null;
 };
 
 type CartState = {
@@ -39,7 +41,13 @@ export const useCart = create<CartState>()(
             return {
               items: state.items.map((i) =>
                 i.productId === item.productId
-                  ? { ...i, quantity: i.quantity + qty }
+                  ? {
+                      ...i,
+                      quantity: i.quantity + qty,
+                      // Шинэ image, slug ирвэл шинэчилнэ
+                      imageUrl: item.imageUrl ?? i.imageUrl,
+                      slug: item.slug ?? i.slug,
+                    }
                   : i,
               ),
             };
@@ -64,6 +72,6 @@ export const useCart = create<CartState>()(
       totalAmount: () =>
         get().items.reduce((s, i) => s + i.price * i.quantity, 0),
     }),
-    { name: "vidan-cart" },
+    { name: "vidan-cart", version: 2 },
   ),
 );

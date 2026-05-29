@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
@@ -78,14 +79,30 @@ export function CartView() {
                 key={item.productId}
                 className="flex gap-4 rounded-2xl border border-ink-200 bg-white p-4"
               >
-                <div
-                  className={`grid h-24 w-24 shrink-0 place-items-center rounded-xl text-4xl ${meta.bg}`}
-                >
-                  {meta.emoji}
-                </div>
+                {item.imageUrl ? (
+                  <Link
+                    href={item.slug ? `/products/${item.slug}` : "/products"}
+                    className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-cream-100"
+                  >
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                    />
+                  </Link>
+                ) : (
+                  <Link
+                    href={item.slug ? `/products/${item.slug}` : "/products"}
+                    className={`grid h-24 w-24 shrink-0 place-items-center rounded-xl text-4xl ${meta.bg}`}
+                  >
+                    {meta.emoji}
+                  </Link>
+                )}
                 <div className="flex flex-1 flex-col">
                   <Link
-                    href={`/products/${item.sku.toLowerCase()}`}
+                    href={item.slug ? `/products/${item.slug}` : "/products"}
                     className="font-semibold text-ink-900 hover:text-brand-700"
                   >
                     {item.name}

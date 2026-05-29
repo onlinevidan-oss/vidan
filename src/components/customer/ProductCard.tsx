@@ -35,8 +35,10 @@ export function ProductCard({ product }: { product: ProductRow }) {
     addItem({
       productId: product.id,
       sku: product.sku,
+      slug: product.slug,
       name: product.name_mn,
       price: product.price,
+      imageUrl: firstImage ?? null,
     });
   }
 

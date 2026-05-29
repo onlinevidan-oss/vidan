@@ -152,9 +152,11 @@ export default async function ProductDetailPage({
               product={{
                 id: product.id,
                 sku: product.sku,
+                slug: product.slug,
                 name: product.name_mn,
                 price: product.price,
                 inStock: product.stock > 0,
+                imageUrl: images[0]?.url ?? null,
               }}
             />
           </div>
