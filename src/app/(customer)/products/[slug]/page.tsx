@@ -62,7 +62,7 @@ export default async function ProductDetailPage({
         <span className="text-ink-700">{product.name_mn}</span>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         {/* Image side */}
         <div>
           {images.length > 0 ? (
@@ -98,7 +98,7 @@ export default async function ProductDetailPage({
           <div className="mb-2 text-xs font-bold uppercase tracking-wider text-brand-600">
             {product.category?.name_mn ?? "—"}
           </div>
-          <h1 className="font-display text-3xl md:text-4xl font-black tracking-tight text-ink-900">
+          <h1 className="font-display text-2xl md:text-3xl font-black tracking-tight text-ink-900">
             {product.name_mn}
           </h1>
           <p className="mt-3 text-sm text-ink-700">
@@ -106,15 +106,15 @@ export default async function ProductDetailPage({
           </p>
 
           {/* Rating */}
-          <div className="mt-4 flex items-center gap-3 text-sm">
+          <div className="mt-3 flex items-center gap-3 text-sm">
             <span className="text-[#f5b942]">★★★★★</span>
             <span className="font-bold text-ink-900">4.8</span>
             <span className="text-ink-500">· 150+ үнэлгээ</span>
           </div>
 
           {/* Price */}
-          <div className="mt-6 flex items-baseline gap-3">
-            <div className="font-display text-4xl font-black tracking-tight text-ink-900">
+          <div className="mt-4 flex items-baseline gap-3">
+            <div className="font-display text-3xl font-black tracking-tight text-ink-900">
               {formatMnt(product.price)}
             </div>
             {product.old_price && product.old_price > product.price && (
@@ -130,7 +130,7 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Stock */}
-          <div className="mt-3 flex items-center gap-2 text-sm">
+          <div className="mt-2 flex items-center gap-2 text-sm">
             {product.stock > 20 ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e3f5ea] px-3 py-1 text-xs font-bold text-[#2da764]">
                 ✓ {product.stock} ширхэг бэлэн
@@ -147,7 +147,7 @@ export default async function ProductDetailPage({
           </div>
 
           {/* Add to cart */}
-          <div className="mt-6">
+          <div className="mt-4">
             <AddToCartBlock
               product={{
                 id: product.id,
@@ -163,7 +163,7 @@ export default async function ProductDetailPage({
 
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {product.tags.map((t) => (
                 <span
                   key={t}
@@ -176,7 +176,7 @@ export default async function ProductDetailPage({
           )}
 
           {/* Specs */}
-          <div className="mt-7 rounded-2xl border border-ink-200 bg-white p-5">
+          <div className="mt-4 rounded-2xl border border-ink-200 bg-white p-4">
             <h3 className="mb-3 text-sm font-extrabold uppercase tracking-wider text-ink-700">
               Дэлгэрэнгүй
             </h3>
