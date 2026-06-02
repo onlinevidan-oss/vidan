@@ -3,22 +3,7 @@ import { KpiCard } from "@/components/admin/KpiCard";
 import { getDashboardStats } from "@/lib/queries/dashboard";
 import { getCurrentStaff } from "@/lib/queries/staff";
 import { formatMnt, formatPhone } from "@/lib/utils";
-
-const STATUS_BADGE: Record<string, string> = {
-  new:       "bg-[#e8f1fc] text-[#2e7eda]",
-  preparing: "bg-lime-100   text-lime-700",
-  shipping:  "bg-[#ede1f5]  text-[#7c3aed]",
-  delivered: "bg-[#e3f5ea]  text-[#2da764]",
-  cancelled: "bg-brand-100  text-brand-700",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  new:       "Шинэ",
-  preparing: "Бэлтгэж байна",
-  shipping:  "Жолоочид",
-  delivered: "Хүргэгдсэн",
-  cancelled: "Цуцлагдсан",
-};
+import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
 
@@ -152,10 +137,10 @@ export default async function AdminDashboard() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_BADGE[o.status] ?? "bg-ink-100 text-ink-500"}`}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100 text-ink-500"}`}
                         >
                           <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                          {STATUS_LABEL[o.status] ?? o.status}
+                          {STATUS_LABEL[o.status as OrderStatus] ?? o.status}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-ink-500">

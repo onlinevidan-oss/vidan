@@ -2,19 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
+import { STATUS_FLOW, STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
 
 export const metadata = { title: "Захиалгын дэлгэрэнгүй | VIDAN" };
 export const dynamic = "force-dynamic";
-
-const STATUS_FLOW = ["new", "preparing", "shipping", "delivered"] as const;
-
-const STATUS_LABEL: Record<string, string> = {
-  new: "Шинэ",
-  preparing: "Бэлтгэж байна",
-  shipping: "Жолоочид",
-  delivered: "Хүргэгдсэн",
-  cancelled: "Цуцлагдсан",
-};
 
 export default async function CustomerOrderDetail({
   params,

@@ -552,8 +552,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calc_order_totals: {
+        Args: { p_subtotal: number }
+        Returns: {
+          shipping: number
+          subtotal: number
+          tax: number
+          total: number
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      place_order: {
+        Args: {
+          p_address_id: string
+          p_driver_notes?: string
+          p_items: Json
+          p_payment_method: string
+          p_promo_code?: string
+        }
+        Returns: {
+          order_id: string
+          order_number: string
+          total: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

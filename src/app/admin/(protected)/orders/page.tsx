@@ -2,25 +2,10 @@ import Link from "next/link";
 import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt, formatPhone } from "@/lib/utils";
+import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 
 export const metadata = { title: "Захиалга | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
-
-const STATUS_STYLE: Record<string, string> = {
-  new: "bg-[#e8f1fc] text-[#2e7eda]",
-  preparing: "bg-lime-100 text-lime-700",
-  shipping: "bg-[#ede1f5] text-[#7c3aed]",
-  delivered: "bg-[#e3f5ea] text-[#2da764]",
-  cancelled: "bg-brand-100 text-brand-700",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  new: "Шинэ",
-  preparing: "Бэлтгэж байна",
-  shipping: "Жолоочид",
-  delivered: "Хүргэгдсэн",
-  cancelled: "Цуцлагдсан",
-};
 
 export default async function AdminOrders({
   searchParams,
@@ -53,7 +38,7 @@ export default async function AdminOrders({
 
   return (
     <>
-      <TopBar title="Захиалга" crumb={status ? STATUS_LABEL[status] : "Бүгд"} />
+      <TopBar title="Захиалга" crumb={status ? STATUS_LABEL[status as OrderStatus] : "Бүгд"} />
       <div className="flex-1 p-7">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -149,10 +134,10 @@ export default async function AdminOrders({
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[o.status] ?? "bg-ink-100"}`}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100"}`}
                           >
                             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                            {STATUS_LABEL[o.status]}
+                            {STATUS_LABEL[o.status as OrderStatus]}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-ink-500">

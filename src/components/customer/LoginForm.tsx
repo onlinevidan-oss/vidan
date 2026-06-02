@@ -48,13 +48,17 @@ export function LoginForm({ next = "/" }: { next?: string }) {
     setOtp("");
   }
 
+  // OTP digit count (spaces = empty)
+  const otpDigitsOnly = otp.replace(/\s/g, "");
+  const otpComplete = otpDigitsOnly.length === 6;
+
   async function verifyOtp() {
-    if (otp.length !== 6) return;
+    if (!otpComplete) return;
     setError(null);
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({
       phone: fullPhone,
-      token: otp,
+      token: otpDigitsOnly,
       type: "sms",
     });
     setLoading(false);
@@ -70,11 +74,17 @@ export function LoginForm({ next = "/" }: { next?: string }) {
     }, 1200);
   }
 
+  // Debounce: pending resend үед дахин дарж олон SMS илгээхээс сэргийлэх
   async function resendOtp() {
-    if (countdown > 0) return;
+    if (countdown > 0 || loading) return;
     setLoading(true);
-    await supabase.auth.signInWithOtp({ phone: fullPhone });
+    setError(null);
+    const { error } = await supabase.auth.signInWithOtp({ phone: fullPhone });
     setLoading(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
     setCountdown(60);
   }
 
@@ -223,10 +233,6 @@ function PhoneStep({
         зөвшөөрч байна.
       </p>
 
-      <div className="mt-6 rounded-lg bg-lime-50 p-3 text-[11px] text-ink-700">
-        <strong className="text-lime-700">💡 Тест:</strong> 9911 2233 (код:{" "}
-        <strong>123456</strong>) · 9988 7766 (код: <strong>111111</strong>)
-      </div>
     </>
   );
 }
@@ -260,23 +266,35 @@ function OtpStep({
     inputsRef.current[0]?.focus();
   }, []);
 
+  // OTP-ийг 6 урттай fixed string-ээр хадгална (" " = empty slot).
+  // Ингэснээр оронгуйд оруулсан digit нь position-аа алдахгүй.
+  const padOtp = (s: string) => s.padEnd(6, " ").slice(0, 6);
+
   function handleChange(i: number, val: string) {
     const digit = val.replace(/\D/g, "").slice(-1);
-    const arr = otp.split("");
-    arr[i] = digit;
-    const next = arr.join("").padEnd(6, "").slice(0, 6).trimEnd();
-    setOtp(next);
+    const arr = padOtp(otp).split("");
+    arr[i] = digit || " ";
+    setOtp(arr.join(""));
     if (digit && i < 5) inputsRef.current[i + 1]?.focus();
   }
 
   function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !otp[i] && i > 0) {
-      inputsRef.current[i - 1]?.focus();
-      const arr = otp.split("");
-      arr[i - 1] = "";
-      setOtp(arr.join(""));
+    const padded = padOtp(otp);
+    if (e.key === "Backspace") {
+      const arr = padded.split("");
+      if (padded[i] === " " && i > 0) {
+        arr[i - 1] = " ";
+        setOtp(arr.join(""));
+        inputsRef.current[i - 1]?.focus();
+      } else {
+        arr[i] = " ";
+        setOtp(arr.join(""));
+      }
+      e.preventDefault();
     }
-    if (e.key === "Enter" && otp.length === 6) onVerify();
+    if (e.key === "Enter" && padded.replace(/\s/g, "").length === 6) {
+      onVerify();
+    }
   }
 
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
@@ -310,26 +328,30 @@ function OtpStep({
       </p>
 
       <div className="mb-5 flex justify-center gap-2.5">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <input
-            key={i}
-            ref={(el) => {
-              inputsRef.current[i] = el;
-            }}
-            type="tel"
-            inputMode="numeric"
-            maxLength={1}
-            value={otp[i] ?? ""}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            onPaste={handlePaste}
-            className={`font-display h-[64px] w-[52px] rounded-[12px] border-[1.5px] text-center text-2xl font-extrabold outline-none transition focus:border-brand-500 focus:-translate-y-0.5 focus:shadow-[0_0_0_4px_var(--color-brand-100)] ${
-              otp[i]
-                ? "border-lime-500 bg-lime-50"
-                : "border-ink-200 bg-white"
-            }`}
-          />
-        ))}
+        {[0, 1, 2, 3, 4, 5].map((i) => {
+          const ch = padOtp(otp)[i];
+          const filled = ch && ch !== " ";
+          return (
+            <input
+              key={i}
+              ref={(el) => {
+                inputsRef.current[i] = el;
+              }}
+              type="tel"
+              inputMode="numeric"
+              maxLength={1}
+              value={filled ? ch : ""}
+              onChange={(e) => handleChange(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              onPaste={handlePaste}
+              className={`font-display h-[64px] w-[52px] rounded-[12px] border-[1.5px] text-center text-2xl font-extrabold outline-none transition focus:border-brand-500 focus:-translate-y-0.5 focus:shadow-[0_0_0_4px_var(--color-brand-100)] ${
+                filled
+                  ? "border-lime-500 bg-lime-50"
+                  : "border-ink-200 bg-white"
+              }`}
+            />
+          );
+        })}
       </div>
 
       {error && (
@@ -351,7 +373,7 @@ function OtpStep({
 
       <button
         onClick={onVerify}
-        disabled={otp.length !== 6 || loading}
+        disabled={padOtp(otp).replace(/\s/g, "").length !== 6 || loading}
         className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-600 px-4 py-4 text-[15px] font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none"
       >
         {loading ? "Шалгаж байна…" : "Баталгаажуулах →"}

@@ -1,24 +1,31 @@
 /**
  * OAuth callback handler.
- * Supabase OAuth провайдер (Google гэх мэт) -ээс ирсэн `code`-ыг
- * session болгож, redirect хийнэ.
- *
- * URL: https://yoursite.com/auth/callback?code=...&next=...
+ * `next` параметр open redirect-аас сэргийлэхээр зөвхөн internal path
+ * (эхэлж "/" гэхдээ "//" биш) зөвшөөрнө.
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+/** Аюулгүй internal path эсэхийг шалгана */
+function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  // "//" эсвэл "/\" — protocol-relative redirect-ийг хорино
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return "/";
+  }
+  return raw;
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNext(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Vercel-д ажиллах үед load balancer header-ыг хүндэтгэх
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocal = process.env.NODE_ENV === "development";
       if (isLocal) {
@@ -31,6 +38,5 @@ export async function GET(request: Request) {
     }
   }
 
-  // Алдаа гарвал login руу буцаах
   return NextResponse.redirect(`${origin}/login?error=auth_callback`);
 }

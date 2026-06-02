@@ -6,12 +6,10 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { placeOrder } from "@/app/(customer)/checkout/actions";
+import { calculateOrderTotals } from "@/lib/pricing";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
-
-const FREE_SHIPPING_MIN = 50000;
-const TAX_RATE = 0.1;
 
 type PaymentMethod = "qpay" | "card" | "cash";
 
@@ -65,9 +63,7 @@ export function CheckoutView({
     );
   }
 
-  const shipping = subtotal >= FREE_SHIPPING_MIN ? 0 : 5000;
-  const tax = Math.round(subtotal * TAX_RATE);
-  const total = subtotal + shipping + tax;
+  const { shipping, tax, total } = calculateOrderTotals(subtotal);
 
   function handleSubmit() {
     setError(null);

@@ -2,6 +2,7 @@
  * Admin dashboard query-үүд (server-side)
  */
 import { createClient } from "@/lib/supabase/server";
+import { startOfDayMongolia, startOfMonthMongolia } from "@/lib/datetime";
 
 export type DashboardStats = {
   todayRevenue: number;
@@ -21,15 +22,15 @@ export type DashboardStats = {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const supabase = await createClient();
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  // UB timezone-аар "өнөөдрийн" эх (UTC server дээр зөв)
+  const today = startOfDayMongolia();
+  const monthStart = startOfMonthMongolia();
 
-  // 4 KPI query-ийг параллель ажиллуулна
+  // 4 query параллель + recent orders
   const [
     { data: todayOrders },
     { count: newCustomersCount },
-    { data: lowStockProducts },
+    { count: lowStockCount },
     { data: recent },
   ] = await Promise.all([
     supabase
@@ -43,9 +44,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .gte("created_at", monthStart.toISOString()),
     supabase
       .from("products")
-      .select("id")
+      .select("id", { count: "exact", head: true })
       .eq("is_active", true)
-      .lte("stock", 20), // stock_threshold-ыг ашиглах боломжтой, гэхдээ raw filter түр хэрэглэе
+      .lte("stock", 20),
     supabase
       .from("orders")
       .select(
@@ -64,16 +65,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     todayRevenue,
     todayOrders: todayOrders?.length ?? 0,
     newCustomersThisMonth: newCustomersCount ?? 0,
-    lowStockCount: lowStockProducts?.length ?? 0,
+    lowStockCount: lowStockCount ?? 0,
     recentOrders: (recent ?? []).map((o) => ({
       id: o.id,
       order_number: o.order_number,
       total: Number(o.total ?? 0),
       status: o.status,
       created_at: o.created_at,
-      customer_name: (o.user as { full_name: string | null } | null)
-        ?.full_name ?? null,
-      customer_phone: (o.user as { phone: string | null } | null)?.phone ?? null,
+      customer_name:
+        (o.user as { full_name: string | null } | null)?.full_name ?? null,
+      customer_phone:
+        (o.user as { phone: string | null } | null)?.phone ?? null,
     })),
   };
 }

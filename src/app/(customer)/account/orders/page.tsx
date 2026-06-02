@@ -2,25 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
+import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 
 export const metadata = { title: "Миний захиалга | VIDAN" };
 export const dynamic = "force-dynamic";
-
-const STATUS_STYLE: Record<string, string> = {
-  new: "bg-[#e8f1fc] text-[#2e7eda]",
-  preparing: "bg-lime-100 text-lime-700",
-  shipping: "bg-[#ede1f5] text-[#7c3aed]",
-  delivered: "bg-[#e3f5ea] text-[#2da764]",
-  cancelled: "bg-brand-100 text-brand-700",
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  new: "Шинэ",
-  preparing: "Бэлтгэж байна",
-  shipping: "Жолоочид",
-  delivered: "Хүргэгдсэн",
-  cancelled: "Цуцлагдсан",
-};
 
 export default async function MyOrdersPage() {
   const supabase = await createClient();
@@ -95,11 +80,11 @@ export default async function MyOrdersPage() {
                 </div>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold ${
-                    STATUS_STYLE[o.status] ?? "bg-ink-100"
+                    STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100"
                   }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {STATUS_LABEL[o.status] ?? o.status}
+                  {STATUS_LABEL[o.status as OrderStatus] ?? o.status}
                 </span>
               </Link>
             );

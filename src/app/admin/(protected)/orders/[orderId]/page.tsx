@@ -4,24 +4,13 @@ import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { OrderActions } from "@/components/admin/OrderActions";
+import {
+  STATUS_FLOW,
+  NEXT_STATUS_LABEL as NEXT_LABEL,
+  type OrderStatus,
+} from "@/lib/order-status";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_FLOW = ["new", "preparing", "shipping", "delivered"] as const;
-
-const STATUS_LABEL: Record<string, string> = {
-  new: "Шинэ",
-  preparing: "Бэлтгэж байна",
-  shipping: "Жолоочид",
-  delivered: "Хүргэгдсэн",
-  cancelled: "Цуцлагдсан",
-};
-
-const NEXT_LABEL: Record<string, string> = {
-  new: "Бэлтгэлд оруулах",
-  preparing: "Жолоочид өгөх",
-  shipping: "Хүргэгдсэн гэж тэмдэглэх",
-};
 
 export default async function AdminOrderDetail({
   params,
@@ -164,7 +153,7 @@ export default async function AdminOrderDetail({
               orderId={order.id}
               currentStatus={order.status}
               paymentStatus={order.payment_status}
-              nextLabel={nextStatus ? NEXT_LABEL[order.status] : null}
+              nextLabel={nextStatus ? NEXT_LABEL[order.status as OrderStatus] ?? null : null}
               nextStatus={nextStatus ?? null}
             />
 

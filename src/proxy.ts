@@ -12,11 +12,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Дараахаас бусад бүх замд ажиллана:
-     * - _next/static (статик файл)
-     * - _next/image  (image optimization)
-     * - favicon, image-ууд
+     * Зөвхөн Next.js дотоод asset path-уудыг exclude хийнэ.
+     * (Өмнө `*.png/.svg/...` файлын өргөтгөл exclude хийгддэг байсан нь
+     * `/admin/foo.png` гэх мэт path-аар matcher-ыг гүйцэлгэхгүй авч
+     * болохуйц аюулгүй байдлын асуудал үүсгэж байсан)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 };

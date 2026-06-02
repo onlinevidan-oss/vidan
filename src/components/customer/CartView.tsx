@@ -5,9 +5,7 @@ import Image from "next/image";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
-
-const FREE_SHIPPING_MIN = 50000;
-const TAX_RATE = 0.1;
+import { calculateOrderTotals, freeShippingNeeded } from "@/lib/pricing";
 
 export function CartView() {
   const items = useCart((s) => s.items);
@@ -38,10 +36,8 @@ export function CartView() {
     );
   }
 
-  const shipping = subtotal >= FREE_SHIPPING_MIN ? 0 : 5000;
-  const tax = Math.round(subtotal * TAX_RATE);
-  const total = subtotal - 0 + shipping + tax;
-  const freeShipNeeded = Math.max(0, FREE_SHIPPING_MIN - subtotal);
+  const { shipping, tax, total } = calculateOrderTotals(subtotal);
+  const freeShipNeeded = freeShippingNeeded(subtotal);
 
   return (
     <div className="my-6">

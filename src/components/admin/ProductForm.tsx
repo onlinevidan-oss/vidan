@@ -102,6 +102,21 @@ export function ProductForm({
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !initialId) return;
+
+    // Client-side урьдчилсан validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Зөвхөн JPG, PNG, WEBP хүлээж авна");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Зургийн хэмжээ 5MB-аас бага байх ёстой");
+      return;
+    }
+
+    // Input-ийг цэвэрлэх — ижил файлыг 2 дахин upload хийх боломжтой болгох
+    e.target.value = "";
+
     setUploading(true);
     setError(null);
     const result = await uploadProductImage(file, initialId);
@@ -110,21 +125,28 @@ export function ProductForm({
       setUploading(false);
       return;
     }
+    // Серверт бүртгүүлж бодит id-г буцаан авах
     const add = await addProductImage(initialId, result.url);
-    if (!add.ok) {
-      setError(add.error || "Image add failed");
+    if (!add.ok || !add.id) {
+      setError(add.ok ? "Image add failed" : add.error);
       setUploading(false);
       return;
     }
-    // refresh local list via router refresh — but we'll also append optimistically
-    setImages([...images, { id: crypto.randomUUID(), url: result.url }]);
+    setImages([...images, { id: add.id, url: result.url }]);
     setUploading(false);
     router.refresh();
   }
 
   async function handleRemoveImage(id: string) {
+    // Optimistic remove
+    const prev = images;
     setImages(images.filter((i) => i.id !== id));
-    await removeProductImage(id);
+    const res = await removeProductImage(id);
+    if (!res.ok) {
+      setError("Зураг устгахад алдаа гарлаа");
+      setImages(prev);
+      return;
+    }
     router.refresh();
   }
 

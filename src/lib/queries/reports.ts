@@ -2,6 +2,7 @@
  * Admin reports query-үүд
  */
 import { createClient } from "@/lib/supabase/server";
+import { ubDateKey } from "@/lib/datetime";
 
 export type DailyRevenue = { date: string; revenue: number; orders: number };
 
@@ -23,14 +24,17 @@ export async function getReports(days = 30): Promise<ReportsData> {
   const since = new Date();
   since.setDate(since.getDate() - days);
 
-  // Бүх non-cancelled захиалга өгөгдсөн хугацаанд
-  const { data: orders } = await supabase
-    .from("orders")
-    .select(
-      "id, total, payment_method, created_at, items:order_items(product_id, product_name, quantity, subtotal, product:products(category_id, category:categories(name_mn)))",
-    )
-    .gte("created_at", since.toISOString())
-    .neq("status", "cancelled");
+  // Параллель: orders + customers count
+  const [{ data: orders }, { count: customers }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(
+        "id, total, payment_method, created_at, items:order_items(product_id, product_name, quantity, subtotal, product:products(category_id, category:categories(name_mn)))",
+      )
+      .gte("created_at", since.toISOString())
+      .neq("status", "cancelled"),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+  ]);
 
   const list = orders ?? [];
 
@@ -39,20 +43,15 @@ export async function getReports(days = 30): Promise<ReportsData> {
   const ordersCount = list.length;
   const avgOrder = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
 
-  const { count: customers } = await supabase
-    .from("profiles")
-    .select("id", { count: "exact", head: true });
-
-  // By day
+  // By day (UB timezone-аар key үүсгэх)
   const dayMap = new Map<string, { revenue: number; orders: number }>();
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    dayMap.set(key, { revenue: 0, orders: 0 });
+    dayMap.set(ubDateKey(d), { revenue: 0, orders: 0 });
   }
   list.forEach((o) => {
-    const key = o.created_at.slice(0, 10);
+    const key = ubDateKey(new Date(o.created_at));
     const slot = dayMap.get(key);
     if (slot) {
       slot.revenue += Number(o.total ?? 0);

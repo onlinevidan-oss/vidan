@@ -7,7 +7,10 @@ import {
 } from "@/lib/queries/products";
 
 export const metadata = { title: "Бүтээгдэхүүн | VIDAN" };
-export const dynamic = "force-dynamic";
+// `searchParams` уншсанаар Next.js автоматаар динамик renderлэдэг,
+// тиймээс force-dynamic шаардлагагүй; жирийн /products шалтгаангүй
+// тохиолдолд CDN кэшлэгдэх боломжтой.
+export const revalidate = 30;
 
 export default async function ProductsPage({
   searchParams,
