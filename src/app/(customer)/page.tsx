@@ -24,29 +24,35 @@ export default async function HomePage() {
       {/* ============ HERO ============ */}
       <section className="my-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-br from-brand-700 to-brand-500 p-8 md:p-12 text-white min-h-[340px] flex flex-col justify-center">
-          <span className="mb-4 inline-flex w-max items-center gap-1.5 rounded-full bg-lime-500 px-3.5 py-1.5 text-xs font-bold text-ink-900 shadow-md">
+          {/* Дэвсгэр зураг — байвал gradient-ийг бүрхэнэ */}
+          {hero.image_url && (
+            <Image
+              src={hero.image_url}
+              alt=""
+              fill
+              className="pointer-events-none object-cover z-0"
+              unoptimized={hero.image_url.startsWith("http")}
+              priority
+            />
+          )}
+          {/* Текст уншигдахын тулд overlay */}
+          <div className="pointer-events-none absolute inset-0 z-[1] bg-black/45" />
+
+          <span className="relative z-10 mb-4 inline-flex w-max items-center gap-1.5 rounded-full bg-lime-500 px-3.5 py-1.5 text-xs font-bold text-ink-900 shadow-md">
             {hero.badge}
           </span>
-          <h1 className="font-display max-w-[520px] text-4xl md:text-5xl font-black leading-[1.1] tracking-tight whitespace-pre-line">
+          <h1 className="relative z-10 font-display max-w-[520px] text-4xl md:text-5xl font-black leading-[1.1] tracking-tight whitespace-pre-line">
             {hero.title}
           </h1>
-          <p className="my-3 max-w-[480px] text-base opacity-95 relative z-10">
+          <p className="relative z-10 my-3 max-w-[480px] text-base opacity-95">
             {hero.body}
           </p>
           <Link
             href={hero.btn_href}
-            className="w-max rounded-[10px] bg-white px-7 py-3.5 text-[15px] font-bold text-brand-700 shadow-lg transition hover:-translate-y-0.5 relative z-10"
+            className="relative z-10 w-max rounded-[10px] bg-white px-7 py-3.5 text-[15px] font-bold text-brand-700 shadow-lg transition hover:-translate-y-0.5"
           >
             {hero.btn_label}
           </Link>
-          <Image
-            src={hero.image_url}
-            alt=""
-            width={240}
-            height={240}
-            className="pointer-events-none absolute -bottom-10 right-10 opacity-90 -rotate-[15deg] scale-[1.4]"
-            unoptimized={hero.image_url.startsWith("http")}
-          />
         </div>
 
         <div className="flex flex-col gap-4">
