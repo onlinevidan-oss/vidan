@@ -32,3 +32,18 @@ export async function deleteProductImage(path: string): Promise<boolean> {
   const { error } = await supabase.storage.from(BUCKET).remove([path]);
   return !error;
 }
+
+/** Hero banner зураг upload (products bucket дотор hero/ prefix-тэй) */
+export async function uploadHeroImage(
+  file: File,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const supabase = createBrowserClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const fileName = `hero/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(fileName, file, {
+    cacheControl: "3600",
+    upsert: true,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, url: getPublicImageUrl(fileName) };
+}

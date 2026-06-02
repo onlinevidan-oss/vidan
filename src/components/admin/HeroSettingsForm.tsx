@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { updateHeroSettings } from "@/app/admin/(protected)/settings/actions";
+import { uploadHeroImage } from "@/lib/storage";
 import type { HeroSettings } from "@/lib/queries/settings";
 
 export function HeroSettingsForm({ initial }: { initial: HeroSettings }) {
   const [form, setForm] = useState<HeroSettings>(initial);
   const [status, setStatus] = useState<"idle" | "saving" | "ok" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function set(key: keyof HeroSettings, val: string) {
     setForm((f) => ({ ...f, [key]: val }));
@@ -26,6 +30,32 @@ export function HeroSettingsForm({ initial }: { initial: HeroSettings }) {
       setErrorMsg(res.error);
       setStatus("error");
     }
+  }
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setUploadError("Зөвхөн JPG, PNG, WEBP зургийг хүлээж авна");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Зургийн хэмжээ 5MB-аас бага байх ёстой");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+    const res = await uploadHeroImage(file);
+    setUploading(false);
+    if (!res.ok) {
+      setUploadError(res.error);
+      return;
+    }
+    setForm((f) => ({ ...f, image_url: res.url }));
   }
 
   const isSupabaseUrl =
@@ -88,17 +118,34 @@ export function HeroSettingsForm({ initial }: { initial: HeroSettings }) {
         </Field>
       </div>
 
-      {/* Image URL */}
-      <Field
-        label="Зургийн URL"
-        hint="Supabase storage URL эсвэл /public дотрох зам (жнь. /vidan-leaf.png)"
-      >
-        <input
-          value={form.image_url}
-          onChange={(e) => set("image_url", e.target.value)}
-          className={inputCls}
-          placeholder="/vidan-leaf.png"
-        />
+      {/* Image upload */}
+      <Field label="Зураг" hint="JPG, PNG, WEBP — дээд тал 5MB">
+        <div className="flex gap-2">
+          <input
+            value={form.image_url}
+            onChange={(e) => set("image_url", e.target.value)}
+            className={inputCls}
+            placeholder="/vidan-leaf.png"
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="shrink-0 rounded-[10px] border-[1.5px] border-ink-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 transition hover:border-brand-400 hover:text-brand-600 disabled:opacity-50"
+          >
+            {uploading ? "Upload..." : "Upload"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleUpload}
+          />
+        </div>
+        {uploadError && (
+          <p className="mt-1 text-xs text-red-600">{uploadError}</p>
+        )}
         {previewSrc && (
           <div className="mt-2 flex items-center gap-3">
             <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-ink-200 bg-ink-100">
