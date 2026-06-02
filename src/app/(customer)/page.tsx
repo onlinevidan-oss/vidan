@@ -6,15 +6,17 @@ import {
   getFeaturedProducts,
   getNewArrivals,
 } from "@/lib/queries/products";
+import { getHeroSettings } from "@/lib/queries/settings";
 
 export const revalidate = 60; // ISR: 1 минут
 
 export default async function HomePage() {
   // Параллель татна — нэг round-trip
-  const [categories, featured, newArrivals] = await Promise.all([
+  const [categories, featured, newArrivals, hero] = await Promise.all([
     getCategoriesWithProductCount(),
     getFeaturedProducts(4),
     getNewArrivals(4),
+    getHeroSettings(),
   ]);
 
   return (
@@ -23,30 +25,27 @@ export default async function HomePage() {
       <section className="my-6 grid gap-4 lg:grid-cols-[2fr_1fr]">
         <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-br from-brand-700 to-brand-500 p-8 md:p-12 text-white min-h-[340px] flex flex-col justify-center">
           <span className="mb-4 inline-flex w-max items-center gap-1.5 rounded-full bg-lime-500 px-3.5 py-1.5 text-xs font-bold text-ink-900 shadow-md">
-            🌱 Үндэсний үйлдвэрлэл · 1998 оноос
+            {hero.badge}
           </span>
-          <h1 className="font-display max-w-[520px] text-4xl md:text-5xl font-black leading-[1.1] tracking-tight">
-            Эрүүл хөрсөнд
-            <br />
-            ургуулсан эрүүл хүнс
+          <h1 className="font-display max-w-[520px] text-4xl md:text-5xl font-black leading-[1.1] tracking-tight whitespace-pre-line">
+            {hero.title}
           </h1>
           <p className="my-3 max-w-[480px] text-base opacity-95 relative z-10">
-            VIDAN брэндийн 100% цэвэр, хүнсний нэмэлтгүй даршилсан ногоо, жимсний
-            чанамал болон хүүхдийн тэжээл — Монгол хөрсөнд ургуулсан түүхий
-            эдээр.
+            {hero.body}
           </p>
           <Link
-            href="/products"
+            href={hero.btn_href}
             className="w-max rounded-[10px] bg-white px-7 py-3.5 text-[15px] font-bold text-brand-700 shadow-lg transition hover:-translate-y-0.5 relative z-10"
           >
-            Бүтээгдэхүүн үзэх →
+            {hero.btn_label}
           </Link>
           <Image
-            src="/vidan-leaf.png"
+            src={hero.image_url}
             alt=""
             width={240}
             height={240}
             className="pointer-events-none absolute -bottom-10 right-10 opacity-90 -rotate-[15deg] scale-[1.4]"
+            unoptimized={hero.image_url.startsWith("http")}
           />
         </div>
 
