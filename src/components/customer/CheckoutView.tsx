@@ -13,10 +13,9 @@ type Address = Database["public"]["Tables"]["addresses"]["Row"];
 
 type PaymentMethod = "qpay" | "card" | "cash";
 
+// Одоогоор зөвхөн QPay (QR) төлбөр идэвхтэй.
 const PAY_OPTIONS: { value: PaymentMethod; emoji: string; label: string; desc: string }[] = [
   { value: "qpay", emoji: "📱", label: "QPay", desc: "QR-аар банкны апп-аар төл" },
-  { value: "card", emoji: "💳", label: "Карт", desc: "Visa, Mastercard, UnionPay" },
-  { value: "cash", emoji: "💵", label: "Бэлэн", desc: "Хүлээж авах үед бэлнээр" },
 ];
 
 export function CheckoutView({
@@ -192,7 +191,7 @@ export function CheckoutView({
 
           {/* Payment */}
           <Section title="3. Төлбөрийн арга">
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className={PAY_OPTIONS.length > 1 ? "grid grid-cols-3 gap-2.5" : "grid grid-cols-1 gap-2.5"}>
               {PAY_OPTIONS.map((p) => (
                 <button
                   key={p.value}
