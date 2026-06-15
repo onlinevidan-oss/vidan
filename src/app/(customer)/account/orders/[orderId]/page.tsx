@@ -7,6 +7,13 @@ import { STATUS_FLOW, STATUS_LABEL, type OrderStatus } from "@/lib/order-status"
 export const metadata = { title: "Захиалгын дэлгэрэнгүй | VIDAN" };
 export const dynamic = "force-dynamic";
 
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  pending: "Хүлээгдэж буй",
+  paid: "Төлөгдсөн",
+  failed: "Амжилтгүй",
+  refunded: "Буцаагдсан",
+};
+
 export default async function CustomerOrderDetail({
   params,
 }: PageProps<"/account/orders/[orderId]">) {
@@ -156,7 +163,17 @@ export default async function CustomerOrderDetail({
               Төлбөр
             </h3>
             <Row label="Арга" value={order.payment_method?.toUpperCase() ?? "—"} />
-            <Row label="Төлөв" value={order.payment_status} />
+            <Row label="Төлөв" value={PAYMENT_STATUS_LABEL[order.payment_status] ?? order.payment_status} />
+            {order.payment_method === "qpay" &&
+              order.payment_status === "pending" &&
+              order.status !== "cancelled" && (
+                <Link
+                  href={`/checkout/payment/${order.id}`}
+                  className="mt-3 flex items-center justify-center rounded-[10px] bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
+                >
+                  📱 QPay-ээр төлөх
+                </Link>
+              )}
           </div>
         </aside>
       </div>

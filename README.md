@@ -66,12 +66,54 @@ src/
 - [ ] **Phase 4** — Admin auth + RBAC
 - [ ] **Phase 5** — Каталог + product detail
 - [ ] **Phase 6** — Сагс + checkout
-- [ ] **Phase 7** — QPay интеграц
+- [x] **Phase 7** — QPay интеграц (онлайн төлбөр, QR, callback, e-barimt)
 - [ ] **Phase 8** — Order management
 - [ ] **Phase 9** — Reports
 - [ ] **Phase 10** — Promotions
 - [ ] **Phase 11** — Notifications
 - [ ] **Phase 12** — Production deploy
+
+## 💳 QPay онлайн төлбөр
+
+QPay v2 merchant API-аар QR төлбөр хүлээн авна (ДӨРВӨН-ӨЛЗИЙ ХХК — VIDAN).
+
+### Тохиргоо (`.env.local`)
+
+```bash
+QPAY_USERNAME=VIDAN_MN
+QPAY_PASSWORD=••••••••
+QPAY_INVOICE_CODE=VIDAN_MN
+QPAY_BASE_URL=https://merchant.qpay.mn/v2
+QPAY_CALLBACK_BASE_URL=https://your-domain.mn   # callback-ийн public домэйн
+SUPABASE_SERVICE_ROLE_KEY=••••                  # callback/token cache бичихэд
+```
+
+### Урсгал
+
+1. **Checkout** — хэрэглэгч `QPay` сонгоход `place_order` RPC захиалга үүсгэнэ
+   (`payment_status = pending`).
+2. **Payment page** (`/checkout/payment/[orderId]`) — qPay нэхэмжлэл (invoice)
+   үүсгэж QR код + банкны апп-уудын deeplink харуулна. 3 секунд тутам автоматаар
+   төлбөр шалгана.
+3. **Callback** (`/api/qpay/callback?order_id=…`) — qPay төлбөр төлөгдсөний дараа
+   дуудна. Шууд итгэлгүйгээр `/payment/check`-ээр **баталгаажуулж** байж
+   `payment_status = paid` болгоно.
+4. **E-barimt** — төлбөр баталгаажсаны дараа best-effort үүсгэнэ.
+
+### Гол онцлог
+
+- **Token cache** — access token-ийг `qpay_tokens` хүснэгтэд хадгалж, хүчинтэй
+  хугацаанд **нэг л удаа** авна (серверлесс орчинд найдвартай).
+- **Idempotent** — `mark_order_paid` RPC давхар callback/polling-д давхар бичихгүй.
+- **Аюулгүй** — үнэ DB-ээс уншина, callback-ийг `payment/check`-ээр шалгана,
+  бичих үйлдэл зөвхөн `service_role`-оор.
+
+### Холбогдох файлууд
+
+- `src/lib/qpay/client.ts` — QPay API client (token, invoice, check, ebarimt)
+- `src/lib/qpay/orders.ts` — order ↔ invoice холбогч логик
+- `src/app/api/qpay/callback/route.ts` — callback endpoint
+- `supabase/migrations/0009_qpay.sql` — qpay_tokens, qpay_invoices, mark_order_paid
 
 ## ⚠️ Next.js 16 онцлогууд
 

@@ -86,7 +86,12 @@ export function CheckoutView({
         return;
       }
       clearCart();
-      router.push(`/checkout/success/${result.orderId}`);
+      // QPay бол QR төлбөрийн хуудас руу, бусад нь шууд баталгаажуулалт руу
+      if (payment === "qpay") {
+        router.push(`/checkout/payment/${result.orderId}`);
+      } else {
+        router.push(`/checkout/success/${result.orderId}`);
+      }
     });
   }
 

@@ -288,6 +288,86 @@ export type Database = {
           },
         ]
       }
+      qpay_tokens: {
+        Row: {
+          access_token: string
+          expires_at: string
+          id: number
+          refresh_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          expires_at: string
+          id?: number
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          expires_at?: string
+          id?: number
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      qpay_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          order_id: string
+          paid_at: string | null
+          qpay_payment_id: string | null
+          qpay_short_url: string | null
+          qr_image: string | null
+          qr_text: string | null
+          status: string
+          updated_at: string
+          urls: Json | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          order_id: string
+          paid_at?: string | null
+          qpay_payment_id?: string | null
+          qpay_short_url?: string | null
+          qr_image?: string | null
+          qr_text?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          order_id?: string
+          paid_at?: string | null
+          qpay_payment_id?: string | null
+          qpay_short_url?: string | null
+          qr_image?: string | null
+          qr_text?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qpay_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           alt: string | null
@@ -581,6 +661,14 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
+      mark_order_paid: {
+        Args: {
+          p_order_id: string
+          p_payment_ref?: string
+          p_qpay_payment_id?: string
+        }
+        Returns: boolean
+      }
       place_order: {
         Args: {
           p_address_id: string
