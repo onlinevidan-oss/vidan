@@ -11,7 +11,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
 
-type PaymentMethod = "qpay" | "card" | "cash";
+type PaymentMethod = "qpay";
 
 // Одоогоор зөвхөн QPay (QR) төлбөр идэвхтэй.
 const PAY_OPTIONS: { value: PaymentMethod; emoji: string; label: string; desc: string }[] = [
