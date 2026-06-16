@@ -58,6 +58,11 @@ export default async function PaymentPage({
       e instanceof Error ? e.message : "QPay нэхэмжлэл үүсгэхэд алдаа гарлаа";
   }
 
+  // Давхар insert race condition: өмнөх нэхэмжлэл DB-д байгаа бол шууд дахин ачааллана
+  if (invoiceError && invoiceError.includes("duplicate key")) {
+    redirect(`/checkout/payment/${orderId}`);
+  }
+
   if (invoiceError) {
     return (
       <div className="my-12 grid place-items-center">
