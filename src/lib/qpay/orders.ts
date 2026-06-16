@@ -72,6 +72,16 @@ export async function ensureInvoiceForOrder(order: {
     .select("*")
     .single();
 
+  // Давхар insert (race condition) — байгаа record-ийг буцаана
+  if (error?.code === "23505") {
+    const { data: existing2 } = await admin
+      .from("qpay_invoices")
+      .select("*")
+      .eq("order_id", order.id)
+      .maybeSingle();
+    if (existing2) return existing2;
+  }
+
   if (error || !row) {
     throw new Error(`qPay нэхэмжлэл хадгалж чадсангүй: ${error?.message}`);
   }
