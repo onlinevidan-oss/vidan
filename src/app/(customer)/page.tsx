@@ -22,37 +22,42 @@ export default async function HomePage() {
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 md:my-8">
-        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[300px] md:min-h-[380px]">
-          {/* Постер зураг — тод харагдана */}
-          {hero.image_url && (
-            <Image
-              src={hero.image_url}
-              alt=""
-              fill
-              className="pointer-events-none object-cover"
-              unoptimized={hero.image_url.startsWith("http")}
-              priority
-            />
-          )}
-          {/* Зөвхөн текстийн талд зөөлөн gradient — постер нөгөө талдаа тод үлдэнэ */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-900/85 via-ink-900/45 to-transparent" />
+        <div className="relative overflow-hidden rounded-[16px] bg-ink-900">
+          {/* Постер зураг — контейнерийн харьцааг зургийнхтэй (1640×720) тааруулснаар
+              бүтэн харагдана (тайрагдахгүй). Мобайлд арай өндөр байлгана. */}
+          <div className="relative min-h-[440px] sm:min-h-0 sm:aspect-[1640/720]">
+            {hero.image_url && (
+              <Image
+                src={hero.image_url}
+                alt=""
+                fill
+                className="pointer-events-none object-cover object-center"
+                unoptimized={hero.image_url.startsWith("http")}
+                priority
+              />
+            )}
+            {/* Текстийн талд зөөлөн gradient — уншигдахуйц */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-900/90 via-ink-900/55 to-ink-900/10 sm:to-transparent" />
 
-          <div className="relative z-10 flex min-h-[300px] md:min-h-[380px] max-w-[560px] flex-col justify-center p-8 md:p-12 text-white">
-            <span className="mb-5 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
-              {hero.badge}
-            </span>
-            <h1 className="font-display max-w-[440px] text-2xl md:text-[32px] font-extrabold leading-[1.15] tracking-tight">
-              {hero.title}
-            </h1>
-            <p className="mt-3 max-w-[420px] text-sm md:text-[15px] leading-relaxed text-white/80">
-              {hero.body}
-            </p>
-            <Link
-              href={hero.btn_href}
-              className="mt-6 w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
-            >
-              {hero.btn_label}
-            </Link>
+            <div className="absolute inset-0 flex items-center">
+              <div className="max-w-[540px] p-7 md:p-12 text-white">
+                <span className="mb-5 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
+                  {hero.badge}
+                </span>
+                <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.15] tracking-tight">
+                  {hero.title}
+                </h1>
+                <Link
+                  href={hero.btn_href}
+                  className="mt-6 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
+                >
+                  {hero.btn_label}
+                </Link>
+                <p className="mt-4 max-w-[380px] text-[13px] md:text-sm leading-relaxed text-white/75">
+                  {hero.body}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
