@@ -22,45 +22,40 @@ export default async function HomePage() {
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 md:my-8">
-        <div className="overflow-hidden rounded-[16px] bg-ink-900">
-          {/* Утсан дээр: постер дээр, текст доор (постер бүтэн харагдана).
-              sm+ дээр: постер дүүрэн, текст түүн дээр overlay. */}
-          <div className="flex flex-col sm:relative">
-            {/* Постер зураг — харьцаа зургийнхтэй (1640×720) тул тайрагдахгүй */}
-            <div className="relative aspect-[1640/720] w-full">
-              {hero.image_url && (
-                <Image
-                  src={hero.image_url}
-                  alt=""
-                  fill
-                  className="pointer-events-none object-cover object-center"
-                  unoptimized={hero.image_url.startsWith("http")}
-                  priority
-                />
-              )}
-              {/* Overlay зөвхөн sm+ дээр (текст зураг дээр гарах үед) */}
-              <div className="pointer-events-none absolute inset-0 hidden sm:block bg-gradient-to-r from-ink-900/90 via-ink-900/50 to-transparent" />
-            </div>
+        {/* Нэгдмэл банер: зураг дүүрэн, текст доор нь gradient дээр overlay.
+            Утсан дээр босоо тааруухан (min-h), desktop дээр зургийн харьцаагаар. */}
+        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[380px] sm:min-h-0 sm:aspect-[1640/720]">
+          {hero.image_url && (
+            <Image
+              src={hero.image_url}
+              alt=""
+              fill
+              className="pointer-events-none object-cover object-center"
+              unoptimized={hero.image_url.startsWith("http")}
+              priority
+            />
+          )}
+          {/* Утсан дээр доороос, desktop дээр зүүнээс gradient */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/45 to-transparent sm:bg-gradient-to-r sm:from-ink-900/90 sm:via-ink-900/45 sm:to-transparent" />
 
-            {/* Текст блок */}
-            <div className="p-7 sm:absolute sm:inset-0 sm:flex sm:items-center sm:p-0">
-              <div className="max-w-[540px] text-white sm:p-12">
-                <span className="mb-5 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
-                  {hero.badge}
-                </span>
-                <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.15] tracking-tight">
-                  {hero.title}
-                </h1>
-                <Link
-                  href={hero.btn_href}
-                  className="mt-6 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
-                >
-                  {hero.btn_label}
-                </Link>
-                <p className="mt-4 max-w-[380px] text-[13px] md:text-sm leading-relaxed text-white/75">
-                  {hero.body}
-                </p>
-              </div>
+          <div className="absolute inset-0 flex items-end sm:items-center">
+            <div className="max-w-[540px] p-6 sm:p-12 text-white">
+              <span className="mb-4 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
+                {hero.badge}
+              </span>
+              <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.15] tracking-tight">
+                {hero.title}
+              </h1>
+              <Link
+                href={hero.btn_href}
+                className="mt-5 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
+              >
+                {hero.btn_label}
+              </Link>
+              {/* Дэд тайлбар — desktop дээр л (утсан дээр банер цэвэрхэн байлгах) */}
+              <p className="mt-4 hidden max-w-[380px] text-sm leading-relaxed text-white/75 sm:block">
+                {hero.body}
+              </p>
             </div>
           </div>
         </div>
@@ -130,10 +125,10 @@ export default async function HomePage() {
       {/* ============ TRUST STRIP ============ */}
       <div className="my-10 grid grid-cols-2 gap-x-8 gap-y-6 rounded-[16px] border border-ink-200 bg-white p-8 lg:grid-cols-4">
         {[
-          ["Хүргэлт", "УБ хотод 24 цагийн дотор"],
-          ["Нэмэлтгүй цэвэр", "Хиймэл өнгө, амтлагчгүй"],
+          ["Хүргэлт", "Улаанбаатар хотод 24 цагт"],
+          ["Байгалийн орц", "Хүнсний нэмэлтгүй"],
           ["Чанарын баталгаа", "ISO 9001 стандарт"],
-          ["Аюулгүй төлбөр", "Картаар болон QR"],
+          ["Төлбөр", "Карт болон QPay"],
         ].map(([t, d]) => (
           <div key={t} className="border-l-2 border-lime-500 pl-4">
             <h4 className="text-sm font-bold text-ink-900">{t}</h4>
