@@ -9,9 +9,7 @@ export default function CustomerLayout({
   return (
     <>
       <div className="bg-brand-700 px-5 py-2 text-center text-[13px] text-white">
-        🚚 50,000₮-с дээш захиалгад{" "}
-        <strong className="text-lime-500">ҮНЭГҮЙ ХҮРГЭЛТ</strong> · Улаанбаатар
-        хотод 2 цагт хүрнэ
+        20,000₮-с дээш захиалгад хүргэлттэй · Улаанбаатар хотод 2 цагт хүрнэ
       </div>
       <Header />
       <main className="mx-auto w-full max-w-[1240px] px-5 flex-1">
