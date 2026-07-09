@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/server";
+import { getCategories } from "@/lib/queries/products";
 import { UserMenu } from "@/components/customer/UserMenu";
 import { CartButton } from "@/components/customer/CartButton";
 
@@ -17,9 +18,12 @@ function CatChip({ href, label }: { href: string; label: string }) {
 
 export async function Header() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [
+    {
+      data: { user },
+    },
+    categories,
+  ] = await Promise.all([supabase.auth.getUser(), getCategories()]);
 
   let profile: { full_name: string | null; phone: string | null } | null = null;
   let isStaff = false;
@@ -85,16 +89,16 @@ export async function Header() {
         </div>
 
         <nav className="border-t border-ink-200 overflow-x-auto">
-          <div className="flex gap-2 py-2.5 whitespace-nowrap">
+          <div className="flex gap-1 py-2.5 whitespace-nowrap">
             <CatChip href="/products" label="Бүгд" />
-            <CatChip href="/products?category=darshilsan"  label="🥒 Даршилсан ногоо" />
-            <CatChip href="/products?category=jam"         label="🫙 Чанамал" />
-            <CatChip href="/products?category=compote"     label="🥤 Компот" />
-            <CatChip href="/products?category=apple-puree" label="🍎 Алимны нухаш" />
-            <CatChip href="/products?category=baby-food"   label="👶 Хүүхдийн тэжээл" />
-            <CatChip href="/products?category=gift-pack"   label="🎁 Бэлгийн багц" />
-            <CatChip href="/products?sale=true"            label="🔥 Хямдрал" />
-            <CatChip href="/products?new=true"             label="⭐ Шинэ" />
+            {categories.map((c) => (
+              <CatChip
+                key={c.id}
+                href={`/products?category=${c.slug}`}
+                label={c.name_mn}
+              />
+            ))}
+            <CatChip href="/products?new=true" label="Шинэ" />
           </div>
         </nav>
       </div>
