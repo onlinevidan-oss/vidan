@@ -22,25 +22,29 @@ export default async function HomePage() {
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 md:my-8">
-        <div className="relative overflow-hidden rounded-[16px] bg-ink-900">
-          {/* Постер зураг — контейнерийн харьцааг зургийнхтэй (1640×720) тааруулснаар
-              бүтэн харагдана (тайрагдахгүй). Мобайлд арай өндөр байлгана. */}
-          <div className="relative min-h-[440px] sm:min-h-0 sm:aspect-[1640/720]">
-            {hero.image_url && (
-              <Image
-                src={hero.image_url}
-                alt=""
-                fill
-                className="pointer-events-none object-cover object-center"
-                unoptimized={hero.image_url.startsWith("http")}
-                priority
-              />
-            )}
-            {/* Текстийн талд зөөлөн gradient — уншигдахуйц */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-900/90 via-ink-900/55 to-ink-900/10 sm:to-transparent" />
+        <div className="overflow-hidden rounded-[16px] bg-ink-900">
+          {/* Утсан дээр: постер дээр, текст доор (постер бүтэн харагдана).
+              sm+ дээр: постер дүүрэн, текст түүн дээр overlay. */}
+          <div className="flex flex-col sm:relative">
+            {/* Постер зураг — харьцаа зургийнхтэй (1640×720) тул тайрагдахгүй */}
+            <div className="relative aspect-[1640/720] w-full">
+              {hero.image_url && (
+                <Image
+                  src={hero.image_url}
+                  alt=""
+                  fill
+                  className="pointer-events-none object-cover object-center"
+                  unoptimized={hero.image_url.startsWith("http")}
+                  priority
+                />
+              )}
+              {/* Overlay зөвхөн sm+ дээр (текст зураг дээр гарах үед) */}
+              <div className="pointer-events-none absolute inset-0 hidden sm:block bg-gradient-to-r from-ink-900/90 via-ink-900/50 to-transparent" />
+            </div>
 
-            <div className="absolute inset-0 flex items-center">
-              <div className="max-w-[540px] p-7 md:p-12 text-white">
+            {/* Текст блок */}
+            <div className="p-7 sm:absolute sm:inset-0 sm:flex sm:items-center sm:p-0">
+              <div className="max-w-[540px] text-white sm:p-12">
                 <span className="mb-5 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
                   {hero.badge}
                 </span>
@@ -126,9 +130,9 @@ export default async function HomePage() {
       {/* ============ TRUST STRIP ============ */}
       <div className="my-10 grid grid-cols-2 gap-x-8 gap-y-6 rounded-[16px] border border-ink-200 bg-white p-8 lg:grid-cols-4">
         {[
-          ["Хурдан хүргэлт", "УБ хотод 2 цагт"],
-          ["Нэмэлтгүй цэвэр", "100% байгалийн"],
-          ["Чанарын баталгаа", "HACCP стандарт"],
+          ["Хүргэлт", "УБ хотод 24 цагийн дотор"],
+          ["Нэмэлтгүй цэвэр", "Хиймэл өнгө, амтлагчгүй"],
+          ["Чанарын баталгаа", "ISO 9001 стандарт"],
           ["Аюулгүй төлбөр", "Картаар болон QR"],
         ].map(([t, d]) => (
           <div key={t} className="border-l-2 border-lime-500 pl-4">
@@ -164,30 +168,30 @@ export default async function HomePage() {
       </section>
 
       {/* ============ BRAND STORY ============ */}
-      <section className="relative my-14 overflow-hidden rounded-[16px] bg-ink-900 p-8 md:p-14 text-white">
+      <section className="relative my-14 overflow-hidden rounded-[16px] border border-ink-200 bg-white p-8 md:p-14">
         <div className="relative z-10">
-          <div className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-lime-500">
+          <div className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-lime-700">
             Бидний түүх
           </div>
-          <h2 className="font-display mb-4 max-w-[620px] text-2xl md:text-[34px] font-extrabold leading-tight tracking-tight">
-            27 жилийн туршлага, нэг л зорилго — эрүүл хүнс
+          <h2 className="font-display mb-4 max-w-[640px] text-2xl md:text-[34px] font-extrabold leading-tight tracking-tight text-ink-900">
+            Энэ жил 30 жилийн ойгоо тэмдэглэж байна
           </h2>
-          <p className="mb-7 max-w-[620px] text-[15px] leading-relaxed text-white/80">
+          <p className="mb-7 max-w-[620px] text-[15px] leading-relaxed text-ink-700">
             Дөрвөн Өлзий ХХК нь 1996 оноос худалдааны салбарт, 1998 оноос VIDAN
-            хүнсний үйлдвэрээ нээж, өнөөдрийг хүртэл Монгол хүн бүрт баталгаатай,
-            эрүүл хүнсийг өргөн барих эрхэм зорилгоор ажиллаж байна.
+            хүнсний үйлдвэрээ нээснээс хойш өнөөдрийг хүртэл Монгол хүн бүрт
+            баталгаатай, эрүүл хүнсийг өргөн барих эрхэм зорилгоор ажиллаж байна.
           </p>
           <Link
             href="/about"
-            className="inline-block rounded-[10px] bg-white px-6 py-3.5 font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
+            className="inline-block rounded-[10px] bg-ink-900 px-6 py-3.5 font-bold text-white transition hover:-translate-y-0.5 hover:bg-brand-600"
           >
             Бидний тухай
           </Link>
-          <div className="relative z-10 mt-9 flex flex-wrap gap-12">
-            <Stat n="27+" l="жилийн туршлага" />
+          <div className="relative z-10 mt-9 flex flex-wrap gap-x-12 gap-y-6">
+            <Stat n="30 жил" l="үндэсний үйлдвэрлэл" />
             <Stat n="40+" l="төрлийн бүтээгдэхүүн" />
             <Stat n="100%" l="нэмэлтгүй цэвэр" />
-            <Stat n="HACCP" l="олон улсын стандарт" />
+            <Stat n="ISO 9001" l="чанарын стандарт" />
           </div>
         </div>
         <Image
@@ -195,7 +199,7 @@ export default async function HomePage() {
           alt=""
           width={280}
           height={280}
-          className="pointer-events-none absolute -bottom-10 right-8 opacity-20 -rotate-[15deg] scale-[1.8]"
+          className="pointer-events-none absolute -bottom-10 right-8 opacity-[0.06] -rotate-[15deg] scale-[1.8]"
         />
       </section>
     </>
@@ -205,10 +209,10 @@ export default async function HomePage() {
 function Stat({ n, l }: { n: string; l: string }) {
   return (
     <div>
-      <div className="font-display text-3xl md:text-4xl font-black leading-none text-lime-500">
+      <div className="font-display text-2xl md:text-3xl font-black leading-none text-lime-700">
         {n}
       </div>
-      <div className="mt-1.5 text-[13px] text-white/80">{l}</div>
+      <div className="mt-1.5 text-[13px] text-ink-500">{l}</div>
     </div>
   );
 }
