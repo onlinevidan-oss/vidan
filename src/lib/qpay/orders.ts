@@ -12,6 +12,7 @@ import {
   createEbarimt,
   type QpayBankUrl,
 } from "./client";
+import { sendOrderSms } from "@/lib/sms/notifications";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type QpayInvoiceRow =
@@ -130,6 +131,9 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
       // E-barimt амжилтгүй болсон нь төлбөрийг хүчингүй болгохгүй.
     }
   }
+
+  // Хэрэглэгчид баталгаажилтын SMS — best effort.
+  await sendOrderSms(orderId, "paid");
 
   return "paid";
 }

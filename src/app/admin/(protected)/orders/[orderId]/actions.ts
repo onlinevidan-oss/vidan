@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireStaff } from "@/lib/admin-guard";
 import { canTransition, type OrderStatus, ORDER_STATUSES } from "@/lib/order-status";
+import { sendOrderSms } from "@/lib/sms/notifications";
 import type { Database } from "@/lib/supabase/database.types";
 
 type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
@@ -68,6 +69,11 @@ export async function updateOrderStatus(
     created_by: guard.staff.id,
   });
   if (evtErr) console.error("[order event insert failed]", evtErr);
+
+  // Хэрэглэгчид төлөвийн SMS — best effort, урсгалыг тасалдуулахгүй.
+  if (status === "shipping" || status === "delivered" || status === "cancelled") {
+    await sendOrderSms(orderId, status);
+  }
 
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");
