@@ -22,9 +22,9 @@ export default async function HomePage() {
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 md:my-8">
-        {/* Нэгдмэл банер: зураг дүүрэн, текст доор нь gradient дээр overlay.
-            Утсан дээр босоо тааруухан (min-h), desktop дээр зургийн харьцаагаар. */}
-        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[380px] sm:min-h-0 sm:aspect-[1640/720]">
+        {/* Нэгдмэл банер: зураг дүүрэн, badge дээд буланд тусад нь,
+            гарчиг+товч доор нь — хооронд нь амьсгалын зай өгсөн. */}
+        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[460px] sm:min-h-0 sm:aspect-[1640/720]">
           {hero.image_url && (
             <Image
               src={hero.image_url}
@@ -36,26 +36,30 @@ export default async function HomePage() {
             />
           )}
           {/* Утсан дээр доороос, desktop дээр зүүнээс gradient */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/45 to-transparent sm:bg-gradient-to-r sm:from-ink-900/90 sm:via-ink-900/45 sm:to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/60 to-ink-900/20 sm:bg-gradient-to-r sm:from-ink-900/90 sm:via-ink-900/45 sm:to-transparent" />
 
+          {/* Badge — дээд буланд тусад нь */}
+          <div className="absolute left-6 top-6 sm:left-12 sm:top-12">
+            <span className="inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white backdrop-blur">
+              {hero.badge}
+            </span>
+          </div>
+
+          {/* Гарчиг + товч — доор нь, badge-ээс тусдаа, амьсгалын зайтай */}
           <div className="absolute inset-0 flex items-end sm:items-center">
-            <div className="max-w-[540px] p-6 sm:p-12 text-white">
-              <span className="mb-4 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide backdrop-blur">
-                {hero.badge}
-              </span>
-              <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.15] tracking-tight">
+            <div className="max-w-[540px] p-6 pb-9 sm:p-12 text-white">
+              <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.2] tracking-tight">
                 {hero.title}
               </h1>
+              <p className="mt-3 max-w-[380px] text-sm leading-relaxed text-white/75 hidden sm:block">
+                {hero.body}
+              </p>
               <Link
                 href={hero.btn_href}
-                className="mt-5 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
+                className="mt-6 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
               >
                 {hero.btn_label}
               </Link>
-              {/* Дэд тайлбар — desktop дээр л (утсан дээр банер цэвэрхэн байлгах) */}
-              <p className="mt-4 hidden max-w-[380px] text-sm leading-relaxed text-white/75 sm:block">
-                {hero.body}
-              </p>
             </div>
           </div>
         </div>
