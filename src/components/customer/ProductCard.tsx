@@ -22,6 +22,11 @@ export function ProductCard({ product }: { product: ProductRow }) {
   const meta = getProductMeta(product.sku);
   const { tag, tagText } = getProductTag(product);
   const addItem = useCart((s) => s.addItem);
+  const setQuantity = useCart((s) => s.setQuantity);
+  // Сагсанд байгаа тоо — 0 бол сагсанд ороогүй
+  const qty = useCart(
+    (s) => s.items.find((i) => i.productId === product.id)?.quantity ?? 0,
+  );
 
   // Эхний (sort_order хамгийн бага) бодит зураг
   const sortedImages = [...(product.images ?? [])].sort(
@@ -102,13 +107,48 @@ export function ProductCard({ product }: { product: ProductRow }) {
               </span>
             )}
           </div>
-          <button
-            onClick={handleAdd}
-            className="grid h-[38px] w-[38px] place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
-            title="Сагсанд нэмэх"
-          >
-            +
-          </button>
+          {qty === 0 ? (
+            <button
+              onClick={handleAdd}
+              className="grid h-[38px] w-[38px] place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
+              title="Сагсанд нэмэх"
+            >
+              +
+            </button>
+          ) : (
+            <div
+              className="flex h-[38px] items-center overflow-hidden rounded-[10px] bg-brand-600 text-white"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setQuantity(product.id, qty - 1);
+                }}
+                className="grid h-full w-[28px] place-items-center text-base font-bold transition hover:bg-brand-700"
+                title="Хасах"
+              >
+                −
+              </button>
+              <span
+                key={qty}
+                className="grid min-w-[20px] animate-[pop_.25s_ease] place-items-center text-center text-sm font-extrabold tabular-nums"
+              >
+                {qty}
+              </span>
+              <button
+                onClick={handleAdd}
+                className="grid h-full w-[28px] place-items-center text-base font-bold transition hover:bg-brand-700"
+                title="Нэмэх"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </Link>
