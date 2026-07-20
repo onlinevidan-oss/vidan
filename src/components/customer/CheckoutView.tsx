@@ -234,7 +234,7 @@ export function CheckoutView({
                             : "rounded-full border-[1.5px] border-ink-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-ink-700 transition hover:border-brand-200"
                         }
                       >
-                        Өөр…
+                        Бусад
                       </button>
                     </div>
                     {customLabel && (
