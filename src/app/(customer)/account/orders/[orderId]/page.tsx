@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
-import { STATUS_FLOW, STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
+import { type OrderStatus } from "@/lib/order-status";
+import { OrderStatusTracker } from "@/components/customer/OrderStatusTracker";
 
 export const metadata = { title: "Захиалгын дэлгэрэнгүй | VIDAN" };
 export const dynamic = "force-dynamic";
@@ -31,9 +32,6 @@ export default async function CustomerOrderDetail({
 
   if (!order) notFound();
 
-  const currentStep = STATUS_FLOW.indexOf(order.status as (typeof STATUS_FLOW)[number]);
-  const isCancelled = order.status === "cancelled";
-
   return (
     <div className="my-6">
       <nav className="mb-2 flex items-center gap-2 text-xs text-ink-500">
@@ -50,47 +48,13 @@ export default async function CustomerOrderDetail({
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-5">
-          {/* Status timeline */}
-          {!isCancelled ? (
-            <div className="rounded-2xl border border-ink-200 bg-white p-5">
-              <h3 className="font-display mb-4 text-sm font-extrabold uppercase tracking-wider text-ink-700">
-                Захиалгын явц
-              </h3>
-              <div className="grid grid-cols-4 gap-2">
-                {STATUS_FLOW.map((s, idx) => {
-                  const done = idx <= currentStep;
-                  const isCurrent = idx === currentStep;
-                  return (
-                    <div key={s} className="text-center">
-                      <div
-                        className={
-                          done
-                            ? isCurrent
-                              ? "mx-auto grid h-10 w-10 place-items-center rounded-full bg-brand-600 text-base text-white shadow-[0_0_0_4px_var(--color-brand-100)]"
-                              : "mx-auto grid h-10 w-10 place-items-center rounded-full bg-lime-500 text-base text-ink-900"
-                            : "mx-auto grid h-10 w-10 place-items-center rounded-full bg-ink-100 text-base text-ink-500"
-                        }
-                      >
-                        {done && !isCurrent ? "✓" : idx + 1}
-                      </div>
-                      <div className={done ? "mt-1.5 text-[11px] font-bold text-ink-900" : "mt-1.5 text-[11px] text-ink-500"}>
-                        {STATUS_LABEL[s]}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-brand-200 bg-brand-50 p-5 text-center">
-              <div className="font-display text-lg font-bold text-brand-700">
-                ✕ Энэ захиалга цуцлагдсан
-              </div>
-              {order.cancelled_reason && (
-                <p className="mt-1 text-xs text-ink-700">{order.cancelled_reason}</p>
-              )}
-            </div>
-          )}
+          {/* Захиалгын явц — REAL-TIME */}
+          <OrderStatusTracker
+            orderId={order.id}
+            initialStatus={order.status as OrderStatus}
+            initialPaymentStatus={order.payment_status}
+            initialCancelledReason={order.cancelled_reason}
+          />
 
           {/* Items */}
           <div className="rounded-2xl border border-ink-200 bg-white p-5">
