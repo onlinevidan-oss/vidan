@@ -16,12 +16,8 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
 
-type PaymentMethod = "qpay";
-
-// Одоогоор зөвхөн QPay (QR) төлбөр идэвхтэй.
-const PAY_OPTIONS: { value: PaymentMethod; emoji: string; label: string; desc: string }[] = [
-  { value: "qpay", emoji: "📱", label: "QPay", desc: "QR-аар банкны апп-аар төл" },
-];
+// Төлбөрийн арга энэ хуудсанд харагдахгүй — захиалга баталгаажмагц
+// QPay төлбөрийн хуудас руу шилжинэ.
 
 export function CheckoutView({
   profile,
@@ -48,10 +44,28 @@ export function CheckoutView({
     detail: "",
   });
   const [customLabel, setCustomLabel] = useState(false);
-  const [payment, setPayment] = useState<PaymentMethod>("qpay");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  // Захиалга баталгаажсаны дараа төлбөрийн хуудас руу шилжих хооронд
+  // "Сагс хоосон" гэж анивчихын оронд ачааллын дэлгэц харуулна.
+  if (redirecting) {
+    return (
+      <div className="my-16 grid place-items-center">
+        <div className="rounded-2xl border-[1.5px] border-ink-200 bg-white p-12 text-center">
+          <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-[3px] border-ink-200 border-t-brand-600" />
+          <h2 className="font-display mb-1 text-lg font-extrabold text-ink-900">
+            Захиалга баталгаажлаа
+          </h2>
+          <p className="text-sm text-ink-500">
+            Төлбөрийн хуудас руу шилжиж байна…
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -103,20 +117,18 @@ export function CheckoutView({
           addressId === "new"
             ? { ...newAddr, district: `${newAddr.district} дүүрэг` }
             : undefined,
-        paymentMethod: payment,
+        paymentMethod: "qpay",
         driverNotes: notes,
       });
       if (!result.ok) {
         setError(result.error);
         return;
       }
+      // Эхлээд ачааллын дэлгэц рүү шилжүүлж, дараа нь сагс хоослоно —
+      // ингэснээр "Сагс хоосон" төлөв огт харагдахгүй.
+      setRedirecting(true);
       clearCart();
-      // QPay бол QR төлбөрийн хуудас руу, бусад нь шууд баталгаажуулалт руу
-      if (payment === "qpay") {
-        router.push(`/checkout/payment/${result.orderId}`);
-      } else {
-        router.push(`/checkout/success/${result.orderId}`);
-      }
+      router.push(`/checkout/payment/${result.orderId}`);
     });
   }
 
@@ -320,26 +332,6 @@ export function CheckoutView({
             />
           </Section>
 
-          {/* Payment */}
-          <Section title="4. Төлбөрийн арга">
-            <div className={PAY_OPTIONS.length > 1 ? "grid grid-cols-3 gap-2.5" : "grid grid-cols-1 gap-2.5"}>
-              {PAY_OPTIONS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => setPayment(p.value)}
-                  className={
-                    payment === p.value
-                      ? "rounded-xl border-[1.5px] border-brand-600 bg-brand-50 p-3.5 text-center"
-                      : "rounded-xl border-[1.5px] border-ink-200 bg-white p-3.5 text-center transition hover:border-brand-200"
-                  }
-                >
-                  <div className="mb-1.5 text-2xl">{p.emoji}</div>
-                  <div className="text-sm font-bold text-ink-900">{p.label}</div>
-                  <div className="mt-0.5 text-[11px] text-ink-500">{p.desc}</div>
-                </button>
-              ))}
-            </div>
-          </Section>
         </div>
 
         {/* Summary */}
@@ -386,6 +378,9 @@ export function CheckoutView({
             >
               {pending ? "Захиалга үүсгэж байна…" : `✓ Захиалга баталгаажуулах (${formatMnt(total)})`}
             </button>
+            <p className="mt-2.5 text-center text-[11px] text-ink-500">
+              Баталгаажуулсны дараа QPay төлбөрийн хуудас руу шилжинэ
+            </p>
             <Link
               href="/cart"
               className="mt-2 block text-center text-xs font-bold text-ink-500 hover:text-brand-700 hover:underline"
