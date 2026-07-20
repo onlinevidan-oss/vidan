@@ -244,7 +244,7 @@ export function CheckoutView({
                         onChange={(e) =>
                           setNewAddr({ ...newAddr, label: e.target.value })
                         }
-                        placeholder="Жнь: Эмээгийн гэр"
+                        placeholder=""
                         autoFocus
                         className="mt-2 w-full rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500"
                       />
