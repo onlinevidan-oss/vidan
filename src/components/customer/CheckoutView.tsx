@@ -310,8 +310,18 @@ export function CheckoutView({
             </div>
           </Section>
 
+          {/* Notes — хаягийн шууд доор */}
+          <Section title="3. Жолоочид заавар (заавал биш)">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Жнь: Орцны код 1234, 2-р давхар"
+              className="min-h-[80px] w-full resize-y rounded-xl border-[1.5px] border-ink-200 bg-white p-3 text-sm outline-none transition focus:border-brand-500 focus:shadow-[0_0_0_3px_var(--color-brand-100)]"
+            />
+          </Section>
+
           {/* Payment */}
-          <Section title="3. Төлбөрийн арга">
+          <Section title="4. Төлбөрийн арга">
             <div className={PAY_OPTIONS.length > 1 ? "grid grid-cols-3 gap-2.5" : "grid grid-cols-1 gap-2.5"}>
               {PAY_OPTIONS.map((p) => (
                 <button
@@ -329,16 +339,6 @@ export function CheckoutView({
                 </button>
               ))}
             </div>
-          </Section>
-
-          {/* Notes */}
-          <Section title="4. Жолоочид заавар (заавал биш)">
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Жнь: Орцны код 1234, 2-р давхар"
-              className="min-h-[80px] w-full resize-y rounded-xl border-[1.5px] border-ink-200 bg-white p-3 text-sm outline-none transition focus:border-brand-500 focus:shadow-[0_0_0_3px_var(--color-brand-100)]"
-            />
           </Section>
         </div>
 
