@@ -6,8 +6,10 @@
  */
 
 export const FREE_SHIPPING_MIN = 50_000;
-export const SHIPPING_BASE     = 5_000;
+export const SHIPPING_BASE     = 8_000;
 export const TAX_RATE          = 0.1;
+/** Захиалгын доод дүн — үүнээс бага бол захиалга өгөх боломжгүй */
+export const MIN_ORDER_AMOUNT  = 20_000;
 
 export type OrderTotals = {
   subtotal: number;

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
-import { calculateOrderTotals, freeShippingNeeded } from "@/lib/pricing";
+import { calculateOrderTotals, MIN_ORDER_AMOUNT } from "@/lib/pricing";
 
 export function CartView() {
   const items = useCart((s) => s.items);
@@ -37,7 +37,7 @@ export function CartView() {
   }
 
   const { shipping, tax, total } = calculateOrderTotals(subtotal);
-  const freeShipNeeded = freeShippingNeeded(subtotal);
+  const belowMinOrder = subtotal < MIN_ORDER_AMOUNT;
 
   return (
     <div className="my-6">
@@ -57,13 +57,6 @@ export function CartView() {
           Сагс хоослох
         </button>
       </div>
-
-      {freeShipNeeded > 0 && (
-        <div className="mb-5 rounded-xl border border-lime-300 bg-lime-50 p-4 text-sm text-ink-700">
-          🚚 <strong className="text-lime-700">Ахиад {formatMnt(freeShipNeeded)}</strong>{" "}
-          захиалбал хүргэлт <strong>үнэгүй</strong> болно!
-        </div>
-      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         {/* Items */}
@@ -166,12 +159,26 @@ export function CartView() {
                 {formatMnt(total)}
               </div>
             </div>
-            <Link
-              href="/checkout"
-              className="flex w-full items-center justify-center rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700"
-            >
-              Захиалга өгөх →
-            </Link>
+            {belowMinOrder ? (
+              <>
+                <div className="mb-3 rounded-xl bg-ink-100 p-3 text-center text-[13px] text-ink-700">
+                  Захиалгын доод дүн{" "}
+                  <strong>{formatMnt(MIN_ORDER_AMOUNT)}</strong> — ахиад{" "}
+                  <strong>{formatMnt(MIN_ORDER_AMOUNT - subtotal)}</strong>
+                  -ийн бараа нэмнэ үү.
+                </div>
+                <div className="flex w-full cursor-not-allowed items-center justify-center rounded-[12px] bg-ink-300 py-4 text-base font-extrabold text-white">
+                  Захиалга өгөх →
+                </div>
+              </>
+            ) : (
+              <Link
+                href="/checkout"
+                className="flex w-full items-center justify-center rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700"
+              >
+                Захиалга өгөх →
+              </Link>
+            )}
             <Link
               href="/products"
               className="mt-2 block text-center text-xs font-bold text-ink-500 underline-offset-2 transition hover:text-brand-700 hover:underline"

@@ -27,6 +27,9 @@ function translateError(message: string): string {
   if (message.includes("INVALID_ADDRESS")) return "Хүргэх хаяг буруу байна";
   if (message.includes("INVALID_PAYMENT_METHOD")) return "Төлбөрийн арга буруу";
   if (message.includes("INVALID_QUANTITY")) return "Барааны тоо буруу";
+  if (message.includes("MIN_ORDER_NOT_MET")) {
+    return "Захиалгын доод дүн 20,000₮ — сагсандаа бараа нэмнэ үү";
+  }
   if (message.includes("INSUFFICIENT_STOCK")) {
     return "Зарим бараа дутагдалтай — сагсаа шинэчилнэ үү";
   }

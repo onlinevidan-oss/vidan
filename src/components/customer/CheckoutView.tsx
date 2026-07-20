@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { placeOrder } from "@/app/(customer)/checkout/actions";
-import { calculateOrderTotals } from "@/lib/pricing";
+import { calculateOrderTotals, MIN_ORDER_AMOUNT } from "@/lib/pricing";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
@@ -63,9 +63,16 @@ export function CheckoutView({
   }
 
   const { shipping, tax, total } = calculateOrderTotals(subtotal);
+  const belowMinOrder = subtotal < MIN_ORDER_AMOUNT;
 
   function handleSubmit() {
     setError(null);
+    if (belowMinOrder) {
+      setError(
+        `Захиалгын доод дүн ${formatMnt(MIN_ORDER_AMOUNT)} — сагсандаа бараа нэмнэ үү`,
+      );
+      return;
+    }
     if (addressId === "new") {
       if (!newAddr.district.trim() || !newAddr.detail.trim()) {
         setError("Шинэ хаягийн талбаруудыг бөглөнө үү");
@@ -260,7 +267,7 @@ export function CheckoutView({
 
             <button
               onClick={handleSubmit}
-              disabled={pending}
+              disabled={pending || belowMinOrder}
               className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none"
             >
               {pending ? "Захиалга үүсгэж байна…" : `✓ Захиалга баталгаажуулах (${formatMnt(total)})`}
