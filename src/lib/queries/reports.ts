@@ -32,6 +32,7 @@ export async function getReports(days = 30): Promise<ReportsData> {
         "id, total, payment_method, created_at, items:order_items(product_id, product_name, quantity, subtotal, product:products(category_id, category:categories(name_mn)))",
       )
       .gte("created_at", since.toISOString())
+      .eq("payment_status", "paid")
       .neq("status", "cancelled"),
     supabase.from("profiles").select("id", { count: "exact", head: true }),
   ]);

@@ -37,6 +37,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .from("orders")
       .select("total")
       .gte("created_at", today.toISOString())
+      .eq("payment_status", "paid")
       .neq("status", "cancelled"),
     supabase
       .from("profiles")
@@ -52,6 +53,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .select(
         "id, order_number, total, status, created_at, user:profiles(full_name, phone)",
       )
+      .eq("payment_status", "paid")
       .order("created_at", { ascending: false })
       .limit(5),
   ]);

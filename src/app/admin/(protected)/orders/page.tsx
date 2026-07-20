@@ -15,22 +15,25 @@ export default async function AdminOrders({
 
   const supabase = await createClient();
 
-  // Counts by status
+  // Counts by status — зөвхөн төлбөр баталгаажсан захиалгууд.
+  // Төлбөр төлөгдөөгүй (pending) захиалга админд харагдахгүй.
   const { data: allOrders } = await supabase
     .from("orders")
-    .select("status");
+    .select("status")
+    .eq("payment_status", "paid");
   const counts: Record<string, number> = {};
   (allOrders ?? []).forEach((o) => {
     counts[o.status] = (counts[o.status] ?? 0) + 1;
   });
   const total = allOrders?.length ?? 0;
 
-  // Filtered list
+  // Filtered list — мөн зөвхөн төлөгдсөн
   let q = supabase
     .from("orders")
     .select(
       "id, order_number, total, status, payment_method, created_at, user:profiles(full_name, phone), address:addresses(label, district, khoroo, detail), items:order_items(quantity)",
     )
+    .eq("payment_status", "paid")
     .order("created_at", { ascending: false })
     .limit(50);
   if (status) q = q.eq("status", status);
