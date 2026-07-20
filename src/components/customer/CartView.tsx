@@ -5,9 +5,17 @@ import Image from "next/image";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
-import { calculateOrderTotals, MIN_ORDER_AMOUNT } from "@/lib/pricing";
+import {
+  calculateOrderTotals,
+  COMMERCE_DEFAULTS,
+  type CommerceSettings,
+} from "@/lib/pricing";
 
-export function CartView() {
+export function CartView({
+  settings = COMMERCE_DEFAULTS,
+}: {
+  settings?: CommerceSettings;
+}) {
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
   const setQuantity = useCart((s) => s.setQuantity);
@@ -36,8 +44,8 @@ export function CartView() {
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal);
-  const belowMinOrder = subtotal < MIN_ORDER_AMOUNT;
+  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings);
+  const belowMinOrder = subtotal < settings.min_order_amount;
 
   return (
     <div className="my-6">
@@ -163,8 +171,8 @@ export function CartView() {
               <>
                 <div className="mb-3 rounded-xl bg-ink-100 p-3 text-center text-[13px] text-ink-700">
                   Захиалгын доод дүн{" "}
-                  <strong>{formatMnt(MIN_ORDER_AMOUNT)}</strong> — ахиад{" "}
-                  <strong>{formatMnt(MIN_ORDER_AMOUNT - subtotal)}</strong>
+                  <strong>{formatMnt(settings.min_order_amount)}</strong> — ахиад{" "}
+                  <strong>{formatMnt(settings.min_order_amount - subtotal)}</strong>
                   -ийн бараа нэмнэ үү.
                 </div>
                 <div className="flex w-full cursor-not-allowed items-center justify-center rounded-[12px] bg-ink-300 py-4 text-base font-extrabold text-white">

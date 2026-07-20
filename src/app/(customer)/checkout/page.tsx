@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CheckoutView } from "@/components/customer/CheckoutView";
+import { getCommerceSettings } from "@/lib/queries/settings";
 
 export const metadata = { title: "Захиалга өгөх | VIDAN" };
 
@@ -26,11 +27,14 @@ export default async function CheckoutPage() {
       .order("is_default", { ascending: false }),
   ]);
 
+  const settings = await getCommerceSettings();
+
   return (
     <CheckoutView
       user={{ id: user.id, email: user.email ?? null }}
       profile={profile}
       addresses={addresses ?? []}
+      settings={settings}
     />
   );
 }

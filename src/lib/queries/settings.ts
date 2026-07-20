@@ -29,3 +29,28 @@ export async function getHeroSettings(): Promise<HeroSettings> {
   if (!data?.value) return HERO_DEFAULTS;
   return { ...HERO_DEFAULTS, ...(data.value as Partial<HeroSettings>) };
 }
+
+// ============================================================
+// Худалдааны тохиргоо (хүргэлт, доод дүн) — админ хэсгээс удирдана.
+// DB-ийн calc_order_totals() энэ утгуудыг мөн адил уншдаг тул
+// client/server хоёр тал үргэлж ижил тооцоолно.
+// Type + defaults нь client-safe pricing.ts дотор байрлана.
+// ============================================================
+import {
+  COMMERCE_DEFAULTS,
+  type CommerceSettings,
+} from "@/lib/pricing";
+
+export { COMMERCE_DEFAULTS, type CommerceSettings };
+
+export async function getCommerceSettings(): Promise<CommerceSettings> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "commerce")
+    .maybeSingle();
+
+  if (!data?.value) return COMMERCE_DEFAULTS;
+  return { ...COMMERCE_DEFAULTS, ...(data.value as Partial<CommerceSettings>) };
+}

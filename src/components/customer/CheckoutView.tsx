@@ -6,7 +6,11 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { placeOrder } from "@/app/(customer)/checkout/actions";
-import { calculateOrderTotals, MIN_ORDER_AMOUNT } from "@/lib/pricing";
+import {
+  calculateOrderTotals,
+  COMMERCE_DEFAULTS,
+  type CommerceSettings,
+} from "@/lib/pricing";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
@@ -21,10 +25,12 @@ const PAY_OPTIONS: { value: PaymentMethod; emoji: string; label: string; desc: s
 export function CheckoutView({
   profile,
   addresses,
+  settings = COMMERCE_DEFAULTS,
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
   addresses: Address[];
+  settings?: CommerceSettings;
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
@@ -62,14 +68,14 @@ export function CheckoutView({
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal);
-  const belowMinOrder = subtotal < MIN_ORDER_AMOUNT;
+  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings);
+  const belowMinOrder = subtotal < settings.min_order_amount;
 
   function handleSubmit() {
     setError(null);
     if (belowMinOrder) {
       setError(
-        `Захиалгын доод дүн ${formatMnt(MIN_ORDER_AMOUNT)} — сагсандаа бараа нэмнэ үү`,
+        `Захиалгын доод дүн ${formatMnt(settings.min_order_amount)} — сагсандаа бараа нэмнэ үү`,
       );
       return;
     }
