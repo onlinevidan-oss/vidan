@@ -11,6 +11,7 @@ import {
   COMMERCE_DEFAULTS,
   type CommerceSettings,
 } from "@/lib/pricing";
+import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
@@ -46,6 +47,7 @@ export function CheckoutView({
     khoroo: "",
     detail: "",
   });
+  const [customLabel, setCustomLabel] = useState(false);
   const [payment, setPayment] = useState<PaymentMethod>("qpay");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -80,8 +82,16 @@ export function CheckoutView({
       return;
     }
     if (addressId === "new") {
-      if (!newAddr.district.trim() || !newAddr.detail.trim()) {
-        setError("Шинэ хаягийн талбаруудыг бөглөнө үү");
+      if (!newAddr.district) {
+        setError("Дүүргээ сонгоно уу");
+        return;
+      }
+      if (!newAddr.khoroo) {
+        setError("Хороогоо сонгоно уу");
+        return;
+      }
+      if (!newAddr.detail.trim()) {
+        setError("Дэлгэрэнгүй хаягаа бичнэ үү (гудамж, байр, орц, тоот)");
         return;
       }
     }
@@ -89,7 +99,10 @@ export function CheckoutView({
       const result = await placeOrder({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         addressId: addressId === "new" ? undefined : addressId,
-        newAddress: addressId === "new" ? newAddr : undefined,
+        newAddress:
+          addressId === "new"
+            ? { ...newAddr, district: `${newAddr.district} дүүрэг` }
+            : undefined,
         paymentMethod: payment,
         driverNotes: notes,
       });
@@ -185,15 +198,110 @@ export function CheckoutView({
               </label>
 
               {addressId === "new" && (
-                <div className="grid gap-2.5 rounded-xl border border-ink-200 bg-cream p-4 md:grid-cols-2">
-                  <Field label="Тэмдэглэгээ (Гэр/Ажил)" value={newAddr.label}
-                    onChange={(v) => setNewAddr({ ...newAddr, label: v })} />
-                  <Field label="Дүүрэг" value={newAddr.district}
-                    onChange={(v) => setNewAddr({ ...newAddr, district: v })}
-                    placeholder="Жнь: Сүхбаатар дүүрэг" />
-                  <Field label="Хороо" value={newAddr.khoroo}
-                    onChange={(v) => setNewAddr({ ...newAddr, khoroo: v })}
-                    placeholder="Жнь: 1-р хороо" />
+                <div className="space-y-3 rounded-xl border border-ink-200 bg-cream p-4">
+                  {/* Тэмдэглэгээ — Гэр / Ажил / Өөр */}
+                  <div>
+                    <div className="mb-1.5 text-[13px] font-bold text-ink-700">
+                      Тэмдэглэгээ
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {ADDRESS_LABELS.map((l) => (
+                        <button
+                          key={l}
+                          type="button"
+                          onClick={() => {
+                            setCustomLabel(false);
+                            setNewAddr({ ...newAddr, label: l });
+                          }}
+                          className={
+                            !customLabel && newAddr.label === l
+                              ? "rounded-full border-[1.5px] border-brand-600 bg-brand-50 px-4 py-1.5 text-[13px] font-bold text-brand-700"
+                              : "rounded-full border-[1.5px] border-ink-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-ink-700 transition hover:border-brand-200"
+                          }
+                        >
+                          {l}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomLabel(true);
+                          setNewAddr({ ...newAddr, label: "" });
+                        }}
+                        className={
+                          customLabel
+                            ? "rounded-full border-[1.5px] border-brand-600 bg-brand-50 px-4 py-1.5 text-[13px] font-bold text-brand-700"
+                            : "rounded-full border-[1.5px] border-ink-200 bg-white px-4 py-1.5 text-[13px] font-semibold text-ink-700 transition hover:border-brand-200"
+                        }
+                      >
+                        Өөр…
+                      </button>
+                    </div>
+                    {customLabel && (
+                      <input
+                        type="text"
+                        value={newAddr.label}
+                        onChange={(e) =>
+                          setNewAddr({ ...newAddr, label: e.target.value })
+                        }
+                        placeholder="Жнь: Эмээгийн гэр"
+                        autoFocus
+                        className="mt-2 w-full rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500"
+                      />
+                    )}
+                  </div>
+
+                  {/* Дүүрэг + Хороо — сонголт */}
+                  <div className="grid gap-2.5 md:grid-cols-2">
+                    <div>
+                      <div className="mb-1.5 text-[13px] font-bold text-ink-700">
+                        Дүүрэг
+                      </div>
+                      <select
+                        value={newAddr.district}
+                        onChange={(e) =>
+                          setNewAddr({
+                            ...newAddr,
+                            district: e.target.value,
+                            khoroo: "",
+                          })
+                        }
+                        className="w-full cursor-pointer rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500"
+                      >
+                        <option value="" disabled>
+                          Дүүрэг сонгох
+                        </option>
+                        {UB_DISTRICTS.map((d) => (
+                          <option key={d.name} value={d.name}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <div className="mb-1.5 text-[13px] font-bold text-ink-700">
+                        Хороо
+                      </div>
+                      <select
+                        value={newAddr.khoroo}
+                        onChange={(e) =>
+                          setNewAddr({ ...newAddr, khoroo: e.target.value })
+                        }
+                        disabled={!newAddr.district}
+                        className="w-full cursor-pointer rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-500 disabled:cursor-not-allowed disabled:bg-ink-100 disabled:text-ink-500"
+                      >
+                        <option value="" disabled>
+                          {newAddr.district ? "Хороо сонгох" : "Эхлээд дүүрэг сонгоно"}
+                        </option>
+                        {khoroosOf(newAddr.district).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <Field label="Дэлгэрэнгүй (заавал)" value={newAddr.detail}
                     onChange={(v) => setNewAddr({ ...newAddr, detail: v })}
                     placeholder="Гудамж, байр, орц, тоот" required />
