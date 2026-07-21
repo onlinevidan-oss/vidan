@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/customer/ProductCard";
 import {
+  getBrands,
   getCategoriesWithProductCount,
   getProducts,
   type ProductSort,
@@ -17,15 +18,26 @@ export default async function ProductsPage({
 }: PageProps<"/products">) {
   const params = await searchParams;
   const categorySlug = typeof params.category === "string" ? params.category : undefined;
+  const brandSlug = typeof params.brand === "string" ? params.brand : undefined;
   const isNew = params.new === "true";
   const saleOnly = params.sale === "true";
   const search = typeof params.search === "string" ? params.search : undefined;
   const sort = (typeof params.sort === "string" ? params.sort : "newest") as ProductSort;
 
-  const [products, categories] = await Promise.all([
-    getProducts({ categorySlug, isNew, saleOnly, search, sort }),
+  const [categories, brands] = await Promise.all([
     getCategoriesWithProductCount(),
+    getBrands(),
   ]);
+  const activeBrand = brands.find((b) => b.slug === brandSlug);
+
+  const products = await getProducts({
+    categorySlug,
+    brandId: activeBrand?.id,
+    isNew,
+    saleOnly,
+    search,
+    sort,
+  });
 
   const activeCategory = categories.find((c) => c.slug === categorySlug);
   const pageTitle = isNew
@@ -36,7 +48,9 @@ export default async function ProductsPage({
         ? `"${search}" хайлт`
         : activeCategory
           ? activeCategory.name_mn
-          : "Бүх бүтээгдэхүүн";
+          : activeBrand
+            ? activeBrand.name
+            : "Бүх бүтээгдэхүүн";
 
   return (
     <div className="my-6">
@@ -66,12 +80,46 @@ export default async function ProductsPage({
         <aside className="space-y-5">
           <div className="rounded-2xl border border-ink-200 bg-white p-5">
             <h3 className="font-display mb-3.5 text-sm font-extrabold uppercase tracking-wider text-ink-700">
-              Ангилал
+              Брэнд
             </h3>
             <ul className="space-y-1.5">
               <li>
                 <Link
                   href="/products"
+                  className={
+                    !brandSlug && !categorySlug && !isNew && !saleOnly
+                      ? "flex items-center justify-between rounded-lg bg-brand-100 px-3 py-2 text-sm font-bold text-brand-700"
+                      : "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-cream"
+                  }
+                >
+                  <span>Бүгд</span>
+                </Link>
+              </li>
+              {brands.map((b) => (
+                <li key={b.id}>
+                  <Link
+                    href={`/products?brand=${b.slug}`}
+                    className={
+                      brandSlug === b.slug
+                        ? "flex items-center justify-between rounded-lg bg-brand-100 px-3 py-2 text-sm font-bold text-brand-700"
+                        : "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-cream"
+                    }
+                  >
+                    <span>{b.name}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-ink-200 bg-white p-5">
+            <h3 className="font-display mb-3.5 text-sm font-extrabold uppercase tracking-wider text-ink-700">
+              Ангилал
+            </h3>
+            <ul className="space-y-1.5">
+              <li>
+                <Link
+                  href={brandSlug ? `/products?brand=${brandSlug}` : "/products"}
                   className={
                     !categorySlug && !isNew && !saleOnly
                       ? "flex items-center justify-between rounded-lg bg-brand-100 px-3 py-2 text-sm font-bold text-brand-700"
@@ -79,24 +127,23 @@ export default async function ProductsPage({
                   }
                 >
                   <span>Бүгд</span>
-                  <span className="text-xs text-ink-500">
-                    {categories.reduce((s, c) => s + c.product_count, 0)}
-                  </span>
                 </Link>
               </li>
               {categories.map((c) => (
                 <li key={c.id}>
                   <Link
-                    href={`/products?category=${c.slug}`}
+                    href={
+                      brandSlug
+                        ? `/products?brand=${brandSlug}&category=${c.slug}`
+                        : `/products?category=${c.slug}`
+                    }
                     className={
                       categorySlug === c.slug
                         ? "flex items-center justify-between rounded-lg bg-brand-100 px-3 py-2 text-sm font-bold text-brand-700"
                         : "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition hover:bg-cream"
                     }
                   >
-                    <span>
-                      {c.emoji} {c.name_mn}
-                    </span>
+                    <span>{c.name_mn}</span>
                     <span className="text-xs text-ink-500">{c.product_count}</span>
                   </Link>
                 </li>

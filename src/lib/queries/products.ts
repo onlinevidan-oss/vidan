@@ -41,6 +41,56 @@ export async function getNewArrivals(limit = 4) {
   return data ?? [];
 }
 
+// =========================================================
+// Brands
+// =========================================================
+export async function getBrands() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id, name, slug, logo_url, card_from, card_to, logo_mode")
+    .eq("is_active", true)
+    .order("sort_order");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getBrandsWithProductCount() {
+  const supabase = await createClient();
+  const [{ data: brands }, { data: prods }] = await Promise.all([
+    supabase
+      .from("brands")
+      .select("id, name, slug, logo_url, card_from, card_to, logo_mode")
+      .eq("is_active", true)
+      .order("sort_order"),
+    supabase.from("products").select("brand_id").eq("is_active", true),
+  ]);
+
+  const countByBrand = new Map<string, number>();
+  (prods ?? []).forEach((p) => {
+    if (p.brand_id) {
+      countByBrand.set(p.brand_id, (countByBrand.get(p.brand_id) ?? 0) + 1);
+    }
+  });
+
+  return (brands ?? []).map((b) => ({
+    ...b,
+    product_count: countByBrand.get(b.id) ?? 0,
+  }));
+}
+
+export async function getBrandBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("brands")
+    .select("id, name, slug, logo_url, card_from, card_to, logo_mode")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getCategories() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -87,6 +137,7 @@ export type ProductSort = "newest" | "price-asc" | "price-desc" | "name";
 
 export async function getProducts(opts: {
   categorySlug?: string;
+  brandId?: string;
   isNew?: boolean;
   saleOnly?: boolean;
   search?: string;
@@ -101,6 +152,7 @@ export async function getProducts(opts: {
     .eq("is_active", true);
 
   if (opts.categorySlug) q = q.eq("category.slug", opts.categorySlug);
+  if (opts.brandId) q = q.eq("brand_id", opts.brandId);
   if (opts.isNew) q = q.eq("is_new", true);
   if (opts.saleOnly) q = q.not("old_price", "is", null);
   if (opts.search && opts.search.trim()) {

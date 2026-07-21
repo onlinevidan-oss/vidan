@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/server";
-import { getCategories } from "@/lib/queries/products";
+import { getBrands } from "@/lib/queries/products";
 import { UserMenu } from "@/components/customer/UserMenu";
 import { CartButton } from "@/components/customer/CartButton";
 
@@ -22,8 +22,8 @@ export async function Header() {
     {
       data: { user },
     },
-    categories,
-  ] = await Promise.all([supabase.auth.getUser(), getCategories()]);
+    brands,
+  ] = await Promise.all([supabase.auth.getUser(), getBrands()]);
 
   let profile: { full_name: string | null; phone: string | null } | null = null;
   let isStaff = false;
@@ -91,11 +91,11 @@ export async function Header() {
         <nav className="border-t border-ink-200 overflow-x-auto">
           <div className="flex gap-1 py-2.5 whitespace-nowrap">
             <CatChip href="/products" label="Бүгд" />
-            {categories.map((c) => (
+            {brands.map((b) => (
               <CatChip
-                key={c.id}
-                href={`/products?category=${c.slug}`}
-                label={c.name_mn}
+                key={b.id}
+                href={`/products?brand=${b.slug}`}
+                label={b.name}
               />
             ))}
             <CatChip href="/products?new=true" label="Шинэ" />

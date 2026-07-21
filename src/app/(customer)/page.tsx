@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ProductCard } from "@/components/customer/ProductCard";
+import { BrandCard } from "@/components/customer/BrandCard";
 import {
-  getCategoriesWithProductCount,
+  getBrandsWithProductCount,
   getFeaturedProducts,
   getNewArrivals,
 } from "@/lib/queries/products";
@@ -11,8 +12,8 @@ import { getHeroSettings } from "@/lib/queries/settings";
 export const revalidate = 60; // ISR: 1 минут
 
 export default async function HomePage() {
-  const [categories, featured, newArrivals, hero] = await Promise.all([
-    getCategoriesWithProductCount(),
+  const [brands, featured, newArrivals, hero] = await Promise.all([
+    getBrandsWithProductCount(),
     getFeaturedProducts(4),
     getNewArrivals(4),
     getHeroSettings(),
@@ -65,38 +66,27 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ CATEGORIES (DB) ============ */}
+      {/* ============ BRANDS (DB) ============ */}
       <section className="my-14">
         <div className="mb-6 flex items-end justify-between">
           <div>
             <h2 className="font-display text-xl md:text-2xl font-bold tracking-tight text-ink-900">
-              Ангилалаар үзэх
+              Брэндүүд
             </h2>
             <p className="mt-1 text-sm text-ink-500">
-              VIDAN брэндийн бүтээгдэхүүнүүд
+              Дөрвөн Өлзий ХХК-ийн брэндүүд
             </p>
           </div>
           <Link
             href="/products"
             className="text-sm font-semibold text-brand-600 hover:text-brand-700"
           >
-            Бүгдийг харах
+            Бүх бүтээгдэхүүн
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-          {categories.map((c) => (
-            <Link
-              key={c.id}
-              href={`/products?category=${c.slug}`}
-              className="group rounded-[12px] border border-ink-200 bg-white px-4 py-5 text-center transition hover:border-brand-300 hover:shadow-[var(--shadow-brand-sm)]"
-            >
-              <div className="text-sm font-semibold text-ink-900 transition group-hover:text-brand-600">
-                {c.name_mn}
-              </div>
-              <div className="mt-1 text-[11px] text-ink-500">
-                {c.product_count} бүтээгдэхүүн
-              </div>
-            </Link>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+          {brands.map((b) => (
+            <BrandCard key={b.id} brand={b} />
           ))}
         </div>
       </section>

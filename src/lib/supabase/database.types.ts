@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      brands: {
+        Row: {
+          card_from: string | null
+          card_to: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          logo_mode: string
+          logo_url: string | null
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          card_from?: string | null
+          card_to?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_mode?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          card_from?: string | null
+          card_to?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          logo_mode?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           color_gradient: string | null
@@ -288,86 +327,6 @@ export type Database = {
           },
         ]
       }
-      qpay_tokens: {
-        Row: {
-          access_token: string
-          expires_at: string
-          id: number
-          refresh_token: string | null
-          updated_at: string
-        }
-        Insert: {
-          access_token: string
-          expires_at: string
-          id?: number
-          refresh_token?: string | null
-          updated_at?: string
-        }
-        Update: {
-          access_token?: string
-          expires_at?: string
-          id?: number
-          refresh_token?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      qpay_invoices: {
-        Row: {
-          amount: number
-          created_at: string
-          id: string
-          invoice_id: string
-          order_id: string
-          paid_at: string | null
-          qpay_payment_id: string | null
-          qpay_short_url: string | null
-          qr_image: string | null
-          qr_text: string | null
-          status: string
-          updated_at: string
-          urls: Json | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          id?: string
-          invoice_id: string
-          order_id: string
-          paid_at?: string | null
-          qpay_payment_id?: string | null
-          qpay_short_url?: string | null
-          qr_image?: string | null
-          qr_text?: string | null
-          status?: string
-          updated_at?: string
-          urls?: Json | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          id?: string
-          invoice_id?: string
-          order_id?: string
-          paid_at?: string | null
-          qpay_payment_id?: string | null
-          qpay_short_url?: string | null
-          qr_image?: string | null
-          qr_text?: string | null
-          status?: string
-          updated_at?: string
-          urls?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "qpay_invoices_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: true
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       product_images: {
         Row: {
           alt: string | null
@@ -406,6 +365,7 @@ export type Database = {
       products: {
         Row: {
           barcode: string | null
+          brand_id: string | null
           category_id: string | null
           cost_price: number | null
           created_at: string
@@ -433,6 +393,7 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          brand_id?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
@@ -460,6 +421,7 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          brand_id?: string | null
           category_id?: string | null
           cost_price?: number | null
           created_at?: string
@@ -486,6 +448,13 @@ export type Database = {
           weight_net_g?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
@@ -594,21 +563,101 @@ export type Database = {
         }
         Relationships: []
       }
-      site_settings: {
+      qpay_invoices: {
         Row: {
-          key: string
-          value: Json
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          order_id: string
+          paid_at: string | null
+          qpay_payment_id: string | null
+          qpay_short_url: string | null
+          qr_image: string | null
+          qr_text: string | null
+          status: string
+          updated_at: string
+          urls: Json | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          order_id: string
+          paid_at?: string | null
+          qpay_payment_id?: string | null
+          qpay_short_url?: string | null
+          qr_image?: string | null
+          qr_text?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          order_id?: string
+          paid_at?: string | null
+          qpay_payment_id?: string | null
+          qpay_short_url?: string | null
+          qr_image?: string | null
+          qr_text?: string | null
+          status?: string
+          updated_at?: string
+          urls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qpay_invoices_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qpay_tokens: {
+        Row: {
+          access_token: string
+          expires_at: string
+          id: number
+          refresh_token: string | null
           updated_at: string
         }
         Insert: {
-          key: string
-          value?: Json
+          access_token: string
+          expires_at: string
+          id?: number
+          refresh_token?: string | null
           updated_at?: string
         }
         Update: {
-          key?: string
-          value?: Json
+          access_token?: string
+          expires_at?: string
+          id?: number
+          refresh_token?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
@@ -815,4 +864,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
