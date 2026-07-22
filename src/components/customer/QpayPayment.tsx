@@ -27,6 +27,7 @@ export function QpayPayment({
   urls: QpayBankUrl[];
 }) {
   const router = useRouter();
+  const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState<"pending" | "paid">("pending");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +51,14 @@ export function QpayPayment({
     }
   }, [orderId, router]);
 
-  // Автомат polling
+  // Автомат polling — зөвхөн санамжийг зөвшөөрсний дараа
   useEffect(() => {
+    if (!agreed) return;
     const id = setInterval(() => {
       if (!paidRef.current) void runCheck();
     }, POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [runCheck]);
+  }, [agreed, runCheck]);
 
   const qrSrc = qrImage.startsWith("data:")
     ? qrImage
@@ -76,6 +78,63 @@ export function QpayPayment({
         <span className="text-ink-700">QPay төлбөр</span>
       </nav>
 
+      {!agreed ? (
+        /* ===== Заавал уншиж зөвшөөрөх санамж ===== */
+        <div className="mx-auto max-w-[560px]">
+          <div className="rounded-2xl border border-ink-200 bg-white p-6 md:p-8">
+            <div className="mb-1 text-center text-[11px] font-bold uppercase tracking-wider text-ink-500">
+              Захиалга {orderNumber}
+            </div>
+            <div className="font-display mb-5 text-center text-2xl font-black text-brand-700">
+              {formatMnt(total)}
+            </div>
+
+            <h2 className="font-display mb-3 text-lg font-extrabold text-ink-900">
+              Төлбөр төлөхийн өмнө уншина уу
+            </h2>
+            <ul className="space-y-2.5 text-sm text-ink-700">
+              <li className="flex gap-2.5">
+                <span className="text-brand-600">•</span>
+                <span>
+                  Гүйлгээ хийхдээ <strong>{formatMnt(total)}</strong> дүнг
+                  бүтэн, зөв төлнө үү.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="text-brand-600">•</span>
+                <span>QR кодыг зөвхөн энэ захиалгын төлбөрт ашиглана.</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="text-brand-600">•</span>
+                <span>
+                  Төлбөр амжилттай төлөгдсөний дараа захиалга баталгаажиж,
+                  бэлтгэл эхэлнэ.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="text-brand-600">•</span>
+                <span>
+                  Дутуу эсвэл буруу дүнгээр төлсөн тохиолдолд захиалга
+                  баталгаажихгүй болохыг анхаарна уу.
+                </span>
+              </li>
+            </ul>
+
+            <button
+              onClick={() => setAgreed(true)}
+              className="mt-6 flex w-full items-center justify-center rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700"
+            >
+              Ойлголоо, төлбөр рүү шилжих →
+            </button>
+            <Link
+              href={`/account/orders/${orderId}`}
+              className="mt-2 block text-center text-xs font-bold text-ink-500 hover:text-brand-700 hover:underline"
+            >
+              Дараа төлөх
+            </Link>
+          </div>
+        </div>
+      ) : (
       <div className="mx-auto grid max-w-[760px] gap-6 lg:grid-cols-[360px_1fr]">
         {/* QR талбар */}
         <div className="rounded-2xl border border-ink-200 bg-white p-6 text-center">
@@ -206,6 +265,7 @@ export function QpayPayment({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
