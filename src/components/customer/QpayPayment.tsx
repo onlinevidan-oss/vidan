@@ -90,14 +90,15 @@ export function QpayPayment({
             </div>
 
             <h2 className="font-display mb-3 text-lg font-extrabold text-ink-900">
-              Төлбөр төлөхийн өмнө уншина уу
+              Үйлчилгээний нөхцөл
             </h2>
             <ul className="space-y-2.5 text-sm text-ink-700">
               <li className="flex gap-2.5">
                 <span className="text-brand-600">•</span>
                 <span>
                   Гүйлгээ хийхдээ <strong>{formatMnt(total)}</strong> дүнг
-                  бүтэн, зөв төлнө үү.
+                  бүтэн, зөв төлнө үү. Дутуу эсвэл буруу дүнгээр төлсөн
+                  тохиолдолд захиалга баталгаажихгүй.
                 </span>
               </li>
               <li className="flex gap-2.5">
@@ -107,15 +108,23 @@ export function QpayPayment({
               <li className="flex gap-2.5">
                 <span className="text-brand-600">•</span>
                 <span>
-                  Төлбөр амжилттай төлөгдсөний дараа захиалга баталгаажиж,
-                  бэлтгэл эхэлнэ.
+                  Төлбөр төлөгдсөний дараа захиалга баталгаажиж,{" "}
+                  <strong>Улаанбаатар хотод 24 цагийн дотор</strong> хүргэнэ.
                 </span>
               </li>
               <li className="flex gap-2.5">
                 <span className="text-brand-600">•</span>
                 <span>
-                  Дутуу эсвэл буруу дүнгээр төлсөн тохиолдолд захиалга
-                  баталгаажихгүй болохыг анхаарна уу.
+                  Буцаалт, санал гомдлыг манай{" "}
+                  <a
+                    href="https://www.facebook.com/durvunulzii"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-brand-700 hover:underline"
+                  >
+                    Facebook хуудсаар
+                  </a>{" "}
+                  дамжуулан хүлээн авна.
                 </span>
               </li>
             </ul>
@@ -124,7 +133,7 @@ export function QpayPayment({
               onClick={() => setAgreed(true)}
               className="mt-6 flex w-full items-center justify-center rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700"
             >
-              Ойлголоо, төлбөр рүү шилжих →
+              Зөвшөөрч, төлбөр рүү шилжих →
             </button>
             <Link
               href={`/account/orders/${orderId}`}

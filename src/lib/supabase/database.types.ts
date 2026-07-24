@@ -144,6 +144,36 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_handled: boolean
+          message: string
+          name: string | null
+          phone: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_handled?: boolean
+          message: string
+          name?: string | null
+          phone?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_handled?: boolean
+          message?: string
+          name?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
       order_events: {
         Row: {
           created_at: string

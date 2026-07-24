@@ -1,4 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
+
+const FB_PAGE = "https://www.facebook.com/durvunulzii";
 
 export function Footer() {
   return (
@@ -39,21 +42,21 @@ export function Footer() {
           <FooterCol
             title="Компани"
             items={[
-              "Бидний тухай",
-              "Үйлдвэрлэл",
-              "Мэдээ мэдээлэл",
-              "Ажлын байр",
-              "Хамтрагч",
+              { label: "Бидний тухай", href: "#" },
+              { label: "Үйлдвэрлэл", href: "#" },
+              { label: "Мэдээ мэдээлэл", href: FB_PAGE, external: true },
+              { label: "Ажлын байр", href: "#" },
+              { label: "Хамтрагч", href: "#" },
             ]}
           />
           <FooterCol
             title="Тусламж"
             items={[
-              "Түгээмэл асуулт",
-              "Хүргэлт",
-              "Буцаалт",
-              "Үйлчилгээний нөхцөл",
-              "Нууцлалын бодлого",
+              { label: "Санал хүсэлт", href: "/feedback" },
+              { label: "Хүргэлт (24 цаг)", href: "/feedback" },
+              { label: "Буцаалт", href: FB_PAGE, external: true },
+              { label: "Санал гомдол", href: FB_PAGE, external: true },
+              { label: "Түгээмэл асуулт", href: FB_PAGE, external: true },
             ]}
           />
           <div>
@@ -88,7 +91,9 @@ export function Footer() {
   );
 }
 
-function FooterCol({ title, items }: { title: string; items: string[] }) {
+type FooterItem = { label: string; href: string; external?: boolean };
+
+function FooterCol({ title, items }: { title: string; items: FooterItem[] }) {
   return (
     <div>
       <h4 className="mb-4 text-sm font-extrabold uppercase tracking-wider">
@@ -96,13 +101,24 @@ function FooterCol({ title, items }: { title: string; items: string[] }) {
       </h4>
       <ul className="space-y-2.5 text-sm opacity-70">
         {items.map((item) => (
-          <li key={item}>
-            <a
-              href="#"
-              className="transition hover:opacity-100 hover:text-lime-500"
-            >
-              {item}
-            </a>
+          <li key={item.label}>
+            {item.external ? (
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:opacity-100 hover:text-lime-500"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                href={item.href}
+                className="transition hover:opacity-100 hover:text-lime-500"
+              >
+                {item.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>
