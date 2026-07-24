@@ -43,12 +43,32 @@ export function CommerceSettingsForm({
         value={form.min_order_amount}
         onChange={(v) => setNum("min_order_amount", v)}
       />
-      <Field
-        label="Хүргэлтийн төлбөр (₮)"
-        hint="Захиалга бүрд нэмэгдэх хүргэлтийн суурь төлбөр"
-        value={form.shipping_base}
-        onChange={(v) => setNum("shipping_base", v)}
-      />
+      {/* Хүргэлт — ширхгээр */}
+      <div className="rounded-xl border-[1.5px] border-ink-200 p-4">
+        <div className="mb-3 text-sm font-bold text-ink-900">
+          Хүргэлтийн төлбөр (ширхгээр)
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field
+            label="Босго (ширхэг)"
+            hint="Хэдэн ширхэг хүртэл суурь төлбөр"
+            value={form.shipping_qty_threshold}
+            onChange={(v) => setNum("shipping_qty_threshold", v)}
+          />
+          <Field
+            label={`≤ ${form.shipping_qty_threshold} ширхэг (₮)`}
+            hint="Босго ба түүнээс доош"
+            value={form.shipping_base}
+            onChange={(v) => setNum("shipping_base", v)}
+          />
+          <Field
+            label={`> ${form.shipping_qty_threshold} ширхэг (₮)`}
+            hint="Босгоос дээш"
+            value={form.shipping_over}
+            onChange={(v) => setNum("shipping_over", v)}
+          />
+        </div>
+      </div>
 
       {/* Үнэгүй хүргэлт */}
       <div className="rounded-xl border-[1.5px] border-ink-200 p-4">
@@ -91,11 +111,12 @@ export function CommerceSettingsForm({
       {/* Урьдчилан харах */}
       <div className="rounded-xl bg-ink-100 p-4 text-[13px] leading-relaxed text-ink-700">
         <strong className="text-ink-900">Одоогийн дүрэм:</strong>{" "}
-        {formatMnt(form.min_order_amount)}-с доош захиалга авахгүй · Хүргэлт{" "}
-        {formatMnt(form.shipping_base)}
+        {formatMnt(form.min_order_amount)}-с доош захиалга авахгүй · Хүргэлт:{" "}
+        {form.shipping_qty_threshold} ширхэг хүртэл {formatMnt(form.shipping_base)},
+        дээш бол {formatMnt(form.shipping_over)}
         {form.free_shipping_enabled
           ? ` · ${formatMnt(form.free_shipping_min)}-с дээш бол үнэгүй`
-          : " (бүх захиалгад)"}
+          : ""}
       </div>
 
       <div className="flex items-center gap-3">

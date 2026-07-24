@@ -56,6 +56,8 @@ export async function updateCommerceSettings(
 
   const minOrder = Math.round(Number(payload.min_order_amount));
   const shipping = Math.round(Number(payload.shipping_base));
+  const shipOver = Math.round(Number(payload.shipping_over));
+  const qtyThresh = Math.round(Number(payload.shipping_qty_threshold));
   const freeMin  = Math.round(Number(payload.free_shipping_min));
 
   if (!Number.isFinite(minOrder) || minOrder < 0 || minOrder > 10_000_000) {
@@ -64,6 +66,12 @@ export async function updateCommerceSettings(
   if (!Number.isFinite(shipping) || shipping < 0 || shipping > 1_000_000) {
     return { ok: false, error: "Хүргэлтийн төлбөр буруу байна" };
   }
+  if (!Number.isFinite(shipOver) || shipOver < 0 || shipOver > 1_000_000) {
+    return { ok: false, error: "Хүргэлтийн (олон ширхэг) төлбөр буруу байна" };
+  }
+  if (!Number.isFinite(qtyThresh) || qtyThresh < 1 || qtyThresh > 1_000) {
+    return { ok: false, error: "Ширхгийн босго буруу байна" };
+  }
   if (!Number.isFinite(freeMin) || freeMin < 0 || freeMin > 100_000_000) {
     return { ok: false, error: "Үнэгүй хүргэлтийн босго буруу байна" };
   }
@@ -71,6 +79,8 @@ export async function updateCommerceSettings(
   const value: CommerceSettings = {
     min_order_amount: minOrder,
     shipping_base: shipping,
+    shipping_over: shipOver,
+    shipping_qty_threshold: qtyThresh,
     free_shipping_enabled: !!payload.free_shipping_enabled,
     free_shipping_min: freeMin,
   };

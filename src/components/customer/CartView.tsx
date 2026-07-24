@@ -18,6 +18,7 @@ export function CartView({
 }) {
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
+  const itemCount = useCart((s) => s.totalCount());
   const setQuantity = useCart((s) => s.setQuantity);
   const removeItem = useCart((s) => s.removeItem);
   const clear = useCart((s) => s.clear);
@@ -44,7 +45,7 @@ export function CartView({
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings);
+  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
   const belowMinOrder = subtotal < settings.min_order_amount;
 
   return (

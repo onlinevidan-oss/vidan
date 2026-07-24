@@ -32,6 +32,7 @@ export function CheckoutView({
   const router = useRouter();
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
+  const itemCount = useCart((s) => s.totalCount());
   const clearCart = useCart((s) => s.clear);
 
   const [addressId, setAddressId] = useState<string | "new">(
@@ -84,7 +85,7 @@ export function CheckoutView({
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings);
+  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
   const belowMinOrder = subtotal < settings.min_order_amount;
 
   function handleSubmit() {
