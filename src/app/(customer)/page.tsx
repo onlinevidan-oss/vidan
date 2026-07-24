@@ -23,9 +23,10 @@ export default async function HomePage() {
     <>
       {/* ============ HERO ============ */}
       <section className="my-6 md:my-8">
-        {/* Нэгдмэл банер: зураг дүүрэн, badge дээд буланд тусад нь,
-            гарчиг+товч доор нь — хооронд нь амьсгалын зай өгсөн. */}
-        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[460px] sm:min-h-0 sm:aspect-[1640/720]">
+        {/* Нэгдмэл банер: утас, desktop хоёулаа адил — зураг дүүрэн, badge дээд
+            буланд, гарчиг+товч доор нь. Өндрийг тогтмол (min-h) байлгаж badge,
+            текст давхцахаас сэргийлнэ. */}
+        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[460px] md:min-h-[520px]">
           {hero.image_url && (
             <Image
               src={hero.image_url}
@@ -36,8 +37,8 @@ export default async function HomePage() {
               priority
             />
           )}
-          {/* Утсан дээр доороос, desktop дээр зүүнээс gradient */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/60 to-ink-900/20 sm:bg-gradient-to-r sm:from-ink-900/90 sm:via-ink-900/45 sm:to-transparent" />
+          {/* Доороос дээш gradient — доод талын текст уншигдахуйц */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/55 to-ink-900/15" />
 
           {/* Badge — дээд буланд тусад нь */}
           <div className="absolute left-6 top-6 sm:left-12 sm:top-12">
@@ -46,8 +47,8 @@ export default async function HomePage() {
             </span>
           </div>
 
-          {/* Гарчиг + товч — доор нь, badge-ээс тусдаа, амьсгалын зайтай */}
-          <div className="absolute inset-0 flex items-end sm:items-center">
+          {/* Гарчиг + товч — desktop дээр ч утасны адил доод талд (badge-тэй давхцахгүй) */}
+          <div className="absolute inset-0 flex items-end">
             <div className="max-w-[540px] p-6 pb-9 sm:p-12 text-white">
               <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.2] tracking-tight">
                 {hero.title}
