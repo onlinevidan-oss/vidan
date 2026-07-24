@@ -38,7 +38,7 @@ create policy "Brands: staff write" on public.brands
 insert into public.brands (slug, name, logo_url, card_from, card_to, logo_mode, sort_order)
 values
   ('vidan',   'VIDAN',   'BASE/brands/vidan.png',   '#e12b2a', '#b81e22', 'contain', 1),
-  ('mangas',  'Мангас',  'BASE/brands/mangas.png',  '#3a0f0f', '#0a0505', 'contain', 2),
+  ('mangas',  'Мангас',  'BASE/brands/mangas.png',  '#141414', '#000000', 'contain', 2),
   ('alimhan', 'Алимхан', 'BASE/brands/alimhan.png', '#f0f7d8', '#b5d33d', 'contain', 3),
   ('owolovo', 'Owolovo', 'BASE/brands/owolovo.png', '#2d6a4f', '#1b4332', 'contain', 4),
   ('black',   'Black',   'BASE/brands/black.png',   '#2a2a2a', '#050505', 'contain', 5)
