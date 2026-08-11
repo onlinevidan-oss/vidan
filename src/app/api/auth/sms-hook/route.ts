@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
   try {
     await sendSms({
       to: phone,
-      text: `VIDAN нэвтрэх код: ${otp}\nЭх орны хөрснөөс таны гарт`,
+      text: `Нэвтрэх код: ${otp}\nЭх орны хөрснөөс таны гарт`,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "SMS алдаа";
