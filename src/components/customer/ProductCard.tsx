@@ -18,6 +18,19 @@ const TAG_STYLES = {
   bio: "bg-ink-900 text-lime-500",
 } as const;
 
+/**
+ * Савалгааны хэмжээ (жин)-ээр зургийн масштаб.
+ * Жижиг сав → бага (0.5), том сав → бүтэн (1.0). Шоо язгуураар (эзэлхүүн→урт).
+ */
+function sizeScale(weightG: number | null): number {
+  const MIN = 150;
+  const MAX = 1700;
+  const g = Math.min(Math.max(weightG ?? 500, MIN), MAX);
+  const t =
+    (Math.cbrt(g) - Math.cbrt(MIN)) / (Math.cbrt(MAX) - Math.cbrt(MIN));
+  return 0.5 + t * 0.5; // 0.5 .. 1.0
+}
+
 export function ProductCard({ product }: { product: ProductRow }) {
   const meta = getProductMeta(product.sku);
   const { tag, tagText } = getProductTag(product);
@@ -54,17 +67,23 @@ export function ProductCard({ product }: { product: ProductRow }) {
     >
       <div
         className={`relative grid aspect-square place-items-center overflow-hidden ${
-          firstImage ? "bg-cream-100" : meta.bg
+          firstImage ? "bg-white" : meta.bg
         }`}
       >
         {firstImage ? (
-          <Image
-            src={firstImage}
-            alt={product.name_mn}
-            fill
-            className="object-cover transition group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-          />
+          // Савалгааны хэмжээгээр масштаблаж, цагаан дэвсгэр дээр төвлүүлнэ
+          <div
+            className="relative aspect-square"
+            style={{ width: `${Math.round(sizeScale(product.weight_gross_g) * 100)}%` }}
+          >
+            <Image
+              src={firstImage}
+              alt={product.name_mn}
+              fill
+              className="object-contain transition group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            />
+          </div>
         ) : (
           <span className="text-[80px]">{meta.emoji}</span>
         )}
