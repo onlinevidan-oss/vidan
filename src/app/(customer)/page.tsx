@@ -55,9 +55,11 @@ export default async function HomePage() {
               <h1 className="font-display max-w-[560px] whitespace-pre-line text-[26px] md:text-[40px] font-black uppercase leading-[1.08] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
                 {hero.title}
               </h1>
-              <p className="mt-4 max-w-[380px] text-sm leading-relaxed text-white/80 hidden sm:block [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
-                {hero.body}
-              </p>
+              {hero.body && (
+                <p className="mt-4 max-w-[380px] text-sm leading-relaxed text-white/80 hidden sm:block [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
+                  {hero.body}
+                </p>
+              )}
               <Link
                 href={hero.btn_href}
                 className="mt-7 inline-flex w-max items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-ink-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-lime-400"
