@@ -68,7 +68,7 @@ export function Footer() {
                 <a href="tel:+97675752525">📞 7575-2525</a>
               </li>
               <li>
-                <a href="tel:+97699073425">🛒 9907-3425 (борлуулалт)</a>
+                <a href="tel:+97694070800">📞 9407-0800</a>
               </li>
               <li>
                 <a href="mailto:info@durvun-ulzii.mn">
