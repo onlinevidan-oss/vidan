@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
+import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/orders";
+import { qrDataUrl } from "@/lib/ebarimt/qr";
+import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 
 export const metadata = { title: "Захиалга баталгаажлаа | VIDAN" };
 export const dynamic = "force-dynamic";
@@ -25,6 +28,20 @@ export default async function OrderSuccessPage({
     .maybeSingle();
 
   if (!order) notFound();
+
+  // E-barimt баримт (үүссэн бол) — QR + сугалаа харуулна
+  const ebarimtItems = (order.items as {
+    quantity: number;
+    product_name: string;
+    unit_price: number;
+    subtotal: number;
+  }[]).map((i) => ({
+    product_name: i.product_name,
+    quantity: i.quantity,
+    unit_price: Number(i.unit_price),
+  }));
+  const ebarimt = ebarimtDisplayFromOrder(order, ebarimtItems);
+  const ebarimtQrImage = ebarimt ? await qrDataUrl(ebarimt.qrData) : null;
 
   return (
     <div className="my-10 grid place-items-center">
@@ -71,6 +88,16 @@ export default async function OrderSuccessPage({
             </span>
           </div>
         </div>
+
+        {/* E-barimt баримт */}
+        {ebarimt && ebarimtQrImage && (
+          <div className="mb-6">
+            <div className="mb-3 text-center text-sm font-bold text-ink-700">
+              Төлбөрийн баримт
+            </div>
+            <ReceiptView response={ebarimt} qrImage={ebarimtQrImage} />
+          </div>
+        )}
 
         <div className="mb-6 rounded-xl border border-lime-300 bg-lime-50 p-4 text-sm">
           📦 Захиалгын явцыг <strong>"Миний захиалга"</strong> хэсгээс хянах боломжтой.

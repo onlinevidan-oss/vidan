@@ -49,18 +49,21 @@ export default async function HomePage() {
 
           {/* Гарчиг + товч — desktop дээр ч утасны адил доод талд (badge-тэй давхцахгүй) */}
           <div className="absolute inset-0 flex items-end">
-            <div className="max-w-[540px] p-6 pb-9 sm:p-12 text-white">
-              <h1 className="font-display max-w-[440px] whitespace-pre-line text-[26px] md:text-[34px] font-extrabold leading-[1.2] tracking-tight">
+            <div className="max-w-[600px] p-6 pb-9 sm:p-12 text-white">
+              {/* Лайм ногоон онцлолын зураас */}
+              <div className="mb-4 h-1.5 w-14 rounded-full bg-lime-400" />
+              <h1 className="font-display max-w-[560px] whitespace-pre-line text-[26px] md:text-[40px] font-black uppercase leading-[1.08] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
                 {hero.title}
               </h1>
-              <p className="mt-3 max-w-[380px] text-sm leading-relaxed text-white/75 hidden sm:block">
+              <p className="mt-4 max-w-[380px] text-sm leading-relaxed text-white/80 hidden sm:block [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
                 {hero.body}
               </p>
               <Link
                 href={hero.btn_href}
-                className="mt-6 inline-block w-max rounded-[10px] bg-white px-6 py-3 text-sm font-bold text-ink-900 transition hover:-translate-y-0.5 hover:bg-lime-500"
+                className="mt-7 inline-flex w-max items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-ink-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-lime-400"
               >
                 {hero.btn_label}
+                <span aria-hidden>→</span>
               </Link>
             </div>
           </div>

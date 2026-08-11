@@ -23,11 +23,13 @@ export function CheckoutView({
   profile,
   addresses,
   settings = COMMERCE_DEFAULTS,
+  ebarimtEnabled = false,
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
   addresses: Address[];
   settings?: CommerceSettings;
+  ebarimtEnabled?: boolean;
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
@@ -46,6 +48,12 @@ export function CheckoutView({
   });
   const [customLabel, setCustomLabel] = useState(false);
   const [notes, setNotes] = useState("");
+  // Баримт — хувь хүн (B2C) / байгууллага (B2B)
+  const [ebarimtType, setEbarimtType] = useState<"B2C_RECEIPT" | "B2B_RECEIPT">(
+    "B2C_RECEIPT",
+  );
+  const [consumerNo, setConsumerNo] = useState("");
+  const [customerTin, setCustomerTin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -110,6 +118,10 @@ export function CheckoutView({
         return;
       }
     }
+    if (ebarimtType === "B2B_RECEIPT" && customerTin.trim().length < 7) {
+      setError("Байгууллагын баримтад ТТД/регистрийн дугаар (7 орон) шаардлагатай");
+      return;
+    }
     startTransition(async () => {
       const result = await placeOrder({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
@@ -120,6 +132,9 @@ export function CheckoutView({
             : undefined,
         paymentMethod: "qpay",
         driverNotes: notes,
+        ebarimtType,
+        ebarimtConsumerNo: consumerNo,
+        ebarimtCustomerTin: customerTin,
       });
       if (!result.ok) {
         setError(result.error);
@@ -333,6 +348,68 @@ export function CheckoutView({
             />
           </Section>
 
+          {/* Баримт — хувь хүн / байгууллага (e-barimt холбогдсон үед л) */}
+          {ebarimtEnabled && (
+          <Section title="4. Төлбөрийн баримт">
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setEbarimtType("B2C_RECEIPT")}
+                className={
+                  ebarimtType === "B2C_RECEIPT"
+                    ? "rounded-xl border-[1.5px] border-brand-600 bg-brand-50 p-3.5 text-left"
+                    : "rounded-xl border-[1.5px] border-ink-200 bg-white p-3.5 text-left transition hover:border-brand-200"
+                }
+              >
+                <div className="font-bold text-ink-900">Хувь хүн</div>
+                <div className="mt-0.5 text-xs text-ink-500">
+                  Сугалаатай баримт
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEbarimtType("B2B_RECEIPT")}
+                className={
+                  ebarimtType === "B2B_RECEIPT"
+                    ? "rounded-xl border-[1.5px] border-brand-600 bg-brand-50 p-3.5 text-left"
+                    : "rounded-xl border-[1.5px] border-ink-200 bg-white p-3.5 text-left transition hover:border-brand-200"
+                }
+              >
+                <div className="font-bold text-ink-900">Байгууллага</div>
+                <div className="mt-0.5 text-xs text-ink-500">
+                  НӨАТ суутгуулах
+                </div>
+              </button>
+            </div>
+
+            {ebarimtType === "B2C_RECEIPT" ? (
+              <div className="mt-3">
+                <Field
+                  label="Иргэний ebarimt дугаар (заавал биш)"
+                  value={consumerNo}
+                  onChange={(v) => setConsumerNo(v.replace(/\D/g, ""))}
+                  placeholder="Жнь: 10038071"
+                />
+                <p className="mt-1.5 text-[11px] text-ink-500">
+                  Оруулбал сугалаа таны e-barimt бүртгэлд шууд орно.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <Field
+                  label="Байгууллагын ТТД / регистр"
+                  value={customerTin}
+                  onChange={(v) => setCustomerTin(v.replace(/\D/g, ""))}
+                  placeholder="Жнь: 3790084"
+                  required
+                />
+                <p className="mt-1.5 text-[11px] text-ink-500">
+                  Байгууллагын НӨАТ суутгах баримт үүснэ.
+                </p>
+              </div>
+            )}
+          </Section>
+          )}
         </div>
 
         {/* Summary */}

@@ -6,12 +6,8 @@
 import "server-only";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  createInvoice,
-  checkPayment,
-  createEbarimt,
-  type QpayBankUrl,
-} from "./client";
+import { createInvoice, checkPayment, type QpayBankUrl } from "./client";
+import { createOrderEbarimt } from "@/lib/ebarimt/orders";
 import { sendOrderSms } from "@/lib/sms/notifications";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -123,14 +119,9 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
     throw new Error(`Төлбөр баталгаажуулахад алдаа: ${error.message}`);
   }
 
-  // E-barimt — best effort, гол урсгалыг тасалдуулахгүй.
-  if (paymentId) {
-    try {
-      await createEbarimt(paymentId, "CITIZEN");
-    } catch {
-      // E-barimt амжилтгүй болсон нь төлбөрийг хүчингүй болгохгүй.
-    }
-  }
+  // E-barimt — төрийн PosAPI 3.0-аар, best effort (гол урсгалыг тасалдуулахгүй).
+  // Idempotent: order.ebarimt_id байвал дотроо алгасна.
+  await createOrderEbarimt(orderId);
 
   // Хэрэглэгчид баталгаажилтын SMS — best effort.
   await sendOrderSms(orderId, "paid");

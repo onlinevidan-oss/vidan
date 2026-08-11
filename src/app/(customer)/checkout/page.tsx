@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CheckoutView } from "@/components/customer/CheckoutView";
 import { getCommerceSettings } from "@/lib/queries/settings";
+import { isEbarimtConfigured } from "@/lib/ebarimt/posapi";
 
 export const metadata = { title: "Захиалга өгөх | VIDAN" };
 
@@ -35,6 +36,7 @@ export default async function CheckoutPage() {
       profile={profile}
       addresses={addresses ?? []}
       settings={settings}
+      ebarimtEnabled={isEbarimtConfigured()}
     />
   );
 }

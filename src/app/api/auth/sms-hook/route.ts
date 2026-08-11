@@ -105,7 +105,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await sendSms({ to: phone, text: `VIDAN нэвтрэх код: ${otp}` });
+    await sendSms({
+      to: phone,
+      text: `VIDAN нэвтрэх код: ${otp}\nЭх орны хөрснөөс таны гарт`,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "SMS алдаа";
     console.error("[sms-hook send failed]", message);

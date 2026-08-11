@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type CheckoutPayload = {
   items: { productId: string; quantity: number }[];
@@ -14,6 +15,10 @@ export type CheckoutPayload = {
   };
   paymentMethod: "qpay" | "card" | "cash";
   driverNotes?: string;
+  /** Баримт — хувь хүн (B2C) / байгууллага (B2B) */
+  ebarimtType?: "B2C_RECEIPT" | "B2B_RECEIPT";
+  ebarimtConsumerNo?: string; // B2C: иргэний ebarimt дугаар (заавал биш)
+  ebarimtCustomerTin?: string; // B2B: байгууллагын ТТД (заавал)
 };
 
 export type CheckoutResult =
@@ -90,6 +95,30 @@ export async function placeOrder(
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.order_id) {
     return { ok: false, error: "Захиалга үүсгэж чадсангүй" };
+  }
+
+  // E-barimt баримтын мэдээлэл хадгалах (place_order-г өөрчлөхгүйн тулд тусад нь).
+  // Захиалга дөнгөж энэ хэрэглэгчийнхээр үүссэн тул admin client-ээр шинэчилнэ.
+  const ebarimtType = payload.ebarimtType ?? "B2C_RECEIPT";
+  try {
+    const admin = createAdminClient();
+    await admin
+      .from("orders")
+      .update({
+        ebarimt_type: ebarimtType,
+        ebarimt_consumer_no:
+          ebarimtType === "B2C_RECEIPT"
+            ? payload.ebarimtConsumerNo?.trim() || null
+            : null,
+        ebarimt_customer_tin:
+          ebarimtType === "B2B_RECEIPT"
+            ? payload.ebarimtCustomerTin?.trim() || null
+            : null,
+      })
+      .eq("id", row.order_id);
+  } catch (e) {
+    // Баримтын мэдээлэл хадгалахад алдвал захиалгыг таслахгүй.
+    console.error("[ebarimt info save failed]", e);
   }
 
   revalidatePath("/admin/orders");

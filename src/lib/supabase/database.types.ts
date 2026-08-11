@@ -277,6 +277,13 @@ export type Database = {
           delivery_window: string | null
           discount: number
           driver_notes: string | null
+          ebarimt_consumer_no: string | null
+          ebarimt_customer_tin: string | null
+          ebarimt_date: string | null
+          ebarimt_id: string | null
+          ebarimt_lottery: string | null
+          ebarimt_qr: string | null
+          ebarimt_type: string | null
           id: string
           internal_notes: string | null
           order_number: string
@@ -301,6 +308,13 @@ export type Database = {
           delivery_window?: string | null
           discount?: number
           driver_notes?: string | null
+          ebarimt_consumer_no?: string | null
+          ebarimt_customer_tin?: string | null
+          ebarimt_date?: string | null
+          ebarimt_id?: string | null
+          ebarimt_lottery?: string | null
+          ebarimt_qr?: string | null
+          ebarimt_type?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string
@@ -325,6 +339,13 @@ export type Database = {
           delivery_window?: string | null
           discount?: number
           driver_notes?: string | null
+          ebarimt_consumer_no?: string | null
+          ebarimt_customer_tin?: string | null
+          ebarimt_date?: string | null
+          ebarimt_id?: string | null
+          ebarimt_lottery?: string | null
+          ebarimt_qr?: string | null
+          ebarimt_type?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string
@@ -397,6 +418,7 @@ export type Database = {
           barcode: string | null
           brand_id: string | null
           category_id: string | null
+          classification_code: string | null
           cost_price: number | null
           created_at: string
           description: string | null
@@ -425,6 +447,7 @@ export type Database = {
           barcode?: string | null
           brand_id?: string | null
           category_id?: string | null
+          classification_code?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
@@ -453,6 +476,7 @@ export type Database = {
           barcode?: string | null
           brand_id?: string | null
           category_id?: string | null
+          classification_code?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
@@ -730,7 +754,7 @@ export type Database = {
     }
     Functions: {
       calc_order_totals: {
-        Args: { p_subtotal: number }
+        Args: { p_item_count?: number; p_subtotal: number }
         Returns: {
           shipping: number
           subtotal: number
