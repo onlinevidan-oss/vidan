@@ -108,13 +108,15 @@ function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
   const wholeLink = !hasText && slide.btn_href ? slide.btn_href : null;
 
   const inner = (
-    <div className="relative min-h-[360px] w-full min-w-full sm:min-h-[460px] md:min-h-[520px]">
+    <div className="relative aspect-[16/9] w-full min-w-full">
       {slide.image_url && (
         <Image
           src={slide.image_url}
           alt={slide.title || ""}
           fill
-          className="pointer-events-none object-cover object-center"
+          className={`pointer-events-none object-center ${
+            hasText ? "object-cover" : "object-contain"
+          }`}
           unoptimized={slide.image_url.startsWith("http")}
           priority={priority}
           sizes="100vw"
@@ -124,35 +126,33 @@ function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
       {hasText && (
         <>
           {/* Доороос дээш gradient — текст уншигдахуйц */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/55 to-ink-900/15" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/50 to-transparent" />
 
-          {slide.badge && (
-            <div className="absolute left-6 top-6 z-10 sm:left-12 sm:top-12">
-              <span className="inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white backdrop-blur">
-                {slide.badge}
-              </span>
-            </div>
-          )}
-
+          {/* Бүх текст доод талд нэг баганад — богино өндөрт ч давхцахгүй */}
           <div className="absolute inset-0 z-10 flex items-end">
-            <div className="max-w-[600px] p-6 pb-9 text-white sm:p-12">
+            <div className="max-w-[600px] p-5 pb-6 text-white sm:p-12">
+              {slide.badge && (
+                <span className="mb-2.5 inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-white backdrop-blur sm:mb-4 sm:px-3.5 sm:py-1.5 sm:text-xs">
+                  {slide.badge}
+                </span>
+              )}
               {slide.title && (
                 <>
-                  <div className="mb-4 h-1.5 w-14 rounded-full bg-lime-400" />
-                  <h1 className="font-display max-w-[560px] whitespace-pre-line text-[26px] font-black uppercase leading-[1.08] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.55)] md:text-[40px]">
+                  <div className="mb-2.5 h-1.5 w-11 rounded-full bg-lime-400 sm:mb-4 sm:w-14" />
+                  <h1 className="font-display max-w-[560px] whitespace-pre-line text-[21px] font-black uppercase leading-[1.04] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.6)] sm:text-[32px] md:text-[40px]">
                     {slide.title}
                   </h1>
                 </>
               )}
               {slide.body && (
-                <p className="mt-4 max-w-[400px] text-[13px] leading-relaxed text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,0.5)] sm:text-sm">
+                <p className="mt-2.5 hidden max-w-[400px] text-[13px] leading-relaxed text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,0.5)] sm:mt-3 sm:block sm:text-sm">
                   {slide.body}
                 </p>
               )}
               {slide.btn_label && (
                 <Link
                   href={slide.btn_href || "/products"}
-                  className="mt-7 inline-flex w-max items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-ink-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-lime-400"
+                  className="mt-3.5 inline-flex w-max items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[13px] font-extrabold text-ink-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-lime-400 sm:mt-6 sm:px-7 sm:py-3.5 sm:text-sm"
                 >
                   {slide.btn_label}
                   <span aria-hidden>→</span>
