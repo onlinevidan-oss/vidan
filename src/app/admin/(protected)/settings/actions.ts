@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
-import type { CommerceSettings, HeroSettings } from "@/lib/queries/settings";
+import type {
+  CommerceSettings,
+  HeroSettings,
+  HeroSlide,
+} from "@/lib/queries/settings";
 
 function isSafeImageUrl(url: string): boolean {
   if (url.startsWith("/")) return true; // /public дотрох зам
@@ -35,6 +39,58 @@ export async function updateHeroSettings(
   const { error } = await supabase
     .from("site_settings")
     .upsert({ key: "hero", value, updated_at: new Date().toISOString() });
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/");
+  revalidatePath("/admin/settings");
+  return { ok: true };
+}
+
+/**
+ * Hero slides (нүүр хуудасны эргэлддэг постерууд) хадгалах.
+ * Хоосон (зураг ч, гарчиг ч байхгүй) слайдыг алгасна.
+ */
+export async function updateHeroSlides(
+  slides: HeroSlide[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  if (!Array.isArray(slides)) {
+    return { ok: false, error: "Слайдын жагсаалт буруу" };
+  }
+  if (slides.length > 12) {
+    return { ok: false, error: "Хамгийн ихдээ 12 слайд" };
+  }
+
+  const cleaned: HeroSlide[] = [];
+  for (const s of slides) {
+    const imageUrl = (s.image_url || "").trim();
+    if (imageUrl && !isSafeImageUrl(imageUrl)) {
+      return { ok: false, error: "Зургийн URL зөвшөөрөгдөхгүй" };
+    }
+    if (!imageUrl && !(s.title || "").trim()) continue; // хоосон слайд
+    cleaned.push({
+      badge: (s.badge || "").trim(),
+      title: (s.title || "").trim(),
+      body: (s.body || "").trim(),
+      btn_label: (s.btn_label || "").trim(),
+      btn_href: (s.btn_href || "").trim(),
+      image_url: imageUrl,
+    });
+  }
+
+  if (cleaned.length === 0) {
+    return { ok: false, error: "Дор хаяж нэг зурагтай слайд шаардлагатай" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "hero_slides",
+    value: { slides: cleaned },
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) return { ok: false, error: error.message };
 

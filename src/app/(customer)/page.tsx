@@ -7,70 +7,23 @@ import {
   getFeaturedProducts,
   getNewArrivals,
 } from "@/lib/queries/products";
-import { getHeroSettings } from "@/lib/queries/settings";
+import { getHeroSlides } from "@/lib/queries/settings";
+import { HeroCarousel } from "@/components/customer/HeroCarousel";
 
 export const revalidate = 60; // ISR: 1 минут
 
 export default async function HomePage() {
-  const [brands, featured, newArrivals, hero] = await Promise.all([
+  const [brands, featured, newArrivals, slides] = await Promise.all([
     getBrandsWithProductCount(),
     getFeaturedProducts(4),
     getNewArrivals(4),
-    getHeroSettings(),
+    getHeroSlides(),
   ]);
 
   return (
     <>
-      {/* ============ HERO ============ */}
-      <section className="my-6 md:my-8">
-        {/* Нэгдмэл банер: утас, desktop хоёулаа адил — зураг дүүрэн, badge дээд
-            буланд, гарчиг+товч доор нь. Өндрийг тогтмол (min-h) байлгаж badge,
-            текст давхцахаас сэргийлнэ. */}
-        <div className="relative overflow-hidden rounded-[16px] bg-ink-900 min-h-[460px] md:min-h-[520px]">
-          {hero.image_url && (
-            <Image
-              src={hero.image_url}
-              alt=""
-              fill
-              className="pointer-events-none object-cover object-center"
-              unoptimized={hero.image_url.startsWith("http")}
-              priority
-            />
-          )}
-          {/* Доороос дээш gradient — доод талын текст уншигдахуйц */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/95 via-ink-900/55 to-ink-900/15" />
-
-          {/* Badge — дээд буланд тусад нь */}
-          <div className="absolute left-6 top-6 sm:left-12 sm:top-12">
-            <span className="inline-flex w-max items-center rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-white backdrop-blur">
-              {hero.badge}
-            </span>
-          </div>
-
-          {/* Гарчиг + товч — desktop дээр ч утасны адил доод талд (badge-тэй давхцахгүй) */}
-          <div className="absolute inset-0 flex items-end">
-            <div className="max-w-[600px] p-6 pb-9 sm:p-12 text-white">
-              {/* Лайм ногоон онцлолын зураас */}
-              <div className="mb-4 h-1.5 w-14 rounded-full bg-lime-400" />
-              <h1 className="font-display max-w-[560px] whitespace-pre-line text-[26px] md:text-[40px] font-black uppercase leading-[1.08] tracking-tight [text-shadow:0_2px_20px_rgba(0,0,0,0.55)]">
-                {hero.title}
-              </h1>
-              {hero.body && (
-                <p className="mt-4 max-w-[380px] text-sm leading-relaxed text-white/80 hidden sm:block [text-shadow:0_1px_8px_rgba(0,0,0,0.5)]">
-                  {hero.body}
-                </p>
-              )}
-              <Link
-                href={hero.btn_href}
-                className="mt-7 inline-flex w-max items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-extrabold text-ink-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-lime-400"
-              >
-                {hero.btn_label}
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ============ HERO CAROUSEL ============ */}
+      <HeroCarousel slides={slides} />
 
       {/* ============ BRANDS (DB) ============ */}
       <section className="my-14">
