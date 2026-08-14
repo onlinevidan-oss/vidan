@@ -79,7 +79,7 @@ export default async function HomePage() {
       <div className="my-10 grid grid-cols-2 gap-x-8 gap-y-6 rounded-[16px] border border-ink-200 bg-white p-8 lg:grid-cols-4">
         {[
           ["Хүргэлт", "Улаанбаатар хотод 24 цагт"],
-          ["Байгалийн орц", "Хүнсний нэмэлтгүй"],
+          ["Баталгаажсан", "Түүхий эд"],
           ["Чанарын баталгаа", "ISO 9001 стандарт"],
           ["Төлбөр", "Карт болон QPay"],
         ].map(([t, d]) => (
