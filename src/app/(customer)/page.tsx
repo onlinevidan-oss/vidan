@@ -139,9 +139,9 @@ export default async function HomePage() {
             Бидний тухай
           </Link>
           <div className="relative z-10 mt-9 flex flex-wrap gap-x-12 gap-y-6">
-            <Stat n="30 жил" l="үндэсний үйлдвэрлэл" />
-            <Stat n="40+" l="төрлийн бүтээгдэхүүн" />
-            <Stat n="100%" l="нэмэлтгүй цэвэр" />
+            <Stat n="18 жил" l="үндэсний үйлдвэрлэл" />
+            <Stat n="30+" l="төрлийн бүтээгдэхүүн" />
+            <Stat n="Баталгаажсан" l="түүхий эд" />
             <Stat n="ISO 9001" l="чанарын стандарт" />
           </div>
         </div>
