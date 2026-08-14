@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const FB_PAGE = "https://www.facebook.com/durvunulzii";
+const FB_PAGE = "https://www.facebook.com/vidanofficial";
 
 export function Footer() {
   return (
@@ -23,7 +23,7 @@ export function Footer() {
             </p>
             <div className="mt-4 flex gap-2.5">
               {[
-                ["f", "https://www.facebook.com/durvunulzii"],
+                ["f", "https://www.facebook.com/vidanofficial"],
                 ["@", "https://www.instagram.com/durvunulziillcofficial/"],
                 ["in", "https://www.linkedin.com/company/durvun-ulzii-llc/"],
                 ["▶", "#"],

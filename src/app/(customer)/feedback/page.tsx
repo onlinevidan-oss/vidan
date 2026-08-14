@@ -3,7 +3,7 @@ import { FeedbackForm } from "@/components/customer/FeedbackForm";
 
 export const metadata = { title: "Санал хүсэлт | VIDAN" };
 
-const FB_PAGE = "https://www.facebook.com/durvunulzii";
+const FB_PAGE = "https://www.facebook.com/vidanofficial";
 
 export default function FeedbackPage() {
   return (

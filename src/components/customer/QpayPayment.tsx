@@ -117,7 +117,7 @@ export function QpayPayment({
                 <span>
                   Буцаалт, санал гомдлыг манай{" "}
                   <a
-                    href="https://www.facebook.com/durvunulzii"
+                    href="https://www.facebook.com/vidanofficial"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-bold text-brand-700 hover:underline"
