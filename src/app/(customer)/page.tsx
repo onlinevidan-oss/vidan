@@ -118,11 +118,8 @@ export default async function HomePage() {
       {/* ============ BRAND STORY ============ */}
       <section className="relative my-14 overflow-hidden rounded-[16px] border border-ink-200 bg-white p-8 md:p-14">
         <div className="relative z-10">
-          <div className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-lime-700">
+          <h2 className="font-display mb-5 text-2xl md:text-[38px] font-extrabold uppercase tracking-tight text-ink-900">
             Бидний түүх
-          </div>
-          <h2 className="font-display mb-4 max-w-[640px] text-2xl md:text-[34px] font-extrabold leading-tight tracking-tight text-ink-900">
-            Энэ жил 30 жилийн ойгоо тэмдэглэж байна
           </h2>
           <p className="mb-4 max-w-[620px] text-[15px] leading-relaxed text-ink-700">
             Бид 2008 онд Польш улсын хүнсний ногоо нөөшлөх үйлдвэрлэлийн
