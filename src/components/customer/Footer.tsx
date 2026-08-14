@@ -24,9 +24,9 @@ export function Footer() {
             <div className="mt-4 flex gap-2.5">
               {[
                 ["f", "https://www.facebook.com/vidanofficial"],
-                ["@", "https://www.instagram.com/durvunulziillcofficial/"],
+                ["@", "https://www.instagram.com/vidan.brand/"],
                 ["in", "https://www.linkedin.com/company/durvun-ulzii-llc/"],
-                ["▶", "#"],
+                ["▶", "https://www.youtube.com/@Marketingdurvunulzii"],
               ].map(([label, href]) => (
                 <a
                   key={label}
