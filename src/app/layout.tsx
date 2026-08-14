@@ -18,7 +18,11 @@ export const metadata: Metadata = {
   title: "VIDAN — Эх орны хөрснөөс таны гарт",
   description:
     "Видан брэнд — нөөшилсөн хүнсний үйлдвэр, 2008 оноос. Эх орны хөрсөнд ургуулсан даршилсан ногоо, жимсний чанамал, нухаш, зөгийн бал.",
-  icons: { icon: "/vidan-leaf.png" },
+  icons: {
+    icon: "/vidan-icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/vidan-icon.png",
+  },
 };
 
 export default function RootLayout({
