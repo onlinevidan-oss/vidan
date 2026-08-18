@@ -19,9 +19,12 @@ export const metadata: Metadata = {
   description:
     "Видан брэнд — нөөшилсөн хүнсний үйлдвэр, 2008 оноос. Эх орны хөрсөнд ургуулсан даршилсан ногоо, жимсний чанамал, нухаш, зөгийн бал.",
   icons: {
-    icon: "/vidan-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/vidan-icon.png", type: "image/png", sizes: "192x192" },
+    ],
     shortcut: "/favicon.ico",
-    apple: "/vidan-icon.png",
+    apple: "/apple-icon.png",
   },
 };
 
