@@ -57,6 +57,7 @@ export function ProductForm({
     shelf_life: initialValues?.shelf_life ?? "",
     is_active: initialValues?.is_active ?? true,
     is_featured: initialValues?.is_featured ?? false,
+    heart_program: initialValues?.heart_program ?? false,
     is_new: initialValues?.is_new ?? false,
     is_bio: initialValues?.is_bio ?? false,
     tags: initialValues?.tags ?? [],
@@ -378,6 +379,8 @@ export function ProductForm({
             checked={v.is_new} onChange={(b) => update("is_new", b)} />
           <Toggle label="🌱 BIO" desc="BIO tag харагдана"
             checked={v.is_bio} onChange={(b) => update("is_bio", b)} />
+          <Toggle label="❤️ Хүрэн зүрх хөтөлбөр" desc="Ширхэг тутмаас 30₮ хандив — бүтээгдэхүүний хуудсанд мэдэгдэл гарна"
+            checked={v.heart_program} onChange={(b) => update("heart_program", b)} />
         </Section>
 
         <Section title="Ангилал *">

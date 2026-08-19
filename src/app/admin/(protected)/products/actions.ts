@@ -30,6 +30,7 @@ export type ProductFormPayload = {
   is_featured: boolean;
   is_new: boolean;
   is_bio: boolean;
+  heart_program: boolean;
   tags: string[];
   meta_description?: string;
 };
@@ -80,6 +81,7 @@ function payloadToRow(payload: ProductFormPayload) {
     is_featured: payload.is_featured,
     is_new: payload.is_new,
     is_bio: payload.is_bio,
+    heart_program: payload.heart_program,
     tags: payload.tags,
     meta_description: payload.meta_description?.trim() || null,
   };

@@ -424,6 +424,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          heart_program: boolean
           is_bio: boolean
           is_featured: boolean
           is_new: boolean
@@ -453,6 +454,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          heart_program?: boolean
           is_bio?: boolean
           is_featured?: boolean
           is_new?: boolean
@@ -482,6 +484,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          heart_program?: boolean
           is_bio?: boolean
           is_featured?: boolean
           is_new?: boolean

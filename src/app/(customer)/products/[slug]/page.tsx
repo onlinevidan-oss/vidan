@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { htmlToText } from "@/lib/html";
+import { HeartProgramNote } from "@/components/customer/HeartProgramNote";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { AddToCartBlock } from "@/components/customer/AddToCartBlock";
@@ -162,6 +163,13 @@ export default async function ProductDetailPage({
               }}
             />
           </div>
+
+          {/* ХҮРЭН ЗҮРХ хөтөлбөр */}
+          {product.heart_program && (
+            <div className="mt-4">
+              <HeartProgramNote />
+            </div>
+          )}
 
           {/* Tags */}
           {product.tags && product.tags.length > 0 && (
