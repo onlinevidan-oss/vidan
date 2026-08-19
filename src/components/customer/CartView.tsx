@@ -88,6 +88,7 @@ export function CartView({
                       fill
                       className="object-cover"
                       sizes="96px"
+                      unoptimized={item.imageUrl.startsWith("http")}
                     />
                   </Link>
                 ) : (

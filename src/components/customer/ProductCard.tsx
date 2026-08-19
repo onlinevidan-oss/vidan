@@ -82,6 +82,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
               fill
               className="object-contain transition group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              unoptimized={firstImage.startsWith("http")}
             />
           </div>
         ) : (

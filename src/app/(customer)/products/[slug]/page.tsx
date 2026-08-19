@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { htmlToText } from "@/lib/html";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { AddToCartBlock } from "@/components/customer/AddToCartBlock";
@@ -15,7 +16,8 @@ export async function generateMetadata({ params }: PageProps<"/products/[slug]">
   if (!product) return { title: "Олдсонгүй | VIDAN" };
   return {
     title: `${product.name_mn} | VIDAN`,
-    description: product.short_description || product.description || undefined,
+    description:
+      htmlToText(product.short_description || product.description) || undefined,
   };
 }
 
@@ -101,8 +103,8 @@ export default async function ProductDetailPage({
           <h1 className="font-display text-2xl md:text-3xl font-black tracking-tight text-ink-900">
             {product.name_mn}
           </h1>
-          <p className="mt-3 text-sm text-ink-700">
-            {product.short_description}
+          <p className="mt-3 whitespace-pre-line text-sm text-ink-700">
+            {htmlToText(product.short_description)}
           </p>
 
           {/* Rating */}
@@ -206,8 +208,8 @@ export default async function ProductDetailPage({
           <h2 className="font-display mb-4 text-xl font-extrabold tracking-tight text-ink-900">
             Бүтээгдэхүүний тухай
           </h2>
-          <p className="text-[15px] leading-relaxed text-ink-700">
-            {product.description}
+          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-700">
+            {htmlToText(product.description)}
           </p>
         </section>
       )}

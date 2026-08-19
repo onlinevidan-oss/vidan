@@ -24,6 +24,7 @@ export function ProductGallery({
           fill
           className="object-cover"
           sizes="(max-width: 1024px) 100vw, 50vw"
+          unoptimized={current.url.startsWith("http")}
           priority
         />
         {tag && tagText && (
@@ -59,6 +60,7 @@ export function ProductGallery({
                 fill
                 className="object-cover"
                 sizes="100px"
+                unoptimized={img.url.startsWith("http")}
               />
             </button>
           ))}
