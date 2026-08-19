@@ -47,3 +47,24 @@ export async function uploadHeroImage(
   if (error) return { ok: false, error: error.message };
   return { ok: true, url: getPublicImageUrl(fileName) };
 }
+
+/**
+ * Танилцуулгын нэг хуудсыг зураг болгож upload (products/about/<batch>/page-NN.jpg).
+ * batch нь нэг PDF-ийн бүх хуудсыг нэг фолдерт цуглуулна — хуучин
+ * танилцуулгын зургууд дарагдахгүй, буцаах боломжтой.
+ */
+export async function uploadAboutPage(
+  blob: Blob,
+  batch: string,
+  index: number,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const supabase = createBrowserClient();
+  const fileName = `about/${batch}/page-${String(index).padStart(2, "0")}.jpg`;
+  const { error } = await supabase.storage.from(BUCKET).upload(fileName, blob, {
+    cacheControl: "31536000",
+    contentType: "image/jpeg",
+    upsert: true,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, url: getPublicImageUrl(fileName) };
+}

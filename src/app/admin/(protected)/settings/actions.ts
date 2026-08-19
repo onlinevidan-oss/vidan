@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import type {
+  BrochurePage,
   CommerceSettings,
   HeroSettings,
   HeroSlide,
@@ -151,6 +152,51 @@ export async function updateCommerceSettings(
   revalidatePath("/cart");
   revalidatePath("/checkout");
   revalidatePath("/");
+  revalidatePath("/admin/settings");
+  return { ok: true };
+}
+
+/**
+ * Танилцуулга (PDF-ээс хөрвүүлсэн хуудсууд) хадгалах.
+ * Хуудсын зургийг браузер талд PDF-ээс гаргаж, Supabase storage-д
+ * байршуулсны дараа энэ action зөвхөн URL жагсаалтыг баталгаажуулж хадгална.
+ * pages хоосон бол танилцуулгыг устгана.
+ */
+export async function updateAboutBrochure(
+  payload: { title: string; pages: BrochurePage[] },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const pages = Array.isArray(payload?.pages) ? payload.pages : [];
+  if (pages.length > 60) {
+    return { ok: false, error: "Хамгийн ихдээ 60 хуудас" };
+  }
+
+  const cleaned: BrochurePage[] = [];
+  for (const p of pages) {
+    const url = (p?.url || "").trim();
+    if (!isSafeImageUrl(url)) {
+      return { ok: false, error: "Хуудасны URL зөвшөөрөгдөхгүй" };
+    }
+    const width = Math.round(Number(p.width));
+    const height = Math.round(Number(p.height));
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 1 || height < 1) {
+      return { ok: false, error: "Хуудасны хэмжээ буруу байна" };
+    }
+    cleaned.push({ url, width, height });
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "about_brochure",
+    value: { title: (payload.title || "Танилцуулга").trim(), pages: cleaned },
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/about");
   revalidatePath("/admin/settings");
   return { ok: true };
 }

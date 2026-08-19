@@ -1,13 +1,19 @@
-import { getCommerceSettings, getHeroSlides } from "@/lib/queries/settings";
+import {
+  getAboutBrochure,
+  getCommerceSettings,
+  getHeroSlides,
+} from "@/lib/queries/settings";
 import { HeroSlidesForm } from "@/components/admin/HeroSlidesForm";
 import { CommerceSettingsForm } from "@/components/admin/CommerceSettingsForm";
+import { AboutBrochureForm } from "@/components/admin/AboutBrochureForm";
 
 export const metadata = { title: "Тохиргоо | VIDAN Backoffice" };
 
 export default async function AdminSettings() {
-  const [slides, commerce] = await Promise.all([
+  const [slides, commerce, brochure] = await Promise.all([
     getHeroSlides(),
     getCommerceSettings(),
+    getAboutBrochure(),
   ]);
 
   return (
@@ -39,6 +45,17 @@ export default async function AdminSettings() {
           Эргэлддэг постерууд — нэмэх, засах, дараалал өөрчлөх боломжтой
         </p>
         <HeroSlidesForm initial={slides} />
+      </section>
+
+      <section className="rounded-[14px] border-[1.5px] border-ink-200 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg font-extrabold text-ink-900">
+          Бидний тухай (Танилцуулга PDF)
+        </h2>
+        <p className="mb-5 text-xs text-ink-500">
+          Компанийн танилцуулгыг PDF хэлбэрээр байршуулна — /about хуудсанд
+          хуудас бүр нь дараалан харагдана
+        </p>
+        <AboutBrochureForm initial={brochure} />
       </section>
     </div>
   );

@@ -42,7 +42,7 @@ export function Footer() {
           <FooterCol
             title="Компани"
             items={[
-              { label: "Бидний тухай", href: "#" },
+              { label: "Бидний тухай", href: "/about" },
               { label: "Үйлдвэрлэл", href: "#" },
               { label: "Мэдээ мэдээлэл", href: FB_PAGE, external: true },
               { label: "Ажлын байр", href: "#" },

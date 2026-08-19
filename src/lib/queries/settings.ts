@@ -88,3 +88,33 @@ export async function getCommerceSettings(): Promise<CommerceSettings> {
   if (!data?.value) return COMMERCE_DEFAULTS;
   return { ...COMMERCE_DEFAULTS, ...(data.value as Partial<CommerceSettings>) };
 }
+
+// ============================================================
+// Танилцуулга (PDF) — админ хэсгээс PDF байршуулахад хуудас бүр
+// зураг болж хөрвөж, дараалалтайгаар энд хадгалагдана.
+// site_settings key='about_brochure'.
+// ============================================================
+export type BrochurePage = { url: string; width: number; height: number };
+
+export type AboutBrochure = {
+  title: string;
+  pages: BrochurePage[];
+};
+
+export async function getAboutBrochure(): Promise<AboutBrochure | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "about_brochure")
+    .maybeSingle();
+
+  const value = data?.value as Partial<AboutBrochure> | null;
+  if (!value || !Array.isArray(value.pages) || value.pages.length === 0) {
+    return null;
+  }
+  return {
+    title: value.title || "Танилцуулга",
+    pages: value.pages.filter((p) => p?.url),
+  };
+}
