@@ -100,7 +100,7 @@ export default async function OrderSuccessPage({
         )}
 
         <div className="mb-6 rounded-xl border border-lime-300 bg-lime-50 p-4 text-sm">
-          📦 Захиалгын явцыг <strong>"Миний захиалга"</strong> хэсгээс хянах боломжтой.
+          📦 Захиалгын явцыг <strong>&quot;Миний захиалга&quot;</strong> хэсгээс хянах боломжтой.
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">

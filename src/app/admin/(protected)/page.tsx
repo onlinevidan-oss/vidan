@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TopBar } from "@/components/admin/TopBar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { getDashboardStats } from "@/lib/queries/dashboard";
@@ -86,12 +87,12 @@ export default async function AdminDashboard() {
             <h3 className="font-display text-[15px] font-extrabold text-ink-900">
               Сүүлийн захиалгууд
             </h3>
-            <a
+            <Link
               href="/admin/orders"
               className="text-xs font-bold text-brand-700 hover:text-brand-900"
             >
               Бүгд →
-            </a>
+            </Link>
           </div>
 
           {stats.recentOrders.length === 0 ? (

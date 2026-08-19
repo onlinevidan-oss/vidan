@@ -13,18 +13,15 @@ export default async function AdminReports() {
   const maxRev = Math.max(1, ...data.byDay.map((d) => d.revenue));
   const maxProduct = Math.max(1, ...data.topProducts.map((p) => p.revenue));
 
-  // Donut math
-  let acc = 0;
-  const donutSegs = data.byCategory.map((c, i) => {
-    const start = acc;
-    acc += c.share * 100;
-    return {
-      ...c,
-      offsetStart: start,
-      length: c.share * 100,
-      color: CAT_COLORS[i % CAT_COLORS.length],
-    };
-  });
+  // Donut math — өмнөх сегментүүдийн нийлбэр нь эхлэх байрлал
+  const donutSegs = data.byCategory.map((c, i) => ({
+    ...c,
+    offsetStart: data.byCategory
+      .slice(0, i)
+      .reduce((sum, prev) => sum + prev.share * 100, 0),
+    length: c.share * 100,
+    color: CAT_COLORS[i % CAT_COLORS.length],
+  }));
 
   return (
     <>

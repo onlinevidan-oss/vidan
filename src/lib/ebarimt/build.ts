@@ -71,7 +71,7 @@ function vatOf(net: number, taxType: TaxType): number {
 }
 
 /** НХАТ тооцоо — одоогоор 0 (хүнсний жижиглэн). Шаардвал энд өөрчилнө. */
-function cityTaxOf(_net: number, _taxType: TaxType): number {
+function cityTaxOf(): number {
   return 0;
 }
 
@@ -94,7 +94,7 @@ export function buildReceiptRequest(
     const taxType = li.taxType ?? "VAT_ABLE";
     const lineNet = li.unitPrice * li.qty; // НӨАТ-гүй мөрийн дүн
     const totalVAT = vatOf(lineNet, taxType);
-    const totalCityTax = cityTaxOf(lineNet, taxType);
+    const totalCityTax = cityTaxOf();
     const item: EbarimtItem = {
       name: li.name,
       barCode: li.barCode ?? null,

@@ -10,6 +10,19 @@ import { createReceipt } from "@/lib/ebarimt/posapi";
 import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 
+/** Демо баримт бүтээх — алдааг JSX-ээс тусад нь буцаана */
+async function buildDemoReceipt(input: BuildReceiptInput) {
+  try {
+    const request = buildReceiptRequest(input);
+    request.payments[0].paidAmount = request.totalAmount;
+    const response = await createReceipt(request);
+    const qrImage = await qrDataUrl(response.qrData);
+    return { response, qrImage };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
+
 export default async function EbarimtDemoPage({
   searchParams,
 }: PageProps<"/ebarimt/demo">) {
@@ -41,25 +54,21 @@ export default async function EbarimtDemoPage({
     payment: { code: "BANK_TRANSFER_QPAY", paidAmount: 0 },
   };
 
-  let content;
-  try {
-    const request = buildReceiptRequest(input);
-    request.payments[0].paidAmount = request.totalAmount;
-    const response = await createReceipt(request);
-    const qrImage = await qrDataUrl(response.qrData);
-    content = <ReceiptView response={response} qrImage={qrImage} />;
-  } catch (e) {
-    content = (
+  const receipt = await buildDemoReceipt(input);
+
+  const content =
+    "error" in receipt ? (
       <div className="mx-auto max-w-[420px] rounded-[16px] border border-brand-200 bg-brand-50 p-6 text-sm text-brand-700">
         <div className="font-bold">Баримт үүсгэж чадсангүй</div>
-        <div className="mt-1">{(e as Error).message}</div>
+        <div className="mt-1">{receipt.error}</div>
         <div className="mt-2 text-xs text-ink-500">
           EBARIMT_POSAPI_URL тохируулсан эсэхийг шалгана уу (mock:
           http://localhost:3000/api/ebarimt/mock).
         </div>
       </div>
+    ) : (
+      <ReceiptView response={receipt.response} qrImage={receipt.qrImage} />
     );
-  }
 
   return (
     <div className="my-8">

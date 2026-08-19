@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Database } from "@/lib/supabase/database.types";
 
 type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
@@ -76,12 +77,12 @@ export function CategoryForm({
         >
           {submitLabel}
         </button>
-        <a
+        <Link
           href="/admin/categories"
           className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-5 py-2.5 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
         >
           Цуцлах
-        </a>
+        </Link>
       </div>
     </form>
   );
