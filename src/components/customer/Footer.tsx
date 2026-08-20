@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 const FB_PAGE = "https://www.facebook.com/vidanofficial";
+/** Ажлын байрны зар — Zangia дээрх компанийн хуудас */
+const JOBS_PAGE = "https://www.zangia.mn/company/durvunulzii";
 
 export function Footer() {
   return (
@@ -47,9 +49,8 @@ export function Footer() {
             title="Компани"
             items={[
               { label: "Бидний тухай", href: "/about" },
-              { label: "Үйлдвэрлэл", href: "#" },
               { label: "Мэдээ мэдээлэл", href: FB_PAGE, external: true },
-              { label: "Ажлын байр", href: "#" },
+              { label: "Ажлын байр", href: JOBS_PAGE, external: true },
               { label: "Хамтрагч", href: "#" },
             ]}
           />
