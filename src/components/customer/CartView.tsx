@@ -155,7 +155,7 @@ export function CartView({
             <h3 className="font-display mb-4 text-base font-extrabold tracking-tight text-ink-900">
               Захиалгын дүн
             </h3>
-            <Row label={`Дэд дүн (${items.length} бараа)`} value={formatMnt(subtotal)} />
+            <Row label={`Барааны дүн (${items.length} бараа)`} value={formatMnt(subtotal)} />
             <Row
               label="Хүргэлт"
               value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
@@ -172,8 +172,10 @@ export function CartView({
             {belowMinOrder ? (
               <>
                 <div className="mb-3 rounded-xl bg-ink-100 p-3 text-center text-[13px] text-ink-700">
-                  Захиалгын доод дүн{" "}
-                  <strong>{formatMnt(settings.min_order_amount)}</strong> — ахиад{" "}
+                  Захиалгын <strong>барааны</strong> доод дүн{" "}
+                  <strong>{formatMnt(settings.min_order_amount)}</strong>{" "}
+                  (хүргэлт, НӨАТ ороогүй). Таны барааны дүн{" "}
+                  <strong>{formatMnt(subtotal)}</strong> — ахиад{" "}
                   <strong>{formatMnt(settings.min_order_amount - subtotal)}</strong>
                   -ийн бараа нэмнэ үү.
                 </div>

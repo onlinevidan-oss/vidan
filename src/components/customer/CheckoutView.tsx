@@ -100,7 +100,7 @@ export function CheckoutView({
     setError(null);
     if (belowMinOrder) {
       setError(
-        `Захиалгын доод дүн ${formatMnt(settings.min_order_amount)} — сагсандаа бараа нэмнэ үү`,
+        `Захиалгын барааны доод дүн ${formatMnt(settings.min_order_amount)} (хүргэлт, НӨАТ ороогүй) — сагсандаа бараа нэмнэ үү`,
       );
       return;
     }
@@ -431,7 +431,7 @@ export function CheckoutView({
               ))}
             </div>
             <div className="my-3 h-px bg-ink-100" />
-            <Row label="Дэд дүн" value={formatMnt(subtotal)} />
+            <Row label="Барааны дүн" value={formatMnt(subtotal)} />
             <Row label="Хүргэлт" value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
               accent={shipping === 0 ? "success" : undefined} />
             <Row label="НӨАТ (10%)" value={formatMnt(tax)} />

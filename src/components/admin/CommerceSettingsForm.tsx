@@ -38,8 +38,8 @@ export function CommerceSettingsForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <Field
-        label="Захиалгын доод дүн (₮)"
-        hint="Үүнээс бага дүнтэй сагс захиалга өгөх боломжгүй"
+        label="Захиалгын барааны доод дүн (₮)"
+        hint="Зөвхөн барааны дүнтэй жишнэ — хүргэлт, НӨАТ ороогүй"
         value={form.min_order_amount}
         onChange={(v) => setNum("min_order_amount", v)}
       />
