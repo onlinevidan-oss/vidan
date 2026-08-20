@@ -163,9 +163,32 @@ export default async function AdminOrderDetail({
                   Хэрэглэгч
                 </h3>
                 <div className="font-bold text-ink-900">{userObj.full_name || "—"}</div>
-                {userObj.phone && (
+                {/* Хүргэлтийн утас — захиалга дээр хадгалсан нь тэргүүн эрэмбэтэй.
+                    Имэйлээр нэвтэрсэн хэрэглэгчид профайлд утас байхгүй. */}
+                {order.contact_phone ? (
+                  <div className="mt-1.5 rounded-lg bg-lime-50 px-2.5 py-1.5">
+                    <a
+                      href={`tel:+976${order.contact_phone}`}
+                      className="text-sm font-extrabold text-ink-900 hover:text-brand-700"
+                    >
+                      📞 {formatPhone(order.contact_phone)}
+                    </a>
+                    {order.contact_phone2 && (
+                      <a
+                        href={`tel:+976${order.contact_phone2}`}
+                        className="ml-2 text-xs font-bold text-ink-500 hover:text-brand-700"
+                      >
+                        / {formatPhone(order.contact_phone2)}
+                      </a>
+                    )}
+                  </div>
+                ) : userObj.phone ? (
                   <div className="mt-0.5 text-xs text-ink-500">
                     📞 {formatPhone(userObj.phone)}
+                  </div>
+                ) : (
+                  <div className="mt-1.5 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-bold text-brand-700">
+                    ⚠️ Утасны дугааргүй захиалга
                   </div>
                 )}
                 {userObj.email && (

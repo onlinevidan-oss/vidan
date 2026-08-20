@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
-import { formatMnt, formatPhone } from "@/lib/utils";
+import { formatMnt } from "@/lib/utils";
 import { placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
@@ -15,6 +15,22 @@ import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
+
+/** Монголын гар утасны дугаар — 8 орон, 6–9-өөр эхэлнэ */
+function isValidMnPhone(raw: string): boolean {
+  return /^[6-9]\d{7}$/.test(raw.replace(/\D/g, ""));
+}
+
+/**
+ * Профайлд утас янз бүрийн хэлбэрээр хадгалагдсан байдаг
+ * ("97694070800", "+976 9407 0800", "94070800"). Талбарт 8 оронтой
+ * дотоодын дугаар болгож оруулна — олдохгүй бол хоосон.
+ */
+function toLocalPhone(raw: string | null | undefined): string {
+  let d = (raw ?? "").replace(/\D/g, "");
+  if (d.length === 11 && d.startsWith("976")) d = d.slice(3);
+  return isValidMnPhone(d) ? d : "";
+}
 
 // Төлбөрийн арга энэ хуудсанд харагдахгүй — захиалга баталгаажмагц
 // QPay төлбөрийн хуудас руу шилжинэ.
@@ -47,6 +63,10 @@ export function CheckoutView({
     detail: "",
   });
   const [customLabel, setCustomLabel] = useState(false);
+  // Хүргэлтийн холбоо барих утас — профайлд байвал урьдчилж бөглөнө.
+  // Имэйл/Google-ээр нэвтэрсэн хэрэглэгчид энэ талбар хоосон ирнэ.
+  const [phone, setPhone] = useState(() => toLocalPhone(profile?.phone));
+  const [phone2, setPhone2] = useState("");
   const [notes, setNotes] = useState("");
   // Баримт — хувь хүн (B2C) / байгууллага (B2B)
   const [ebarimtType, setEbarimtType] = useState<"B2C_RECEIPT" | "B2B_RECEIPT">(
@@ -104,6 +124,14 @@ export function CheckoutView({
       );
       return;
     }
+    if (!isValidMnPhone(phone)) {
+      setError("Холбоо барих утасны дугаараа оруулна уу (8 орон)");
+      return;
+    }
+    if (phone2.trim() && !isValidMnPhone(phone2)) {
+      setError("Нэмэлт утасны дугаар буруу байна (8 орон)");
+      return;
+    }
     if (addressId === "new") {
       if (!newAddr.district) {
         setError("Дүүргээ сонгоно уу");
@@ -131,6 +159,8 @@ export function CheckoutView({
             ? { ...newAddr, district: `${newAddr.district} дүүрэг` }
             : undefined,
         paymentMethod: "qpay",
+        contactPhone: phone,
+        contactPhone2: phone2,
         driverNotes: notes,
         ebarimtType,
         ebarimtConsumerNo: consumerNo,
@@ -166,10 +196,25 @@ export function CheckoutView({
         <div className="space-y-5">
           {/* Customer info */}
           <Section title="1. Хэрэглэгч">
-            <div className="grid grid-cols-2 gap-3">
-              <Info label="Нэр" value={profile?.full_name || "—"} />
-              <Info label="Утас" value={profile?.phone ? formatPhone(profile.phone) : "—"} />
+            <Info label="Нэр" value={profile?.full_name || "—"} />
+
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <PhoneField
+                label="Холбоо барих утас"
+                required
+                value={phone}
+                onChange={setPhone}
+              />
+              <PhoneField
+                label="Нэмэлт утас"
+                value={phone2}
+                onChange={setPhone2}
+                hint="Заавал биш"
+              />
             </div>
+            <p className="mt-2 text-xs text-ink-500">
+              Хүргэлтийн жолооч энэ дугаараар холбогдоно.
+            </p>
           </Section>
 
           {/* Address */}
@@ -515,6 +560,37 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border-[1.5px] border-ink-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500"
       />
+    </label>
+  );
+}
+
+function PhoneField({
+  label, value, onChange, required, hint,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  hint?: string;
+}) {
+  return (
+    <label className="block">
+      <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-ink-500">
+        {label} {required && <span className="text-brand-600">*</span>}
+        {hint && <span className="ml-1 font-medium normal-case">({hint})</span>}
+      </div>
+      <div className="flex items-center rounded-lg border-[1.5px] border-ink-200 bg-white transition focus-within:border-brand-500">
+        <span className="pl-3 pr-1 text-sm font-semibold text-ink-500">+976</span>
+        <input
+          type="tel"
+          inputMode="numeric"
+          maxLength={8}
+          value={value}
+          placeholder="9999 9999"
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 8))}
+          className="w-full rounded-r-lg bg-transparent px-2 py-2 text-sm outline-none"
+        />
+      </div>
     </label>
   );
 }

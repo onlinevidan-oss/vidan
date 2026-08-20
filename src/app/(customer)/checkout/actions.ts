@@ -5,9 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCommerceSettings } from "@/lib/queries/settings";
 import { formatMnt } from "@/lib/utils";
+import { normalizePhone } from "@/lib/sms/client";
 
 export type CheckoutPayload = {
   items: { productId: string; quantity: number }[];
+  /** Хүргэлтийн үндсэн холбоо барих утас (заавал) */
+  contactPhone: string;
+  /** Нэмэлт утас (сонголтоор) */
+  contactPhone2?: string;
   addressId?: string;
   newAddress?: {
     label: string;
@@ -57,6 +62,18 @@ export async function placeOrder(
 
   if (!user) return { ok: false, error: "Нэвтэрнэ үү" };
   if (!payload.items.length) return { ok: false, error: "Сагс хоосон байна" };
+
+  // Хүргэлтийн утас — захиалга үүсгэхээс ӨМНӨ шалгана. Имэйлээр нэвтэрсэн
+  // хэрэглэгчид профайлд утас байхгүй тул энэ шалгалтгүй бол хүргэх
+  // боломжгүй захиалга үүснэ.
+  const contactPhone = normalizePhone(payload.contactPhone);
+  if (!contactPhone) {
+    return { ok: false, error: "Холбоо барих утасны дугаараа зөв оруулна уу" };
+  }
+  const contactPhone2 = normalizePhone(payload.contactPhone2) || null;
+  if (payload.contactPhone2?.trim() && !contactPhone2) {
+    return { ok: false, error: "Нэмэлт утасны дугаар буруу байна" };
+  }
 
   // 1) Шинэ хаяг бол үүсгэх (энэ нь RLS-аар self-only)
   let addressId = payload.addressId;
@@ -112,6 +129,8 @@ export async function placeOrder(
     await admin
       .from("orders")
       .update({
+        contact_phone: contactPhone,
+        contact_phone2: contactPhone2,
         ebarimt_type: ebarimtType,
         ebarimt_consumer_no:
           ebarimtType === "B2C_RECEIPT"
@@ -125,7 +144,26 @@ export async function placeOrder(
       .eq("id", row.order_id);
   } catch (e) {
     // Баримтын мэдээлэл хадгалахад алдвал захиалгыг таслахгүй.
-    console.error("[ebarimt info save failed]", e);
+    console.error("[order contact/ebarimt info save failed]", e);
+  }
+
+  // Профайлд утас байхгүй бол (имэйлээр нэвтэрсэн) нөхөж хадгална —
+  // дараагийн захиалгад автоматаар бөглөгдөнө, SMS мэдэгдэл ажиллана.
+  try {
+    const admin = createAdminClient();
+    const { data: prof } = await admin
+      .from("profiles")
+      .select("phone")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!prof?.phone) {
+      await admin
+        .from("profiles")
+        .update({ phone: contactPhone })
+        .eq("id", user.id);
+    }
+  } catch (e) {
+    console.error("[profile phone backfill failed]", e);
   }
 
   revalidatePath("/admin/orders");

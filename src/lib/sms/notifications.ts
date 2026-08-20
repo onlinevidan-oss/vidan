@@ -42,7 +42,7 @@ export async function sendOrderSms(
     const admin = createAdminClient();
     const { data: order } = await admin
       .from("orders")
-      .select("order_number, total, user_id, profiles:user_id(phone)")
+      .select("order_number, total, user_id, contact_phone, profiles:user_id(phone)")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -51,7 +51,9 @@ export async function sendOrderSms(
     const profile = Array.isArray(order.profiles)
       ? order.profiles[0]
       : order.profiles;
-    const phone = normalizePhone(profile?.phone);
+    // Захиалга дээр хадгалсан хүргэлтийн утас тэргүүн эрэмбэтэй — имэйлээр
+    // нэвтэрсэн хэрэглэгчид профайлд утас байхгүй тул зөвхөн үүнээс олдоно.
+    const phone = normalizePhone(order.contact_phone) || normalizePhone(profile?.phone);
     if (!phone) return;
 
     const text = buildText(kind, order);

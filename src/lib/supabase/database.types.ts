@@ -272,6 +272,8 @@ export type Database = {
           address_id: string | null
           cancelled_at: string | null
           cancelled_reason: string | null
+          contact_phone: string | null
+          contact_phone2: string | null
           created_at: string
           delivered_at: string | null
           delivery_window: string | null
@@ -303,6 +305,8 @@ export type Database = {
           address_id?: string | null
           cancelled_at?: string | null
           cancelled_reason?: string | null
+          contact_phone?: string | null
+          contact_phone2?: string | null
           created_at?: string
           delivered_at?: string | null
           delivery_window?: string | null
@@ -334,6 +338,8 @@ export type Database = {
           address_id?: string | null
           cancelled_at?: string | null
           cancelled_reason?: string | null
+          contact_phone?: string | null
+          contact_phone2?: string | null
           created_at?: string
           delivered_at?: string | null
           delivery_window?: string | null
