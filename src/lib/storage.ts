@@ -68,3 +68,23 @@ export async function uploadAboutPage(
   if (error) return { ok: false, error: error.message };
   return { ok: true, url: getPublicImageUrl(fileName) };
 }
+
+/**
+ * Профайлын зураг upload — `avatars` bucket, зөвхөн өөрийн id-тай фолдерт
+ * (RLS: storage.foldername(name)[1] = auth.uid()).
+ */
+export async function uploadAvatar(
+  file: File,
+  userId: string,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const supabase = createBrowserClient();
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    cacheControl: "3600",
+    upsert: true,
+  });
+  if (error) return { ok: false, error: error.message };
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return { ok: true, url: `${base}/storage/v1/object/public/avatars/${path}` };
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { formatPhone } from "@/lib/utils";
 
 export function UserMenu({
@@ -70,18 +71,18 @@ export function UserMenu({
                 <div className="my-1 h-px bg-ink-100" />
               </>
             )}
-            <a
+            <Link
               href="/account"
               className="rounded-lg px-3 py-2 text-sm text-ink-700 transition hover:bg-ink-100 hover:text-brand-700"
             >
-              👤 Миний профайл
-            </a>
-            <a
-              href="/orders"
+              👤 Миний мэдээлэл
+            </Link>
+            <Link
+              href="/account/orders"
               className="rounded-lg px-3 py-2 text-sm text-ink-700 transition hover:bg-ink-100 hover:text-brand-700"
             >
               📦 Захиалгын түүх
-            </a>
+            </Link>
             <a
               href="/favorites"
               className="rounded-lg px-3 py-2 text-sm text-ink-700 transition hover:bg-ink-100 hover:text-brand-700"
