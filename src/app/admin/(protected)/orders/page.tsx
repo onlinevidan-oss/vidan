@@ -31,7 +31,7 @@ export default async function AdminOrders({
   let q = supabase
     .from("orders")
     .select(
-      "id, order_number, total, status, payment_method, created_at, user:profiles(full_name, phone), address:addresses(label, district, khoroo, detail), items:order_items(quantity)",
+      "id, order_number, total, status, payment_method, created_at, contact_phone, contact_phone2, user:profiles(full_name, phone), address:addresses(label, district, khoroo, detail), items:order_items(quantity)",
     )
     .eq("payment_status", "paid")
     .order("created_at", { ascending: false })
@@ -108,9 +108,21 @@ export default async function AdminOrders({
                         </td>
                         <td className="px-4 py-3">
                           <div className="font-semibold">{userObj?.full_name || "—"}</div>
-                          <div className="text-xs text-ink-500">
-                            {userObj?.phone ? formatPhone(userObj.phone) : "—"}
-                          </div>
+                          {/* Хүргэлтийн утас — захиалга дээрх нь тэргүүн эрэмбэтэй */}
+                          {o.contact_phone || userObj?.phone ? (
+                            <div className="text-xs font-bold text-ink-700">
+                              📞 {formatPhone(o.contact_phone || userObj!.phone!)}
+                              {o.contact_phone2 && (
+                                <span className="ml-1 font-normal text-ink-500">
+                                  / {formatPhone(o.contact_phone2)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-xs font-bold text-brand-700">
+                              ⚠️ утасгүй
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           {addr ? (
