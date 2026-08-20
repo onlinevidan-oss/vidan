@@ -23,14 +23,18 @@ export function Footer() {
             </p>
             <div className="mt-4 flex gap-2.5">
               {[
-                ["f", "https://www.facebook.com/vidanofficial"],
-                ["@", "https://www.instagram.com/vidan.brand/"],
-                ["in", "https://www.linkedin.com/company/durvun-ulzii-llc/"],
-                ["▶", "https://www.youtube.com/@Marketingdurvunulzii"],
-              ].map(([label, href]) => (
+                ["f", "Facebook", "https://www.facebook.com/vidanofficial"],
+                ["@", "Instagram", "https://www.instagram.com/vidan.brand/"],
+                ["in", "LinkedIn", "https://www.linkedin.com/company/durvun-ulzii-llc/"],
+                ["▶", "YouTube", "https://www.youtube.com/@Marketingdurvunulzii"],
+              ].map(([label, name, href]) => (
                 <a
                   key={label}
                   href={href}
+                  aria-label={name}
+                  title={name}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="grid h-9 w-9 place-items-center rounded-full bg-white/10 font-bold transition hover:bg-lime-500 hover:text-ink-900"
                 >
                   {label}
