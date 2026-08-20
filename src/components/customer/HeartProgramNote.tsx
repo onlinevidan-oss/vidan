@@ -8,15 +8,21 @@
 export const HEART_DONATION_PER_ITEM = 30;
 
 export function HeartProgramNote({ compact = false }: { compact?: boolean }) {
+  // Картын нарийн баганад багтах богино хувилбар — бүтэн тайлбар нь
+  // бүтээгдэхүүний хуудсанд байна
   if (compact) {
     return (
-      <div className="flex items-start gap-2 rounded-[10px] border border-brand-200 bg-brand-50 px-3 py-2 text-[12px] leading-snug text-brand-900">
-        <span aria-hidden>❤️</span>
-        <span>
-          <strong className="font-extrabold">ХҮРЭН ЗҮРХ</strong> хөтөлбөр —
-          ширхэг тутмаас {HEART_DONATION_PER_ITEM}₮ “Зүрх мартахгүй” төсөлд
-          хандивлагдана
-        </span>
+      <div className="rounded-[8px] border border-brand-200 bg-brand-50 px-2.5 py-1.5 leading-tight">
+        <div className="text-[10px] font-extrabold uppercase tracking-wide text-brand-700">
+          ❤️ Хүрэн зүрх
+        </div>
+        <div className="mt-0.5 text-[11px] text-ink-700">
+          Ширхэг тутмаас{" "}
+          <strong className="font-bold text-ink-900">
+            {HEART_DONATION_PER_ITEM}₮
+          </strong>{" "}
+          хандив
+        </div>
       </div>
     );
   }

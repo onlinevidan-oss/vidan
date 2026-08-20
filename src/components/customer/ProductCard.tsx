@@ -5,6 +5,7 @@ import Image from "next/image";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta, getProductTag } from "@/lib/product-meta";
 import { useCart } from "@/stores/cart";
+import { HeartProgramNote } from "@/components/customer/HeartProgramNote";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type ProductRow = Database["public"]["Tables"]["products"]["Row"] & {
@@ -118,6 +119,14 @@ export function ProductCard({ product }: { product: ProductRow }) {
           <span className="h-[3px] w-[3px] rounded-full bg-ink-300" />
           150+ үнэлгээ
         </div>
+
+        {/* ХҮРЭН ЗҮРХ хөтөлбөр */}
+        {product.heart_program && (
+          <div className="mb-3">
+            <HeartProgramNote compact />
+          </div>
+        )}
+
         <div className="mt-auto flex items-center justify-between">
           <div className="font-display text-[17px] font-extrabold text-ink-900">
             {formatMnt(product.price)}
