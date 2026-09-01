@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FilterPanel } from "@/components/customer/FilterPanel";
 import { ProductCard } from "@/components/customer/ProductCard";
 import {
   getBrands,
@@ -76,8 +77,13 @@ export default async function ProductsPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        {/* Sidebar filters */}
-        <aside className="space-y-5">
+        {/* Sidebar filters — утсанд эвхээстэй */}
+        <FilterPanel
+          activeCount={
+            [brandSlug, categorySlug, isNew || undefined, saleOnly || undefined]
+              .filter(Boolean).length
+          }
+        >
           <div className="rounded-2xl border border-ink-200 bg-white p-5">
             <h3 className="font-display mb-3.5 text-sm font-extrabold uppercase tracking-wider text-ink-700">
               Брэнд
@@ -182,7 +188,7 @@ export default async function ProductsPage({
               </li>
             </ul>
           </div>
-        </aside>
+        </FilterPanel>
 
         {/* Products grid */}
         <section>
