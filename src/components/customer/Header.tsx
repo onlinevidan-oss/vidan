@@ -5,6 +5,38 @@ import { getBrands } from "@/lib/queries/products";
 import { UserMenu } from "@/components/customer/UserMenu";
 import { CartButton } from "@/components/customer/CartButton";
 
+/**
+ * Хайлтын форм — JS-гүйгээр ажиллана (GET → /products?search=...).
+ * /products хуудас `search` параметрийг серверт нь шүүдэг.
+ */
+function SearchBox({ compact = false }: { compact?: boolean }) {
+  return (
+    <form method="get" action="/products" className="relative w-full">
+      <input
+        type="search"
+        name="search"
+        enterKeyHint="search"
+        aria-label="Бүтээгдэхүүн хайх"
+        placeholder={
+          compact
+            ? "Бүтээгдэхүүн хайх..."
+            : "Бүтээгдэхүүн хайх... (жнь. өргөст хэмх, чанамал)"
+        }
+        className={`w-full rounded-full border-[1.5px] border-ink-200 bg-cream pl-11 pr-4 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:shadow-[0_0_0_3px_var(--color-brand-100)] ${
+          compact ? "py-2.5" : "py-3"
+        }`}
+      />
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm opacity-50">
+        🔍
+      </span>
+      {/* Enter дарахад илгээгдэнэ — гар утсанд "Хайх" товч гарч ирнэ */}
+      <button type="submit" className="sr-only">
+        Хайх
+      </button>
+    </form>
+  );
+}
+
 function CatChip({ href, label }: { href: string; label: string }) {
   return (
     <Link
@@ -51,15 +83,8 @@ export async function Header() {
         <div className="flex items-center gap-6 py-3">
           <Logo height={48} />
 
-          <div className="hidden md:block flex-1 max-w-[580px] relative">
-            <input
-              type="text"
-              placeholder="Бүтээгдэхүүн хайх... (жнь. өргөст хэмх, чанамал)"
-              className="w-full rounded-full border-[1.5px] border-ink-200 bg-cream px-4 py-3 pl-11 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:shadow-[0_0_0_3px_var(--color-brand-100)]"
-            />
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm opacity-50">
-              🔍
-            </span>
+          <div className="hidden md:block flex-1 max-w-[580px]">
+            <SearchBox />
           </div>
 
           <div className="ml-auto flex items-center gap-2">
@@ -86,6 +111,11 @@ export async function Header() {
               </Link>
             )}
           </div>
+        </div>
+
+        {/* Гар утас — хайлт тусдаа мөрөнд (дээд мөрөнд багтахгүй) */}
+        <div className="pb-3 md:hidden">
+          <SearchBox compact />
         </div>
 
         <nav className="border-t border-ink-200 overflow-x-auto">
