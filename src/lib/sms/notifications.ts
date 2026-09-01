@@ -11,20 +11,24 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, normalizePhone } from "./client";
+import {
+  SMS_SETTINGS_DEFAULTS,
+  type SmsSettings,
+} from "@/lib/queries/settings";
 
 export type SmsKind = "paid" | "cancelled";
 
-function buildText(
-  kind: SmsKind,
+/**
+ * Загварт орлуулах утгууд — админы тохиргоотой ижил байх ёстой:
+ *   {order} — захиалгын дугаар, {total} — нийт дүн
+ */
+export function renderSmsTemplate(
+  template: string,
   order: { order_number: string; total: number },
 ): string {
-  // Кирилл SMS 70 тэмдэгт / segment тул богино байлгана.
-  switch (kind) {
-    case "paid":
-      return `VIDAN: Захиалга ${order.order_number} баталгаажлаа. 24 цагийн дотор хүргэгдэнэ.`;
-    case "cancelled":
-      return `VIDAN: Захиалга ${order.order_number} цуцлагдлаа.`;
-  }
+  return template
+    .replaceAll("{order}", order.order_number)
+    .replaceAll("{total}", `${Number(order.total).toLocaleString("en-US")}₮`);
 }
 
 /**
@@ -47,6 +51,27 @@ export async function sendOrderSms(
       .maybeSingle();
 
     if (!order) return;
+
+    // Админы тохиргоо — унтраасан бол огт илгээхгүй
+    const { data: cfgRow } = await admin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "sms_settings")
+      .maybeSingle();
+    const cfg = {
+      ...SMS_SETTINGS_DEFAULTS,
+      ...((cfgRow?.value ?? {}) as Partial<SmsSettings>),
+    };
+
+    const enabled = kind === "paid" ? cfg.paid_enabled : cfg.cancelled_enabled;
+    if (!enabled) {
+      console.info(`[sms disabled by admin] order=${orderId} kind=${kind}`);
+      return;
+    }
+
+    const template =
+      kind === "paid" ? cfg.paid_template : cfg.cancelled_template;
+    if (!template.trim()) return;
 
     const profile = Array.isArray(order.profiles)
       ? order.profiles[0]
@@ -75,7 +100,7 @@ export async function sendOrderSms(
       return;
     }
 
-    const text = buildText(kind, order);
+    const text = renderSmsTemplate(template, order);
     const result = await sendSms({ to: phone, text });
 
     // Илгээсний дараа message_id-г нөхөж бичнэ (мөрдөх, тооцоо хийхэд)

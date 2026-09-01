@@ -167,3 +167,33 @@ export async function getSaleCampaignCount(): Promise<number> {
     .not("sale_campaign", "is", null);
   return count ?? 0;
 }
+
+// ============================================================
+// SMS мэдэгдлийн тохиргоо — админ хэсгээс удирдана.
+// Аль SMS явах, ямар текстээр явахыг кодод биш энд хадгална.
+// ============================================================
+export type SmsSettings = {
+  paid_enabled: boolean;
+  paid_template: string;
+  cancelled_enabled: boolean;
+  cancelled_template: string;
+};
+
+export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
+  paid_enabled: true,
+  paid_template: "VIDAN: Захиалга {order} баталгаажлаа. 24 цагийн дотор хүргэгдэнэ.",
+  cancelled_enabled: true,
+  cancelled_template: "VIDAN: Захиалга {order} цуцлагдлаа.",
+};
+
+export async function getSmsSettings(): Promise<SmsSettings> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "sms_settings")
+    .maybeSingle();
+
+  if (!data?.value) return SMS_SETTINGS_DEFAULTS;
+  return { ...SMS_SETTINGS_DEFAULTS, ...(data.value as Partial<SmsSettings>) };
+}

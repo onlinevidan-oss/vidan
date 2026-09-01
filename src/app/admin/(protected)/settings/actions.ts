@@ -10,6 +10,7 @@ import type {
   HeroSettings,
   HeroSlide,
   SaleCampaign,
+  SmsSettings,
 } from "@/lib/queries/settings";
 
 function isSafeImageUrl(url: string): boolean {
@@ -272,4 +273,47 @@ export async function updateSaleCampaign(
     applied: res.applied ?? 0,
     reverted: res.reverted ?? 0,
   };
+}
+
+/**
+ * SMS мэдэгдлийн тохиргоо хадгалах.
+ * Загварт {order}, {total} орлуулагддаг.
+ */
+export async function updateSmsSettings(
+  payload: SmsSettings,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const paid = payload.paid_template.trim();
+  const cancelled = payload.cancelled_template.trim();
+
+  if (payload.paid_enabled && !paid) {
+    return { ok: false, error: "Баталгаажсан SMS-ийн текст хоосон байна" };
+  }
+  if (payload.cancelled_enabled && !cancelled) {
+    return { ok: false, error: "Цуцлагдсан SMS-ийн текст хоосон байна" };
+  }
+  // Хэт урт SMS = олон segment = илүү төлбөр. 3 segment-ээр хязгаарлав.
+  if (paid.length > 210 || cancelled.length > 210) {
+    return { ok: false, error: "SMS хэт урт байна (дээд тал нь 210 тэмдэгт)" };
+  }
+
+  const value: SmsSettings = {
+    paid_enabled: !!payload.paid_enabled,
+    paid_template: paid,
+    cancelled_enabled: !!payload.cancelled_enabled,
+    cancelled_template: cancelled,
+  };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "sms_settings",
+    value,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/admin/settings");
+  return { ok: true };
 }

@@ -4,17 +4,19 @@ import {
   getHeroSlides,
   getSaleCampaign,
   getSaleCampaignCount,
+  getSmsSettings,
 } from "@/lib/queries/settings";
 import { getBrands } from "@/lib/queries/products";
 import { HeroSlidesForm } from "@/components/admin/HeroSlidesForm";
 import { CommerceSettingsForm } from "@/components/admin/CommerceSettingsForm";
 import { AboutBrochureForm } from "@/components/admin/AboutBrochureForm";
 import { SaleCampaignForm } from "@/components/admin/SaleCampaignForm";
+import { SmsSettingsForm } from "@/components/admin/SmsSettingsForm";
 
 export const metadata = { title: "Тохиргоо | VIDAN Backoffice" };
 
 export default async function AdminSettings() {
-  const [slides, commerce, brochure, campaign, discountedCount, brands] =
+  const [slides, commerce, brochure, campaign, discountedCount, brands, sms] =
     await Promise.all([
       getHeroSlides(),
       getCommerceSettings(),
@@ -22,6 +24,7 @@ export default async function AdminSettings() {
       getSaleCampaign(),
       getSaleCampaignCount(),
       getBrands(),
+      getSmsSettings(),
     ]);
 
   return (
@@ -43,6 +46,16 @@ export default async function AdminSettings() {
           Эдгээр утга сагс, checkout болон серверийн тооцоололд шууд үйлчилнэ
         </p>
         <CommerceSettingsForm initial={commerce} />
+      </section>
+
+      <section className="rounded-[14px] border-[1.5px] border-ink-200 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg font-extrabold text-ink-900">
+          📱 SMS мэдэгдэл
+        </h2>
+        <p className="mb-5 text-xs text-ink-500">
+          Захиалагч руу ямар SMS явахыг эндээс удирдана
+        </p>
+        <SmsSettingsForm initial={sms} />
       </section>
 
       <section className="rounded-[14px] border-[1.5px] border-ink-200 bg-white p-6">
