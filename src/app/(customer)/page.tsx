@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ProductCard } from "@/components/customer/ProductCard";
-import { BrandCard } from "@/components/customer/BrandCard";
+import { BrandStrip } from "@/components/customer/BrandStrip";
 import {
   getBrandsWithProductCount,
   getFeaturedProducts,
@@ -43,11 +43,7 @@ export default async function HomePage() {
             Бүх бүтээгдэхүүн
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
-          {brands.map((b) => (
-            <BrandCard key={b.id} brand={b} />
-          ))}
-        </div>
+        <BrandStrip brands={brands} />
       </section>
 
       {/* ============ FEATURED (DB) ============ */}

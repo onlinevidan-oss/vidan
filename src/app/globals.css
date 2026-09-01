@@ -52,6 +52,14 @@
   /* Radius */
   --radius-card: 14px;
   --radius-card-lg: 16px;
+
+  /* Брэндийн тууз — хөндлөн тасралтгүй урсана.
+     Жагсаалтыг 3 удаа давтсан тул -33.3333% дээр эхэн рүүгээ таарна. */
+  --animate-marquee: marquee 36s linear infinite;
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-33.3333%); }
+  }
 }
 
 /* ============================================================
