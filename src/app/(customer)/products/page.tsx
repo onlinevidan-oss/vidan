@@ -31,12 +31,20 @@ export default async function ProductsPage({
   ]);
   const activeBrand = brands.find((b) => b.slug === brandSlug);
 
+  // Хайлтын үг брэндийн нэртэй таарвал (жнь. "owolovo", "мангас")
+  // тухайн брэндийн бүх бараа мөн үр дүнд орно
+  const searchTerm = search?.trim().toLowerCase();
+  const searchBrand = searchTerm
+    ? brands.find((b) => b.name.toLowerCase().includes(searchTerm))
+    : undefined;
+
   const products = await getProducts({
     categorySlug,
     brandId: activeBrand?.id,
     isNew,
     saleOnly,
     search,
+    searchBrandId: searchBrand?.id,
     sort,
   });
 

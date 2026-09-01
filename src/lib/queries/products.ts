@@ -141,6 +141,8 @@ export async function getProducts(opts: {
   isNew?: boolean;
   saleOnly?: boolean;
   search?: string;
+  /** Хайлтын үг брэндийн нэртэй таарсан бол тухайн брэндийн бараа мөн орно */
+  searchBrandId?: string;
   sort?: ProductSort;
   limit?: number;
 } = {}) {
@@ -156,7 +158,18 @@ export async function getProducts(opts: {
   if (opts.isNew) q = q.eq("is_new", true);
   if (opts.saleOnly) q = q.not("old_price", "is", null);
   if (opts.search && opts.search.trim()) {
-    q = q.ilike("name_mn", `%${opts.search.trim()}%`);
+    // PostgREST-ийн or() таслал/хаалтаар салгадаг тул тэдгээрийг цэвэрлэнэ
+    const term = opts.search.trim().replace(/[,()*%\\]/g, " ").trim();
+    if (term) {
+      const parts = [
+        `name_mn.ilike.%${term}%`,
+        `name_en.ilike.%${term}%`,
+        `sku.ilike.%${term}%`,
+      ];
+      // Брэндийн нэрээр хайсан бол (жнь. "owolovo") тухайн брэндийн бараа
+      if (opts.searchBrandId) parts.push(`brand_id.eq.${opts.searchBrandId}`);
+      q = q.or(parts.join(","));
+    }
   }
 
   switch (opts.sort) {
