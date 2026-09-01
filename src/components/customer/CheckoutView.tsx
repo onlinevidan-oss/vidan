@@ -419,7 +419,69 @@ export function CheckoutView({
           </Section>
 
           {/* Notes — хаягийн шууд доор */}
-          <Section title="3. Жолоочид заавар (заавал биш)">
+          {/* ============ ПРОМО КОД ============ */}
+          <Section title="3. Промо код">
+            {promo ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-[1.5px] border-lime-300 bg-lime-50 px-4 py-3.5">
+                <div>
+                  <div className="font-display text-base font-extrabold text-lime-700">
+                    🎟 {promo.code}
+                  </div>
+                  <div className="mt-0.5 text-sm font-semibold text-ink-900">
+                    {formatMnt(promo.discount)} хөнгөлөлт хэрэгжлээ
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={removePromo}
+                  className="rounded-lg border-[1.5px] border-ink-200 bg-white px-4 py-2 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+                >
+                  Хасах
+                </button>
+              </div>
+            ) : (
+              <div>
+                <p className="mb-2.5 text-sm text-ink-700">
+                  Промо код байвал энд оруулаад{" "}
+                  <strong className="text-ink-900">Ашиглах</strong> дарна уу.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={promoInput}
+                    onChange={(e) => {
+                      setPromoInput(e.target.value.toUpperCase());
+                      setPromoError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void applyPromo();
+                      }
+                    }}
+                    placeholder="ЖИШЭЭ: NEW10"
+                    autoComplete="off"
+                    aria-label="Промо код"
+                    className="min-w-0 flex-1 rounded-xl border-[1.5px] border-ink-200 bg-cream px-4 py-3 text-base font-bold uppercase tracking-wider outline-none transition focus:border-brand-500 focus:bg-white focus:shadow-[0_0_0_3px_var(--color-brand-100)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void applyPromo()}
+                    disabled={promoChecking || !promoInput.trim()}
+                    className="shrink-0 rounded-xl bg-ink-900 px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-600 disabled:bg-ink-300"
+                  >
+                    {promoChecking ? "Шалгаж байна…" : "Ашиглах"}
+                  </button>
+                </div>
+                {promoError && (
+                  <p className="mt-2 text-sm font-semibold text-brand-700">
+                    ⚠️ {promoError}
+                  </p>
+                )}
+              </div>
+            )}
+          </Section>
+
+          <Section title="4. Жолоочид заавар (заавал биш)">
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -430,7 +492,7 @@ export function CheckoutView({
 
           {/* Баримт — хувь хүн / байгууллага (e-barimt холбогдсон үед л) */}
           {ebarimtEnabled && (
-          <Section title="4. Төлбөрийн баримт">
+          <Section title="5. Төлбөрийн баримт">
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -510,57 +572,6 @@ export function CheckoutView({
                 </div>
               ))}
             </div>
-            {/* Промо код */}
-            <div className="my-3 h-px bg-ink-100" />
-            {promo ? (
-              <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-lime-300 bg-lime-50 px-3 py-2.5">
-                <span className="text-xs font-bold text-lime-700">
-                  🎟 {promo.code} — {formatMnt(promo.discount)} хөнгөлөлт
-                </span>
-                <button
-                  type="button"
-                  onClick={removePromo}
-                  className="text-xs font-bold text-ink-500 transition hover:text-brand-700"
-                >
-                  Хасах
-                </button>
-              </div>
-            ) : (
-              <div className="mb-3">
-                <div className="flex gap-2">
-                  <input
-                    value={promoInput}
-                    onChange={(e) => {
-                      setPromoInput(e.target.value.toUpperCase());
-                      setPromoError(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void applyPromo();
-                      }
-                    }}
-                    placeholder="Промо код"
-                    autoComplete="off"
-                    className="min-w-0 flex-1 rounded-lg border-[1.5px] border-ink-200 bg-cream px-3 py-2 text-sm uppercase outline-none transition focus:border-brand-500 focus:bg-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void applyPromo()}
-                    disabled={promoChecking || !promoInput.trim()}
-                    className="shrink-0 rounded-lg border-[1.5px] border-ink-200 px-4 py-2 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 disabled:opacity-40"
-                  >
-                    {promoChecking ? "…" : "Ашиглах"}
-                  </button>
-                </div>
-                {promoError && (
-                  <p className="mt-1.5 text-xs font-semibold text-brand-700">
-                    {promoError}
-                  </p>
-                )}
-              </div>
-            )}
-
             <div className="my-3 h-px bg-ink-100" />
             <Row label="Барааны дүн" value={formatMnt(subtotal)} />
             {discount > 0 && (
