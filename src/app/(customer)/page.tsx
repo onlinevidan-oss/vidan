@@ -32,9 +32,6 @@ export default async function HomePage() {
             <h2 className="font-display text-xl md:text-2xl font-bold tracking-tight text-ink-900">
               Брэндүүд
             </h2>
-            <p className="mt-1 text-sm text-ink-500">
-              Дөрвөн Өлзий ХХК-ийн брэндүүд
-            </p>
           </div>
           <Link
             href="/products"
