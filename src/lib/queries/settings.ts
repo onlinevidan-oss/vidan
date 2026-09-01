@@ -118,3 +118,52 @@ export async function getAboutBrochure(): Promise<AboutBrochure | null> {
     pages: value.pages.filter((p) => p?.url),
   };
 }
+
+// ============================================================
+// Хямдралын кампанит ажил — админ хэсгээс удирдана.
+// Үнийг DB-д бодитоор солидог (place_order нь products.price уншдаг),
+// хугацаанд нь sync_sale_campaign() автоматаар асааж/унтраана.
+// ============================================================
+export type SaleCampaign = {
+  code: string;
+  name: string;
+  brand_slug: string;
+  percent: number;
+  /** ISO (UTC) */
+  starts_at: string;
+  /** ISO (UTC) */
+  ends_at: string;
+  enabled: boolean;
+};
+
+export const SALE_CAMPAIGN_DEFAULTS: SaleCampaign = {
+  code: "campaign",
+  name: "",
+  brand_slug: "",
+  percent: 10,
+  starts_at: "",
+  ends_at: "",
+  enabled: false,
+};
+
+export async function getSaleCampaign(): Promise<SaleCampaign> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "sale_campaign")
+    .maybeSingle();
+
+  if (!data?.value) return SALE_CAMPAIGN_DEFAULTS;
+  return { ...SALE_CAMPAIGN_DEFAULTS, ...(data.value as Partial<SaleCampaign>) };
+}
+
+/** Одоо хэдэн бараа энэ кампанит ажлаар хямдарсан бэ */
+export async function getSaleCampaignCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .not("sale_campaign", "is", null);
+  return count ?? 0;
+}

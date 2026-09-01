@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   BrochurePage,
   CommerceSettings,
   HeroSettings,
   HeroSlide,
+  SaleCampaign,
 } from "@/lib/queries/settings";
 
 function isSafeImageUrl(url: string): boolean {
@@ -199,4 +201,75 @@ export async function updateAboutBrochure(
   revalidatePath("/about");
   revalidatePath("/admin/settings");
   return { ok: true };
+}
+
+/**
+ * Хямдралын кампанит ажил хадгалах.
+ *
+ * Хадгалмагц sync_sale_campaign()-ийг ШУУД дуудна — админ цаг тутмын
+ * cron хүлээхгүйгээр үр дүнг нь тэр дороо харна. Функц идемпотент тул
+ * давхар дуудагдахад асуудалгүй.
+ */
+export async function updateSaleCampaign(
+  payload: SaleCampaign,
+): Promise<
+  | { ok: true; active: boolean; applied: number; reverted: number }
+  | { ok: false; error: string }
+> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const percent = Number(payload.percent);
+  if (!Number.isFinite(percent) || percent <= 0 || percent >= 100) {
+    return { ok: false, error: "Хямдралын хувь 1–99 хооронд байх ёстой" };
+  }
+  if (!payload.brand_slug.trim()) {
+    return { ok: false, error: "Брэндээ сонгоно уу" };
+  }
+
+  const starts = new Date(payload.starts_at);
+  const ends = new Date(payload.ends_at);
+  if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime())) {
+    return { ok: false, error: "Огноо буруу байна" };
+  }
+  if (ends <= starts) {
+    return { ok: false, error: "Дуусах огноо эхлэхээсээ хойш байх ёстой" };
+  }
+
+  const value: SaleCampaign = {
+    // Код солигдоход хуучин хямдрал автоматаар буцдаг тул тогтвортой байлгана
+    code: payload.code.trim() || "campaign",
+    name: payload.name.trim(),
+    brand_slug: payload.brand_slug.trim(),
+    percent,
+    starts_at: starts.toISOString(),
+    ends_at: ends.toISOString(),
+    enabled: !!payload.enabled,
+  };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_settings").upsert({
+    key: "sale_campaign",
+    value,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { ok: false, error: error.message };
+
+  // Үнийг тэр дороо тохируулна (service_role эрхээр)
+  const admin = createAdminClient();
+  const { data: synced, error: syncErr } = await admin.rpc("sync_sale_campaign");
+  if (syncErr) return { ok: false, error: `Хадгалсан ч үнэ тохируулж чадсангүй: ${syncErr.message}` };
+
+  const res = (synced ?? {}) as { active?: boolean; applied?: number; reverted?: number };
+
+  revalidatePath("/");
+  revalidatePath("/products");
+  revalidatePath("/admin/settings");
+
+  return {
+    ok: true,
+    active: !!res.active,
+    applied: res.applied ?? 0,
+    reverted: res.reverted ?? 0,
+  };
 }
