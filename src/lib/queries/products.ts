@@ -219,3 +219,21 @@ export async function getRelatedProducts(
   if (error) throw error;
   return data ?? [];
 }
+
+/**
+ * Хайлтын түргэн санал (typeahead) — header-ийн хайлтын талбарт.
+ * Брэндийн нэрээр хайсныг мөн дотроо шийднэ ("owolovo" → тэр брэндийн бараа).
+ */
+export async function searchProducts(term: string, limit = 6) {
+  const t = term.trim();
+  if (!t) return [];
+  const brands = await getBrands();
+  const lower = t.toLowerCase();
+  const brand = brands.find((b) => b.name.toLowerCase().includes(lower));
+  return getProducts({
+    search: t,
+    searchBrandId: brand?.id,
+    limit,
+    sort: "name",
+  });
+}

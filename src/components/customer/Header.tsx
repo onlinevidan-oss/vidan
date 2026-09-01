@@ -4,38 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getBrands } from "@/lib/queries/products";
 import { UserMenu } from "@/components/customer/UserMenu";
 import { CartButton } from "@/components/customer/CartButton";
-
-/**
- * Хайлтын форм — JS-гүйгээр ажиллана (GET → /products?search=...).
- * /products хуудас `search` параметрийг серверт нь шүүдэг.
- */
-function SearchBox({ compact = false }: { compact?: boolean }) {
-  return (
-    <form method="get" action="/products" className="relative w-full">
-      <input
-        type="search"
-        name="search"
-        enterKeyHint="search"
-        aria-label="Бүтээгдэхүүн хайх"
-        placeholder={
-          compact
-            ? "Бүтээгдэхүүн хайх..."
-            : "Бүтээгдэхүүн хайх... (жнь. өргөст хэмх, чанамал)"
-        }
-        className={`w-full rounded-full border-[1.5px] border-ink-200 bg-cream pl-11 pr-4 text-sm outline-none transition focus:border-brand-500 focus:bg-white focus:shadow-[0_0_0_3px_var(--color-brand-100)] ${
-          compact ? "py-2.5" : "py-3"
-        }`}
-      />
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm opacity-50">
-        🔍
-      </span>
-      {/* Enter дарахад илгээгдэнэ — гар утсанд "Хайх" товч гарч ирнэ */}
-      <button type="submit" className="sr-only">
-        Хайх
-      </button>
-    </form>
-  );
-}
+import { SearchBox } from "@/components/customer/SearchBox";
 
 function CatChip({ href, label }: { href: string; label: string }) {
   return (
