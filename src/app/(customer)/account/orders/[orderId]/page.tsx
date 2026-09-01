@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/orders";
+import { qrDataUrl } from "@/lib/ebarimt/qr";
+import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
@@ -32,6 +35,20 @@ export default async function CustomerOrderDetail({
 
   if (!order) notFound();
 
+  // Төлбөрийн баримт — e-barimt үүссэн бол QR болон сугалааг харуулна.
+  // Захиалагч хэдийд ч захиалгынхаа хуудсанд буцаж ороод баримтаа харна.
+  const ebarimtItems = (order.items as {
+    quantity: number;
+    product_name: string;
+    unit_price: number;
+  }[]).map((i) => ({
+    product_name: i.product_name,
+    quantity: i.quantity,
+    unit_price: Number(i.unit_price),
+  }));
+  const ebarimt = ebarimtDisplayFromOrder(order, ebarimtItems);
+  const ebarimtQrImage = ebarimt ? await qrDataUrl(ebarimt.qrData) : null;
+
   return (
     <div className="my-6">
       <nav className="mb-2 flex items-center gap-2 text-xs text-ink-500">
@@ -55,6 +72,16 @@ export default async function CustomerOrderDetail({
             initialPaymentStatus={order.payment_status}
             initialCancelledReason={order.cancelled_reason}
           />
+
+          {/* Төлбөрийн баримт — e-barimt үүссэн үед */}
+          {ebarimt && ebarimtQrImage && (
+            <div className="rounded-2xl border border-ink-200 bg-white p-5">
+              <h3 className="font-display mb-3 text-sm font-extrabold uppercase tracking-wider text-ink-700">
+                Төлбөрийн баримт
+              </h3>
+              <ReceiptView response={ebarimt} qrImage={ebarimtQrImage} />
+            </div>
+          )}
 
           {/* Items */}
           <div className="rounded-2xl border border-ink-200 bg-white p-5">
