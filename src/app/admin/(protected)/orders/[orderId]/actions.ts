@@ -70,9 +70,11 @@ export async function updateOrderStatus(
   });
   if (evtErr) console.error("[order event insert failed]", evtErr);
 
-  // Хэрэглэгчид төлөвийн SMS — best effort, урсгалыг тасалдуулахгүй.
-  if (status === "shipping" || status === "delivered" || status === "cancelled") {
-    await sendOrderSms(orderId, status);
+  // Хүргэлтийн явцын SMS илгээхээ БОЛЬСОН. Хэрэглэгч захиалгынхаа
+  // хуудсан дээрх "Захиалгын явц" хэсгээс real-time хардаг.
+  // Цуцлалт нь явцын мэдээлэл биш, төлсөн мөнгөтэй холбоотой тул хэвээр.
+  if (status === "cancelled") {
+    await sendOrderSms(orderId, "cancelled");
   }
 
   revalidatePath(`/admin/orders/${orderId}`);

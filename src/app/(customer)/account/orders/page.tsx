@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
-import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
+import { CUSTOMER_STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 
 export const metadata = { title: "Миний захиалга | VIDAN" };
 export const dynamic = "force-dynamic";
@@ -84,7 +84,7 @@ export default async function MyOrdersPage() {
                   }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {STATUS_LABEL[o.status as OrderStatus] ?? o.status}
+                  {CUSTOMER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}
                 </span>
               </Link>
             );

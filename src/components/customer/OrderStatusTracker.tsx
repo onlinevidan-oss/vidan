@@ -9,20 +9,18 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { STATUS_FLOW, STATUS_LABEL, type OrderStatus } from "@/lib/order-status";
+import {
+  CUSTOMER_STATUS_HINT,
+  CUSTOMER_STATUS_LABEL,
+  STATUS_FLOW,
+  type OrderStatus,
+} from "@/lib/order-status";
 
 type Props = {
   orderId: string;
   initialStatus: OrderStatus;
   initialPaymentStatus: string;
   initialCancelledReason: string | null;
-};
-
-const STEP_HINT: Record<(typeof STATUS_FLOW)[number], string> = {
-  new: "Захиалга хүлээн авлаа",
-  preparing: "Бэлтгэж байна",
-  shipping: "Жолооч хүргэж явна",
-  delivered: "Амжилттай хүргэгдлээ",
 };
 
 export function OrderStatusTracker({
@@ -187,7 +185,7 @@ export function OrderStatusTracker({
                     : "mt-1.5 text-[11px] text-ink-500"
                 }
               >
-                {STATUS_LABEL[s]}
+                {CUSTOMER_STATUS_LABEL[s]}
               </div>
             </div>
           );
@@ -197,7 +195,7 @@ export function OrderStatusTracker({
       {/* Одоогийн алхмын тайлбар */}
       {currentStep >= 0 && (
         <div className="mt-4 rounded-xl bg-lime-50 px-4 py-3 text-center text-sm font-semibold text-lime-700">
-          {STEP_HINT[STATUS_FLOW[currentStep]]}
+          {CUSTOMER_STATUS_HINT[STATUS_FLOW[currentStep]]}
         </div>
       )}
     </div>

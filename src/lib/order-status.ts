@@ -29,6 +29,28 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: "Цуцлагдсан",
 };
 
+/**
+ * Хэрэглэгчид харагдах нэршил — админыхаас өөр.
+ * Админд "Жолоочид" гэдэг нь дотоод үйл явц; худалдан авагчид
+ * "Хүргэлтэд" гэсэн нь ойлгомжтой.
+ */
+export const CUSTOMER_STATUS_LABEL: Record<OrderStatus, string> = {
+  new: "Баталгаажсан",
+  preparing: "Бэлтгэж байна",
+  shipping: "Хүргэлтэд",
+  delivered: "Хүргэгдсэн",
+  cancelled: "Цуцлагдсан",
+};
+
+/** Тухайн алхамд хэрэглэгчид харуулах тайлбар */
+export const CUSTOMER_STATUS_HINT: Record<OrderStatus, string> = {
+  new: "Захиалга баталгаажлаа — 24 цагийн дотор хүргэгдэнэ",
+  preparing: "Захиалга бэлтгэгдэж байна",
+  shipping: "Захиалга хүргэлтэд шилжлээ",
+  delivered: "Захиалга хүргэгдлээ. Баярлалаа!",
+  cancelled: "Захиалга цуцлагдсан",
+};
+
 export const STATUS_STYLE: Record<OrderStatus, string> = {
   new: "bg-[#e8f1fc] text-[#2e7eda]",
   preparing: "bg-lime-100 text-lime-700",

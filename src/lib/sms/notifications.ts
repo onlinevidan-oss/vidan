@@ -1,6 +1,10 @@
 /**
  * Захиалгын SMS мэдэгдэл (best-effort)
- *  · Төлбөр баталгаажих, хүргэлтийн төлөв өөрчлөгдөх үед хэрэглэгчид SMS илгээнэ.
+ *  · Хэрэглэгчид ЗӨВХӨН хоёр тохиолдолд SMS явна:
+ *      paid      — төлбөр баталгаажсан (захиалга бүрт нэг удаа)
+ *      cancelled — захиалга цуцлагдсан
+ *    Хүргэлтийн явцыг (бэлтгэж байна / хүргэлтэд / хүргэгдсэн) захиалгын
+ *    хуудсан дээрх "Захиалгын явц" хэсэг real-time харуулна — SMS явуулахгүй.
  *  · SMS амжилтгүй болох нь гол урсгалыг ХЭЗЭЭ Ч тасалдуулахгүй — алдааг log хийгээд өнгөрнө.
  *  · Илгээсэн SMS бүрийг order_events-д тэмдэглэнэ.
  */
@@ -8,7 +12,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, normalizePhone } from "./client";
 
-type SmsKind = "paid" | "shipping" | "delivered" | "cancelled";
+export type SmsKind = "paid" | "cancelled";
 
 function buildText(
   kind: SmsKind,
@@ -17,11 +21,7 @@ function buildText(
   // Кирилл SMS 70 тэмдэгт / segment тул богино байлгана.
   switch (kind) {
     case "paid":
-      return `VIDAN: Захиалга ${order.order_number} батлагдлаа. Дүн: ${Number(order.total).toLocaleString("en-US")}₮. Баярлалаа!`;
-    case "shipping":
-      return `VIDAN: Захиалга ${order.order_number} хүргэлтэд гарлаа.`;
-    case "delivered":
-      return `VIDAN: Захиалга ${order.order_number} хүргэгдлээ. Баярлалаа!`;
+      return `VIDAN: Захиалга ${order.order_number} баталгаажлаа. 24 цагийн дотор хүргэгдэнэ.`;
     case "cancelled":
       return `VIDAN: Захиалга ${order.order_number} цуцлагдлаа.`;
   }
@@ -56,15 +56,34 @@ export async function sendOrderSms(
     const phone = normalizePhone(order.contact_phone) || normalizePhone(profile?.phone);
     if (!phone) return;
 
+    // ДАВХАР ИЛГЭЭХЭЭС СЭРГИЙЛЭХ: илгээхийн ӨМНӨ тэмдэглэгээ бичнэ.
+    // order_events дээрх unique index (0024) хоёр дахь бичилтийг таслах тул
+    // QPay-ийн callback болон polling зэрэг ажилласан ч SMS нэг л удаа явна.
+    const eventType = `sms_${kind}`;
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: eventType,
+      description: `SMS (${kind}) → ${phone}`,
+    });
+    if (claimErr) {
+      // 23505 = unique violation → өөр процесс аль хэдийн илгээсэн
+      if (claimErr.code === "23505") {
+        console.info(`[sms skipped: already sent] order=${orderId} kind=${kind}`);
+      } else {
+        console.error("[sms claim insert failed]", claimErr);
+      }
+      return;
+    }
+
     const text = buildText(kind, order);
     const result = await sendSms({ to: phone, text });
 
-    const { error: evtErr } = await admin.from("order_events").insert({
-      order_id: orderId,
-      event_type: "sms_sent",
-      description: `SMS (${kind}) → ${phone} [${result.message_id}]`,
-    });
-    if (evtErr) console.error("[sms event insert failed]", evtErr);
+    // Илгээсний дараа message_id-г нөхөж бичнэ (мөрдөх, тооцоо хийхэд)
+    await admin
+      .from("order_events")
+      .update({ description: `SMS (${kind}) → ${phone} [${result.message_id}]` })
+      .eq("order_id", orderId)
+      .eq("event_type", eventType);
   } catch (e) {
     console.error(`[sms send failed] order=${orderId} kind=${kind}`, e);
   }
