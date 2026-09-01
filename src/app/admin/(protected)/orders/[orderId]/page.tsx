@@ -191,8 +191,15 @@ export default async function AdminOrderDetail({
                     ⚠️ Утасны дугааргүй захиалга
                   </div>
                 )}
-                {userObj.email && (
-                  <div className="text-xs text-ink-500">✉ {userObj.email}</div>
+                {userObj.email && !userObj.email.endsWith("@vidan.local") && (
+                  <div className="text-xs text-ink-500">
+                    <a
+                      href={`mailto:${userObj.email}`}
+                      className="hover:text-brand-700"
+                    >
+                      ✉ {userObj.email}
+                    </a>
+                  </div>
                 )}
                 <div className="mt-3 space-y-1 text-xs text-ink-500">
                   <div>
@@ -208,6 +215,73 @@ export default async function AdminOrderDetail({
                 </div>
               </div>
             )}
+
+            {/* Төлбөрийн баримт — хэрэглэгч checkout дээр сонгосон төрөл.
+                Сугалааны дугаарыг утсаар илгээхэд энэ карт хэрэгтэй. */}
+            <div className="rounded-2xl border border-ink-200 bg-white p-5">
+              <h3 className="font-display mb-3 text-sm font-extrabold uppercase tracking-wider text-ink-700">
+                Төлбөрийн баримт
+              </h3>
+
+              <div
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold ${
+                  order.ebarimt_type === "B2B_RECEIPT"
+                    ? "bg-[#ede1f5] text-[#7c3aed]"
+                    : "bg-lime-100 text-lime-700"
+                }`}
+              >
+                {order.ebarimt_type === "B2B_RECEIPT"
+                  ? "🏢 Байгууллага"
+                  : "👤 Хувь хүн"}
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-xs">
+                {order.ebarimt_type === "B2B_RECEIPT" ? (
+                  <div>
+                    <span className="text-ink-500">ТТД / Регистр: </span>
+                    <span className="font-bold text-ink-900">
+                      {order.ebarimt_customer_tin || "—"}
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-ink-500">Иргэний e-barimt дугаар: </span>
+                    <span className="font-bold text-ink-900">
+                      {order.ebarimt_consumer_no || "оруулаагүй"}
+                    </span>
+                  </div>
+                )}
+
+                {/* Сугалааны дугаар — баримт үүссэн бол */}
+                {order.ebarimt_lottery ? (
+                  <div className="mt-2 rounded-lg bg-lime-50 px-3 py-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-lime-700">
+                      Сугалааны дугаар
+                    </div>
+                    <div className="font-display text-base font-black tracking-wider text-ink-900">
+                      {order.ebarimt_lottery}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-ink-500">
+                    Сугалааны дугаар: баримт хараахан үүсээгүй
+                  </div>
+                )}
+
+                {/* Илгээх дугаар — сугалааг SMS-ээр явуулахад */}
+                {(order.contact_phone || userObj?.phone) && (
+                  <div className="mt-2 border-t border-ink-100 pt-2">
+                    <span className="text-ink-500">Илгээх дугаар: </span>
+                    <a
+                      href={`tel:+976${order.contact_phone || userObj?.phone}`}
+                      className="font-bold text-ink-900 hover:text-brand-700"
+                    >
+                      {formatPhone(order.contact_phone || userObj!.phone!)}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {order.address && (
               <div className="rounded-2xl border border-ink-200 bg-white p-5">
