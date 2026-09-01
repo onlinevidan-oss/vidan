@@ -181,7 +181,8 @@ export type SmsSettings = {
 
 export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
   paid_enabled: true,
-  paid_template: "VIDAN: Захиалга {order} баталгаажлаа. 24 цагийн дотор хүргэгдэнэ.",
+  paid_template:
+    "Таны {order} дугаартай захиалга баталгаажлаа. Таны захиалга 24 цагийн дотор хүргэгдэнэ баярлалаа. Видан",
   cancelled_enabled: true,
   cancelled_template: "VIDAN: Захиалга {order} цуцлагдлаа.",
 };
