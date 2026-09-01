@@ -428,9 +428,9 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string | null
+          heart_program: boolean
           id: string
           is_active: boolean
-          heart_program: boolean
           is_bio: boolean
           is_featured: boolean
           is_new: boolean
@@ -439,6 +439,7 @@ export type Database = {
           name_mn: string
           old_price: number | null
           price: number
+          sale_campaign: string | null
           shelf_life: string | null
           short_description: string | null
           sku: string
@@ -458,9 +459,9 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          heart_program?: boolean
           id?: string
           is_active?: boolean
-          heart_program?: boolean
           is_bio?: boolean
           is_featured?: boolean
           is_new?: boolean
@@ -469,6 +470,7 @@ export type Database = {
           name_mn: string
           old_price?: number | null
           price: number
+          sale_campaign?: string | null
           shelf_life?: string | null
           short_description?: string | null
           sku: string
@@ -488,9 +490,9 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          heart_program?: boolean
           id?: string
           is_active?: boolean
-          heart_program?: boolean
           is_bio?: boolean
           is_featured?: boolean
           is_new?: boolean
@@ -499,6 +501,7 @@ export type Database = {
           name_mn?: string
           old_price?: number | null
           price?: number
+          sale_campaign?: string | null
           shelf_life?: string | null
           short_description?: string | null
           sku?: string
@@ -530,14 +533,14 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
-          created_at: string
           birth_date: string | null
-          first_name: string | null
-          gender: string | null
-          last_name: string | null
+          created_at: string
           email: string | null
+          first_name: string | null
           full_name: string | null
+          gender: string | null
           id: string
+          last_name: string | null
           phone: string | null
           segment: string
           total_orders: number
@@ -546,14 +549,14 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
-          created_at?: string
           birth_date?: string | null
-          first_name?: string | null
-          gender?: string | null
-          last_name?: string | null
+          created_at?: string
           email?: string | null
+          first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id: string
+          last_name?: string | null
           phone?: string | null
           segment?: string
           total_orders?: number
@@ -562,14 +565,14 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
-          created_at?: string
           birth_date?: string | null
-          first_name?: string | null
-          gender?: string | null
-          last_name?: string | null
+          created_at?: string
           email?: string | null
+          first_name?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          last_name?: string | null
           phone?: string | null
           segment?: string
           total_orders?: number
@@ -807,6 +810,7 @@ export type Database = {
           total: number
         }[]
       }
+      sync_sale_campaign: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
