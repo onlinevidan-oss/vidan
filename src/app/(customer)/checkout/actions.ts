@@ -13,6 +13,8 @@ export type CheckoutPayload = {
   contactPhone: string;
   /** Нэмэлт утас (сонголтоор) */
   contactPhone2?: string;
+  /** Промо код (сонголтоор) — сервер дахин шалгана */
+  promoCode?: string;
   addressId?: string;
   newAddress?: {
     label: string;
@@ -45,6 +47,12 @@ function translateError(message: string, minOrder: number): string {
   if (message.includes("INVALID_QUANTITY")) return "Барааны тоо буруу";
   if (message.includes("MIN_ORDER_NOT_MET")) {
     return `Захиалгын барааны доод дүн ${formatMnt(minOrder)} (хүргэлт, НӨАТ ороогүй) — сагсандаа бараа нэмнэ үү`;
+  }
+  if (message.includes("PROMO_INVALID")) {
+    const key = message.split("PROMO_INVALID:")[1]?.trim() ?? "";
+    return (
+      PROMO_ERRORS[key] ?? "Промо код хүчингүй байна — дахин оруулна уу"
+    );
   }
   if (message.includes("INSUFFICIENT_STOCK")) {
     return "Зарим бараа дутагдалтай — сагсаа шинэчилнэ үү";
@@ -107,7 +115,7 @@ export async function placeOrder(
       quantity: i.quantity,
     })),
     p_driver_notes: payload.driverNotes,
-    p_promo_code: undefined,
+    p_promo_code: payload.promoCode?.trim() || undefined,
   });
 
   if (error) {
@@ -174,4 +182,77 @@ export async function placeOrder(
     orderId: row.order_id,
     orderNumber: row.order_number,
   };
+}
+
+// ============================================================
+// Промо код шалгах — checkout дээрх урьдчилсан харуулалт.
+//
+// Барааны дүнг CLIENT-ээс АВАХГҮЙ, DB дэх үнээр дахин тооцно —
+// эс бөгөөс хэрэглэгч дүнгээ өсгөж илүү хөнгөлөлт авах боломжтой.
+// Захиалга өгөх үед place_order дотор ДАХИН шалгагдана.
+// ============================================================
+export type PromoCheck =
+  | { ok: true; code: string; discount: number }
+  | { ok: false; error: string };
+
+const PROMO_ERRORS: Record<string, string> = {
+  EMPTY: "Промо кодоо оруулна уу",
+  NOT_FOUND: "Ийм промо код олдсонгүй",
+  INACTIVE: "Энэ промо код идэвхгүй байна",
+  NOT_STARTED: "Энэ промо кодын хугацаа эхлээгүй байна",
+  EXPIRED: "Энэ промо кодын хугацаа дууссан байна",
+  MIN_ORDER: "Захиалгын дүн энэ кодод хүрэхгүй байна",
+  LIMIT_REACHED: "Энэ промо кодын хязгаар дууссан байна",
+  USER_LIMIT: "Та энэ кодыг аль хэдийн ашигласан байна",
+  SEGMENT: "Энэ код танд хамаарахгүй байна",
+  UNSUPPORTED_TYPE: "Энэ кодыг одоогоор ашиглах боломжгүй",
+};
+
+export async function checkPromoCode(
+  items: { productId: string; quantity: number }[],
+  code: string,
+): Promise<PromoCheck> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Нэвтэрнэ үү" };
+
+  const trimmed = code.trim();
+  if (!trimmed) return { ok: false, error: PROMO_ERRORS.EMPTY };
+  if (!items.length) return { ok: false, error: "Сагс хоосон байна" };
+
+  // Барааны дүнг DB-ийн үнээр тооцно
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, price")
+    .in("id", items.map((i) => i.productId))
+    .eq("is_active", true);
+
+  const priceById = new Map((products ?? []).map((p) => [p.id, Number(p.price)]));
+  const subtotal = items.reduce(
+    (sum, i) => sum + (priceById.get(i.productId) ?? 0) * i.quantity,
+    0,
+  );
+  if (subtotal <= 0) return { ok: false, error: "Сагс хоосон байна" };
+
+  const { data, error } = await supabase.rpc("validate_promo", {
+    p_code: trimmed,
+    p_user_id: user.id,
+    p_subtotal: subtotal,
+  });
+  if (error) return { ok: false, error: "Код шалгахад алдаа гарлаа" };
+
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { valid: boolean; discount: number; error: string | null }
+    | undefined;
+
+  if (!row?.valid) {
+    return {
+      ok: false,
+      error: PROMO_ERRORS[row?.error ?? ""] ?? "Промо код хүчингүй байна",
+    };
+  }
+
+  return { ok: true, code: trimmed.toUpperCase(), discount: Number(row.discount) };
 }

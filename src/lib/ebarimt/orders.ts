@@ -48,7 +48,7 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
     const { data: order } = await admin
       .from("orders")
       .select(
-        "id, total, shipping, payment_method, payment_status, ebarimt_id, ebarimt_type, ebarimt_customer_tin, ebarimt_consumer_no",
+        "id, total, shipping, discount, payment_method, payment_status, ebarimt_id, ebarimt_type, ebarimt_customer_tin, ebarimt_consumer_no",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -86,6 +86,28 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
       taxType: "VAT_ABLE",
       measureUnit: "ш",
     }));
+
+    // ПРОМО ХӨНГӨЛӨЛТ — баримт бодит төлсөн дүнг тусгах ёстой.
+    // Захиалгын түвшний хөнгөлөлтийг мөр бүрд харьцаагаар хуваарилж,
+    // нэгжийн үнийг бууруулна (unitPrice × qty = мөрийн бодит дүн).
+    const discount = Number(order.discount) || 0;
+    if (discount > 0) {
+      const goodsTotal = lineItems.reduce((s, li) => s + li.unitPrice * li.qty, 0);
+      if (goodsTotal > 0) {
+        const ratio = (goodsTotal - discount) / goodsTotal;
+        for (const li of lineItems) {
+          li.unitPrice = Math.max(0, Math.round(li.unitPrice * ratio));
+        }
+        // Бүхэл тоонд хуваарилахад үлдэгдэл гарч болзошгүй — хянахын тулд log
+        const after = lineItems.reduce((s, li) => s + li.unitPrice * li.qty, 0);
+        const residual = goodsTotal - discount - after;
+        if (residual !== 0) {
+          console.warn(
+            `[ebarimt] хөнгөлөлт хуваарилахад ${residual}₮ зөрүү үлдлээ order=${orderId}`,
+          );
+        }
+      }
+    }
 
     // Хүргэлтийн төлбөр — тусдаа мөр (НӨАТ-гүй, одоогийн үнэ бодлоготой нийцүүлэв)
     const shipping = Number(order.shipping) || 0;

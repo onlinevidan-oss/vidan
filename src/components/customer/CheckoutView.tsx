@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
-import { placeOrder } from "@/app/(customer)/checkout/actions";
+import { checkPromoCode, placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
   COMMERCE_DEFAULTS,
@@ -67,6 +67,11 @@ export function CheckoutView({
   // Имэйл/Google-ээр нэвтэрсэн хэрэглэгчид энэ талбар хоосон ирнэ.
   const [phone, setPhone] = useState(() => toLocalPhone(profile?.phone));
   const [phone2, setPhone2] = useState("");
+  // Промо код — сервер шалгаж хөнгөлөлтийг буцаана
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discount: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
   const [notes, setNotes] = useState("");
   // Баримт — хувь хүн (B2C) / байгууллага (B2B)
   const [ebarimtType, setEbarimtType] = useState<"B2C_RECEIPT" | "B2B_RECEIPT">(
@@ -113,8 +118,37 @@ export function CheckoutView({
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
+  const discount = promo?.discount ?? 0;
+  const { shipping, tax, total } = calculateOrderTotals(
+    subtotal,
+    settings,
+    itemCount,
+    discount,
+  );
   const belowMinOrder = subtotal < settings.min_order_amount;
+
+  async function applyPromo() {
+    setPromoError(null);
+    setPromoChecking(true);
+    const res = await checkPromoCode(
+      items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      promoInput,
+    );
+    setPromoChecking(false);
+    if (res.ok) {
+      setPromo({ code: res.code, discount: res.discount });
+      setPromoInput(res.code);
+    } else {
+      setPromo(null);
+      setPromoError(res.error);
+    }
+  }
+
+  function removePromo() {
+    setPromo(null);
+    setPromoInput("");
+    setPromoError(null);
+  }
 
   function handleSubmit() {
     setError(null);
@@ -161,6 +195,7 @@ export function CheckoutView({
         paymentMethod: "qpay",
         contactPhone: phone,
         contactPhone2: phone2,
+        promoCode: promo?.code,
         driverNotes: notes,
         ebarimtType,
         ebarimtConsumerNo: consumerNo,
@@ -475,8 +510,66 @@ export function CheckoutView({
                 </div>
               ))}
             </div>
+            {/* Промо код */}
+            <div className="my-3 h-px bg-ink-100" />
+            {promo ? (
+              <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-lime-300 bg-lime-50 px-3 py-2.5">
+                <span className="text-xs font-bold text-lime-700">
+                  🎟 {promo.code} — {formatMnt(promo.discount)} хөнгөлөлт
+                </span>
+                <button
+                  type="button"
+                  onClick={removePromo}
+                  className="text-xs font-bold text-ink-500 transition hover:text-brand-700"
+                >
+                  Хасах
+                </button>
+              </div>
+            ) : (
+              <div className="mb-3">
+                <div className="flex gap-2">
+                  <input
+                    value={promoInput}
+                    onChange={(e) => {
+                      setPromoInput(e.target.value.toUpperCase());
+                      setPromoError(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void applyPromo();
+                      }
+                    }}
+                    placeholder="Промо код"
+                    autoComplete="off"
+                    className="min-w-0 flex-1 rounded-lg border-[1.5px] border-ink-200 bg-cream px-3 py-2 text-sm uppercase outline-none transition focus:border-brand-500 focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void applyPromo()}
+                    disabled={promoChecking || !promoInput.trim()}
+                    className="shrink-0 rounded-lg border-[1.5px] border-ink-200 px-4 py-2 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 disabled:opacity-40"
+                  >
+                    {promoChecking ? "…" : "Ашиглах"}
+                  </button>
+                </div>
+                {promoError && (
+                  <p className="mt-1.5 text-xs font-semibold text-brand-700">
+                    {promoError}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="my-3 h-px bg-ink-100" />
             <Row label="Барааны дүн" value={formatMnt(subtotal)} />
+            {discount > 0 && (
+              <Row
+                label={`Хөнгөлөлт (${promo?.code})`}
+                value={`−${formatMnt(discount)}`}
+                accent="success"
+              />
+            )}
             <Row label="Хүргэлт" value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
               accent={shipping === 0 ? "success" : undefined} />
             <Row label="НӨАТ (10%)" value={formatMnt(tax)} />

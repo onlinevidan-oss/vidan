@@ -581,6 +581,55 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_redemptions: {
+        Row: {
+          created_at: string
+          discount: number
+          id: string
+          order_id: string
+          promo_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          discount?: number
+          id?: string
+          order_id: string
+          promo_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          discount?: number
+          id?: string
+          order_id?: string
+          promo_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_promo_id_fkey"
+            columns: ["promo_id"]
+            isOneToOne: false
+            referencedRelation: "promotions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_redemptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promotions: {
         Row: {
           code: string
@@ -777,15 +826,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calc_order_totals: {
-        Args: { p_item_count?: number; p_subtotal: number }
-        Returns: {
-          shipping: number
-          subtotal: number
-          tax: number
-          total: number
-        }[]
-      }
+      calc_order_totals:
+        | {
+            Args: { p_item_count?: number; p_subtotal: number }
+            Returns: {
+              shipping: number
+              subtotal: number
+              tax: number
+              total: number
+            }[]
+          }
+        | {
+            Args: {
+              p_discount?: number
+              p_item_count?: number
+              p_subtotal: number
+            }
+            Returns: {
+              discount: number
+              shipping: number
+              subtotal: number
+              tax: number
+              total: number
+            }[]
+          }
       is_admin: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       mark_order_paid: {
@@ -811,6 +875,15 @@ export type Database = {
         }[]
       }
       sync_sale_campaign: { Args: never; Returns: Json }
+      validate_promo: {
+        Args: { p_code: string; p_subtotal: number; p_user_id: string }
+        Returns: {
+          discount: number
+          error: string
+          promo_id: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
