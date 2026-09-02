@@ -127,11 +127,13 @@ export function ProductCard({ product }: { product: ProductRow }) {
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between gap-2">
-          {/* Хямдралтай үед хуучин үнийг ДЭЭР нь тусад нь мөрөнд —
-              нарийн картанд хоёр үнэ хажуугаараа багтахгүй, наалдаж
-              нэг тоо мэт уншигддаг байсан */}
-          <div className="min-w-0">
+        {/* Үнэ ба сагсны товч — ТУСДАА мөрөнд.
+            Нарийн карт (гар утсанд ~173px) дээр тоо тохируулагч (76px)
+            үнэтэй нэг мөрөнд багтахгүй, үнийг шахаж ирмэг рүү наалддаг
+            байсан. Товчийг доор нь бүтэн өргөнөөр тавьснаар хоёулаа
+            тухтай багтаж, хуруугаар дарахад ч том талбайтай болов. */}
+        <div className="mt-auto">
+          <div className="mb-2">
             {product.old_price && product.old_price > product.price && (
               <div className="text-[11px] font-medium leading-none text-ink-500 line-through">
                 {formatMnt(product.old_price)}
@@ -141,17 +143,18 @@ export function ProductCard({ product }: { product: ProductRow }) {
               {formatMnt(product.price)}
             </div>
           </div>
+
           {qty === 0 ? (
             <button
               onClick={handleAdd}
-              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
+              className="grid h-[38px] w-full place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:bg-brand-700"
               title="Сагсанд нэмэх"
             >
               +
             </button>
           ) : (
             <div
-              className="flex h-[38px] shrink-0 items-center overflow-hidden rounded-[10px] bg-brand-600 text-white"
+              className="flex h-[38px] w-full items-center overflow-hidden rounded-[10px] bg-brand-600 text-white"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -163,20 +166,20 @@ export function ProductCard({ product }: { product: ProductRow }) {
                   e.stopPropagation();
                   setQuantity(product.id, qty - 1);
                 }}
-                className="grid h-full w-[28px] place-items-center text-base font-bold transition hover:bg-brand-700"
+                className="grid h-full flex-1 place-items-center text-base font-bold transition hover:bg-brand-700"
                 title="Хасах"
               >
                 −
               </button>
               <span
                 key={qty}
-                className="grid min-w-[20px] animate-[pop_.25s_ease] place-items-center text-center text-sm font-extrabold tabular-nums"
+                className="grid min-w-[28px] animate-[pop_.25s_ease] place-items-center text-center text-sm font-extrabold tabular-nums"
               >
                 {qty}
               </span>
               <button
                 onClick={handleAdd}
-                className="grid h-full w-[28px] place-items-center text-base font-bold transition hover:bg-brand-700"
+                className="grid h-full flex-1 place-items-center text-base font-bold transition hover:bg-brand-700"
                 title="Нэмэх"
               >
                 +
