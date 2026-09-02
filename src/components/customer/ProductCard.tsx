@@ -127,26 +127,31 @@ export function ProductCard({ product }: { product: ProductRow }) {
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between">
-          <div className="font-display text-[17px] font-extrabold text-ink-900">
-            {formatMnt(product.price)}
+        <div className="mt-auto flex items-center justify-between gap-2">
+          {/* Хямдралтай үед хуучин үнийг ДЭЭР нь тусад нь мөрөнд —
+              нарийн картанд хоёр үнэ хажуугаараа багтахгүй, наалдаж
+              нэг тоо мэт уншигддаг байсан */}
+          <div className="min-w-0">
             {product.old_price && product.old_price > product.price && (
-              <span className="ml-1 text-xs font-medium text-ink-500 line-through">
+              <div className="text-[11px] font-medium leading-none text-ink-500 line-through">
                 {formatMnt(product.old_price)}
-              </span>
+              </div>
             )}
+            <div className="font-display text-[17px] font-extrabold leading-tight text-ink-900">
+              {formatMnt(product.price)}
+            </div>
           </div>
           {qty === 0 ? (
             <button
               onClick={handleAdd}
-              className="grid h-[38px] w-[38px] place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
+              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:scale-105 hover:bg-brand-700"
               title="Сагсанд нэмэх"
             >
               +
             </button>
           ) : (
             <div
-              className="flex h-[38px] items-center overflow-hidden rounded-[10px] bg-brand-600 text-white"
+              className="flex h-[38px] shrink-0 items-center overflow-hidden rounded-[10px] bg-brand-600 text-white"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
