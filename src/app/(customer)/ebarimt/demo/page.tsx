@@ -10,6 +10,8 @@ import { createReceipt } from "@/lib/ebarimt/posapi";
 import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 
+export const metadata = { title: "E-Barimt demo", robots: { index: false, follow: false } };
+
 /** Демо баримт бүтээх — алдааг JSX-ээс тусад нь буцаана */
 async function buildDemoReceipt(input: BuildReceiptInput) {
   try {

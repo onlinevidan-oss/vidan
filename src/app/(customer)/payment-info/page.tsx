@@ -1,0 +1,4 @@
+import type { Metadata } from "next";
+import { InfoPage } from "@/components/customer/InfoPage";
+export const metadata: Metadata = { title: "Төлбөрийн нөхцөл", description: "VIDAN онлайн захиалгын QPay төлбөр болон цахим баримтын мэдээлэл.", alternates: { canonical: "/payment-info" } };
+export default function PaymentInfoPage() { return <InfoPage title="Төлбөрийн нөхцөл" intro="Онлайн захиалгын төлбөрийг QPay-аар найдвартай төлнө."><section><h2>QPay төлбөр</h2><p>Захиалга үүсгэсний дараа банкны апп сонгох эсвэл QR код уншуулж төлбөрөө баталгаажуулна.</p></section><section><h2>Төлбөрийн баталгаажуулалт</h2><p>Амжилттай төлөлт системд баталгаажмагц захиалгын төлөв шинэчлэгдэнэ. Нэг захиалгыг давтан төлөхгүй байхыг анхаарна уу.</p></section><section><h2>Цахим баримт</h2><p>Захиалга хийхдээ хувь хүн эсвэл байгууллагын баримтын төрлийг сонгож, шаардлагатай мэдээллийг үнэн зөв оруулна.</p></section></InfoPage>; }

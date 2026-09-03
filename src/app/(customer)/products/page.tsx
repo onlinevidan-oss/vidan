@@ -7,8 +7,20 @@ import {
   getProducts,
   type ProductSort,
 } from "@/lib/queries/products";
+import type { Metadata } from "next";
+import { SearchEvent, ViewItemListEvent } from "@/components/analytics/EcommerceEvents";
 
-export const metadata = { title: "Бүтээгдэхүүн | VIDAN" };
+export async function generateMetadata({ searchParams }: PageProps<"/products">): Promise<Metadata> {
+  const params = await searchParams;
+  const shouldNoIndex = typeof params.search === "string" || typeof params.sort === "string";
+  return {
+    title: "Бүтээгдэхүүн",
+    description: "VIDAN, Алимхан, Мангас, Owolovo брэндийн нухаш, даршилсан ногоо, чанамал, зөгийн бал болон шүүсийг онлайнаар захиалаарай.",
+    alternates: { canonical: "/products" },
+    robots: shouldNoIndex ? { index: false, follow: true } : { index: true, follow: true },
+    openGraph: { url: "/products", title: "Бүтээгдэхүүн | VIDAN" },
+  };
+}
 // `searchParams` уншсанаар Next.js автоматаар динамик renderлэдэг,
 // тиймээс force-dynamic шаардлагагүй; жирийн /products шалтгаангүй
 // тохиолдолд CDN кэшлэгдэх боломжтой.
@@ -63,9 +75,15 @@ export default async function ProductsPage({
 
   return (
     <div className="my-6">
+      <ViewItemListEvent
+        listId="products"
+        listName={pageTitle}
+        items={products.map((product) => ({ item_id: product.id, item_name: product.name_mn, item_category: product.category?.name_mn ?? undefined, price: Number(product.price), quantity: 1 }))}
+      />
+      {search && <SearchEvent term={search} />}
       {/* Breadcrumb + title */}
       <div className="mb-6">
-        <nav className="mb-2 flex items-center gap-2 text-xs text-ink-500">
+        <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-2 text-xs text-ink-500">
           <Link href="/" className="hover:text-brand-700">Нүүр</Link>
           <span>/</span>
           <Link href="/products" className="hover:text-brand-700">Бүтээгдэхүүн</Link>
@@ -112,7 +130,7 @@ export default async function ProductsPage({
               {brands.map((b) => (
                 <li key={b.id}>
                   <Link
-                    href={`/products?brand=${b.slug}`}
+                    href={`/brands/${b.slug}`}
                     className={
                       brandSlug === b.slug
                         ? "flex items-center justify-between rounded-lg bg-brand-100 px-3 py-2 text-sm font-bold text-brand-700"
@@ -149,7 +167,7 @@ export default async function ProductsPage({
                     href={
                       brandSlug
                         ? `/products?brand=${brandSlug}&category=${c.slug}`
-                        : `/products?category=${c.slug}`
+                        : `/categories/${c.slug}`
                     }
                     className={
                       categorySlug === c.slug

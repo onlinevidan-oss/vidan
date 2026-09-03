@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/stores/cart";
@@ -10,6 +11,7 @@ import {
   COMMERCE_DEFAULTS,
   type CommerceSettings,
 } from "@/lib/pricing";
+import { ecommerceItems, trackEvent } from "@/lib/analytics";
 
 export function CartView({
   settings = COMMERCE_DEFAULTS,
@@ -22,6 +24,13 @@ export function CartView({
   const setQuantity = useCart((s) => s.setQuantity);
   const removeItem = useCart((s) => s.removeItem);
   const clear = useCart((s) => s.clear);
+  const viewCartSent = useRef(false);
+
+  useEffect(() => {
+    if (!items.length || viewCartSent.current) return;
+    viewCartSent.current = true;
+    trackEvent("view_cart", { currency: "MNT", value: subtotal, items: ecommerceItems(items) });
+  }, [items, subtotal]);
 
   if (items.length === 0) {
     return (
@@ -60,7 +69,10 @@ export function CartView({
           Сагс
         </h1>
         <button
-          onClick={clear}
+          onClick={() => {
+            trackEvent("remove_from_cart", { currency: "MNT", value: subtotal, items: ecommerceItems(items) });
+            clear();
+          }}
           className="text-xs font-bold text-ink-500 underline transition hover:text-brand-700"
         >
           Сагс хоослох
@@ -88,7 +100,6 @@ export function CartView({
                       fill
                       className="object-cover"
                       sizes="96px"
-                      unoptimized={item.imageUrl.startsWith("http")}
                     />
                   </Link>
                 ) : (
@@ -134,7 +145,14 @@ export function CartView({
                       </button>
                     </div>
                     <button
-                      onClick={() => removeItem(item.productId)}
+                      onClick={() => {
+                        trackEvent("remove_from_cart", {
+                          currency: "MNT",
+                          value: item.price * item.quantity,
+                          items: ecommerceItems([item]),
+                        });
+                        removeItem(item.productId);
+                      }}
                       className="text-xs font-bold text-brand-600 underline-offset-2 transition hover:underline"
                     >
                       Хасах
@@ -186,6 +204,11 @@ export function CartView({
             ) : (
               <Link
                 href="/checkout"
+                onClick={() => trackEvent("begin_checkout", {
+                  currency: "MNT",
+                  value: total,
+                  items: ecommerceItems(items),
+                })}
                 className="flex w-full items-center justify-center rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700"
               >
                 Захиалга өгөх →

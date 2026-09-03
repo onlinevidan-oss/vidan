@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
 import { CUSTOMER_STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 
-export const metadata = { title: "Миний захиалга | VIDAN" };
+export const metadata = { title: "Миний захиалга", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function MyOrdersPage() {

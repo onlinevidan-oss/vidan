@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "@/stores/cart";
+import { trackEvent } from "@/lib/analytics";
 
 export function AddToCartBlock({
   product,
@@ -32,6 +33,16 @@ export function AddToCartBlock({
       },
       qty,
     );
+    trackEvent("add_to_cart", {
+      currency: "MNT",
+      value: product.price * qty,
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        price: product.price,
+        quantity: qty,
+      }],
+    });
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1800);
   }

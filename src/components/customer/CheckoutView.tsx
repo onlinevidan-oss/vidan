@@ -13,6 +13,7 @@ import {
 } from "@/lib/pricing";
 import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
 import type { Database } from "@/lib/supabase/database.types";
+import { ecommerceItems, trackEvent } from "@/lib/analytics";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
 
@@ -184,6 +185,19 @@ export function CheckoutView({
       setError("Байгууллагын баримтад ТТД/регистрийн дугаар (7 орон) шаардлагатай");
       return;
     }
+    const analyticsItems = ecommerceItems(items);
+    trackEvent("add_shipping_info", {
+      currency: "MNT",
+      value: total,
+      shipping_tier: "Улаанбаатар хүргэлт",
+      items: analyticsItems,
+    });
+    trackEvent("add_payment_info", {
+      currency: "MNT",
+      value: total,
+      payment_type: "QPay",
+      items: analyticsItems,
+    });
     startTransition(async () => {
       const result = await placeOrder({
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),

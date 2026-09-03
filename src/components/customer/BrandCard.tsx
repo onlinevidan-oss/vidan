@@ -21,7 +21,7 @@ export function BrandCard({ brand }: { brand: BrandCardData }) {
 
   return (
     <Link
-      href={`/products?brand=${brand.slug}`}
+      href={`/brands/${brand.slug}`}
       className="group flex flex-col"
     >
       <div
@@ -35,7 +35,6 @@ export function BrandCard({ brand }: { brand: BrandCardData }) {
               alt={brand.name}
               fill
               className="object-cover transition group-hover:scale-105"
-              unoptimized={brand.logo_url.startsWith("http")}
               sizes="(max-width: 768px) 45vw, 20vw"
             />
           ) : (
@@ -46,7 +45,6 @@ export function BrandCard({ brand }: { brand: BrandCardData }) {
                 width={240}
                 height={140}
                 className="max-h-[62%] w-auto max-w-[80%] object-contain transition group-hover:scale-105"
-                unoptimized={brand.logo_url.startsWith("http")}
               />
             </div>
           ))}

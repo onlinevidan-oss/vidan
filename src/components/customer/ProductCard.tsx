@@ -7,9 +7,11 @@ import { getProductMeta, getProductTag } from "@/lib/product-meta";
 import { useCart } from "@/stores/cart";
 import { HeartProgramNote } from "@/components/customer/HeartProgramNote";
 import type { Database } from "@/lib/supabase/database.types";
+import { trackEvent } from "@/lib/analytics";
 
 export type ProductRow = Database["public"]["Tables"]["products"]["Row"] & {
   category?: { name_mn: string | null; slug: string } | null;
+  brand?: { name: string; slug: string } | null;
   images?: { url: string; sort_order: number | null }[] | null;
 };
 
@@ -59,11 +61,27 @@ export function ProductCard({ product }: { product: ProductRow }) {
       price: product.price,
       imageUrl: firstImage ?? null,
     });
+    trackEvent("add_to_cart", {
+      currency: "MNT",
+      value: product.price,
+      items: [{
+        item_id: product.id,
+        item_name: product.name_mn,
+        item_category: product.category?.name_mn ?? undefined,
+        price: product.price,
+        quantity: 1,
+      }],
+    });
   }
 
   return (
     <Link
       href={`/products/${product.slug}`}
+      onClick={() => trackEvent("select_item", {
+        item_list_id: "product_grid",
+        item_list_name: "Бүтээгдэхүүний жагсаалт",
+        items: [{ item_id: product.id, item_name: product.name_mn, price: product.price, quantity: 1 }],
+      })}
       className="group flex flex-col overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-lg)]"
     >
       <div
@@ -83,7 +101,6 @@ export function ProductCard({ product }: { product: ProductRow }) {
               fill
               className="object-contain transition group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-              unoptimized={firstImage.startsWith("http")}
             />
           </div>
         ) : (
@@ -97,6 +114,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
           </span>
         )}
         <button
+          aria-label={`${product.name_mn}-г дуртай бүтээгдэхүүнд нэмэх`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -114,12 +132,6 @@ export function ProductCard({ product }: { product: ProductRow }) {
         <h3 className="mt-1 mb-2 min-h-[38px] text-sm font-semibold text-ink-900">
           {product.name_mn}
         </h3>
-        <div className="mb-3 flex items-center gap-1.5 text-xs text-ink-500">
-          <span className="text-[#f5b942]">★</span> 4.8{" "}
-          <span className="h-[3px] w-[3px] rounded-full bg-ink-300" />
-          150+ үнэлгээ
-        </div>
-
         {/* ХҮРЭН ЗҮРХ хөтөлбөр */}
         {product.heart_program && (
           <div className="mb-3">

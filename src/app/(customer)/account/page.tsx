@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "@/components/customer/ProfileForm";
 
-export const metadata = { title: "Миний мэдээлэл | VIDAN" };
+export const metadata = { title: "Миний мэдээлэл", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {

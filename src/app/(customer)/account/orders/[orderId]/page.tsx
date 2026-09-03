@@ -8,7 +8,7 @@ import { formatMnt } from "@/lib/utils";
 import { type OrderStatus } from "@/lib/order-status";
 import { OrderStatusTracker } from "@/components/customer/OrderStatusTracker";
 
-export const metadata = { title: "Захиалгын дэлгэрэнгүй | VIDAN" };
+export const metadata = { title: "Захиалгын дэлгэрэнгүй", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 const PAYMENT_STATUS_LABEL: Record<string, string> = {

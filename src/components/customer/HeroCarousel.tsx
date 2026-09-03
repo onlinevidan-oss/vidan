@@ -117,7 +117,6 @@ function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
           className={`pointer-events-none object-center ${
             hasText ? "object-cover" : "object-contain"
           }`}
-          unoptimized={slide.image_url.startsWith("http")}
           priority={priority}
           sizes="100vw"
         />

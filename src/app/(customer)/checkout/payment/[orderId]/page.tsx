@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ensureInvoiceForOrder, type QpayBankUrl } from "@/lib/qpay/orders";
 import { QpayPayment } from "@/components/customer/QpayPayment";
 
-export const metadata = { title: "QPay төлбөр | VIDAN" };
+export const metadata = { title: "QPay төлбөр", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function PaymentPage({

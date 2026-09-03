@@ -38,7 +38,7 @@ function BrandPill({ brand }: { brand: BrandCardData }) {
 
   return (
     <Link
-      href={`/products?brand=${brand.slug}`}
+      href={`/brands/${brand.slug}`}
       className="group/pill flex w-[132px] shrink-0 flex-col items-center"
       title={brand.name}
     >
@@ -52,7 +52,6 @@ function BrandPill({ brand }: { brand: BrandCardData }) {
             alt={brand.name}
             width={160}
             height={80}
-            unoptimized={brand.logo_url.startsWith("http")}
             className="max-h-[44px] w-auto max-w-full object-contain"
           />
         ) : (

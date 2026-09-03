@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { FeedbackForm } from "@/components/customer/FeedbackForm";
 
-export const metadata = { title: "Санал хүсэлт | VIDAN" };
+export const metadata = {
+  title: "Санал хүсэлт",
+  description: "VIDAN брэндтэй холбоо барих, санал хүсэлт илгээх утас, имэйл болон хаягийн мэдээлэл.",
+  alternates: { canonical: "/feedback" },
+};
 
 const FB_PAGE = "https://www.facebook.com/vidanofficial";
 

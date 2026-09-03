@@ -5,8 +5,9 @@ import { formatMnt } from "@/lib/utils";
 import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/orders";
 import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
+import { PurchaseEvent } from "@/components/analytics/EcommerceEvents";
 
-export const metadata = { title: "Захиалга баталгаажлаа | VIDAN" };
+export const metadata = { title: "Захиалга баталгаажлаа", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 export default async function OrderSuccessPage({
@@ -22,7 +23,7 @@ export default async function OrderSuccessPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("*, items:order_items(quantity, product_name, unit_price, subtotal)")
+    .select("*, items:order_items(product_id, product_sku, quantity, product_name, unit_price, subtotal)")
     .eq("id", orderId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -45,6 +46,24 @@ export default async function OrderSuccessPage({
 
   return (
     <div className="my-10 grid place-items-center">
+      <PurchaseEvent
+        transactionId={order.order_number}
+        value={Number(order.total)}
+        shipping={Number(order.shipping)}
+        tax={Number(order.tax)}
+        items={(order.items as {
+          quantity: number;
+          product_name: string;
+          unit_price: number;
+          product_id: string | null;
+          product_sku: string | null;
+        }[]).map((item, index) => ({
+          item_id: item.product_id ?? item.product_sku ?? `${order.id}-${index + 1}`,
+          item_name: item.product_name,
+          price: Number(item.unit_price),
+          quantity: item.quantity,
+        }))}
+      />
       <div className="w-full max-w-[640px] rounded-2xl border border-ink-200 bg-white p-10 shadow-[var(--shadow-brand-md)]">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full border-[3px] border-lime-500 bg-lime-100 text-5xl text-lime-700">

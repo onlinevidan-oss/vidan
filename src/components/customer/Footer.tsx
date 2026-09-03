@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/analytics/CookieSettingsButton";
 
 const FB_PAGE = "https://www.facebook.com/vidanofficial";
 /** Ажлын байрны зар — Zangia дээрх компанийн хуудас */
@@ -51,17 +52,17 @@ export function Footer() {
               { label: "Бидний тухай", href: "/about" },
               { label: "Мэдээ мэдээлэл", href: FB_PAGE, external: true },
               { label: "Ажлын байр", href: JOBS_PAGE, external: true },
-              { label: "Хамтрагч", href: "#" },
             ]}
           />
           <FooterCol
             title="Тусламж"
             items={[
               { label: "Санал хүсэлт", href: "/feedback" },
-              { label: "Хүргэлт (24 цаг)", href: "/feedback" },
-              { label: "Буцаалт", href: FB_PAGE, external: true },
-              { label: "Санал гомдол", href: FB_PAGE, external: true },
-              { label: "Түгээмэл асуулт", href: FB_PAGE, external: true },
+              { label: "Хүргэлт (24 цаг)", href: "/delivery" },
+              { label: "Төлбөрийн нөхцөл", href: "/payment-info" },
+              { label: "Буцаалт, солилт", href: "/returns" },
+              { label: "Түгээмэл асуулт", href: "/faq" },
+              { label: "Нууцлал ба cookie", href: "/privacy" },
             ]}
           />
           <div>
@@ -83,12 +84,13 @@ export function Footer() {
               <li className="mt-2 text-[13px]">
                 📍 Баянгол дүүрэг, 20-р хороо, Үйлдвэрийн баруун бүс ХД-50
               </li>
+              <li><CookieSettingsButton /></li>
             </ul>
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[13px] opacity-60 md:flex-row">
-          <span>© 2025 Дөрвөн Өлзий ХХК. Бүх эрх хуулиар хамгаалагдсан.</span>
+          <span>© {new Date().getFullYear()} Дөрвөн Өлзий ХХК. Бүх эрх хуулиар хамгаалагдсан.</span>
           <span>VIDAN брэнд · Үндэсний үйлдвэрлэл</span>
         </div>
       </div>

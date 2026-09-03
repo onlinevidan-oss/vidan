@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { getAboutBrochure } from "@/lib/queries/settings";
+import { getPublicAboutBrochure } from "@/lib/queries/public-settings";
 
 export const metadata: Metadata = {
-  title: "Бидний тухай | Дөрвөн Өлзий ХХК — VIDAN",
+  title: "Бидний тухай | Дөрвөн Өлзий ХХК",
   description:
     "Дөрвөн Өлзий ХХК нь 1996 онд үүсгэн байгуулагдаж, 2008 оноос Польш технологиор эх орны хөрсний хүнсний ногоог нөөшилсөн ВИДАН брэндийн бүтээгдэхүүн үйлдвэрлэж байна. Компанийн танилцуулга.",
   alternates: { canonical: "/about" },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function AboutPage() {
-  const brochure = await getAboutBrochure();
+  const brochure = await getPublicAboutBrochure();
 
   return (
     <div className="my-6">
@@ -49,7 +49,6 @@ export default async function AboutPage() {
               width={page.width}
               height={page.height}
               sizes="(max-width: 940px) 100vw, 900px"
-              unoptimized={page.url.startsWith("http")}
               priority={i === 0}
               loading={i === 0 ? undefined : "lazy"}
               className="w-full rounded-[14px] border border-ink-200 bg-white shadow-[var(--shadow-brand-sm)]"

@@ -4,7 +4,7 @@ import { CheckoutView } from "@/components/customer/CheckoutView";
 import { getCommerceSettings } from "@/lib/queries/settings";
 import { isEbarimtConfigured } from "@/lib/ebarimt/posapi";
 
-export const metadata = { title: "Захиалга өгөх | VIDAN" };
+export const metadata = { title: "Захиалга өгөх", robots: { index: false, follow: false } };
 
 export default async function CheckoutPage() {
   const supabase = await createClient();

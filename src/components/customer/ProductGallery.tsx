@@ -24,7 +24,6 @@ export function ProductGallery({
           fill
           className="object-cover"
           sizes="(max-width: 1024px) 100vw, 50vw"
-          unoptimized={current.url.startsWith("http")}
           priority
         />
         {tag && tagText && (
@@ -47,6 +46,7 @@ export function ProductGallery({
           {images.slice(0, 5).map((img, i) => (
             <button
               key={i}
+              aria-label={`${img.alt} зураг ${i + 1}`}
               onClick={() => setActive(i)}
               className={`relative aspect-square overflow-hidden rounded-lg border-[2px] bg-cream-100 transition ${
                 i === active
@@ -60,7 +60,6 @@ export function ProductGallery({
                 fill
                 className="object-cover"
                 sizes="100px"
-                unoptimized={img.url.startsWith("http")}
               />
             </button>
           ))}

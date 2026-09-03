@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "@/components/customer/LoginForm";
-import { getHeroSlides } from "@/lib/queries/settings";
+import { getPublicHeroSlides } from "@/lib/queries/public-settings";
 import Image from "next/image";
 
-export const metadata = { title: "Нэвтрэх | VIDAN" };
+export const metadata = { title: "Нэвтрэх", robots: { index: false, follow: false } };
 
 export default async function LoginPage({
   searchParams,
@@ -21,7 +21,7 @@ export default async function LoginPage({
 
   // Нүүр хуудасны эхний постертой ижил үг — админаас нүүрийг өөрчлөхөд
   // энэ хуудас ч хамт өөрчлөгдөнө
-  const [hero] = await getHeroSlides();
+  const [hero] = await getPublicHeroSlides();
   const badge = hero?.badge || "Үндэсний үйлдвэрлэл · 2008 оноос";
   const title = hero?.title || "Эх орны хөрснөөс таны гарт";
 

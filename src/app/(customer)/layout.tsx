@@ -1,6 +1,6 @@
 import { Header } from "@/components/customer/Header";
 import { Footer } from "@/components/customer/Footer";
-import { getCommerceSettings } from "@/lib/queries/settings";
+import { getPublicCommerceSettings } from "@/lib/queries/public-settings";
 import { formatMnt } from "@/lib/utils";
 
 export default async function CustomerLayout({
@@ -8,7 +8,7 @@ export default async function CustomerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const commerce = await getCommerceSettings();
+  const commerce = await getPublicCommerceSettings();
   return (
     <>
       <div className="bg-brand-700 px-5 py-2 text-center text-[13px] text-white">

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/checkout", "/account", "/api", "/login"],
+      disallow: ["/admin", "/api"],
     },
     sitemap: "https://www.vidan.mn/sitemap.xml",
     host: "https://www.vidan.mn",

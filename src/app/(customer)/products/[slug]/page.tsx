@@ -5,20 +5,49 @@ import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/customer/ProductCard";
 import { AddToCartBlock } from "@/components/customer/AddToCartBlock";
 import { ProductGallery } from "@/components/customer/ProductGallery";
-import { getProductBySlug, getRelatedProducts } from "@/lib/queries/products";
+import { getProductBySlug, getProducts, getRelatedProducts } from "@/lib/queries/products";
 import { getProductMeta, getProductTag } from "@/lib/product-meta";
 import { formatMnt } from "@/lib/utils";
+import { ViewItemEvent } from "@/components/analytics/EcommerceEvents";
+import type { Metadata } from "next";
+import { SITE_URL, safeJsonLd } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: PageProps<"/products/[slug]">) {
+export async function generateStaticParams() {
+  const products = await getProducts({ sort: "newest" });
+  return products.map((product) => ({ slug: product.slug }));
+}
+
+export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  if (!product) return { title: "Олдсонгүй | VIDAN" };
+  if (!product) return { title: "Олдсонгүй", robots: { index: false, follow: false } };
+  const description =
+    htmlToText(product.meta_description || product.short_description || product.description) ||
+    `${product.name_mn} бүтээгдэхүүнийг VIDAN онлайн дэлгүүрээс захиалаарай.`;
+  const images = [...(product.images ?? [])].sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+  const canonical = `/products/${product.slug}`;
   return {
-    title: `${product.name_mn} | VIDAN`,
-    description:
-      htmlToText(product.short_description || product.description) || undefined,
+    title: product.name_mn,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      locale: "mn_MN",
+      url: canonical,
+      title: `${product.name_mn} | VIDAN`,
+      description,
+      images: images[0] ? [{ url: images[0].url, alt: product.name_mn }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name_mn} | VIDAN`,
+      description,
+      images: images[0] ? [images[0].url] : undefined,
+    },
   };
 }
 
@@ -42,11 +71,63 @@ export default async function ProductDetailPage({
   const images = [...(product.images ?? [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
+  const canonicalUrl = `${SITE_URL}/products/${product.slug}`;
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": `${canonicalUrl}#product`,
+    name: product.name_mn,
+    description: htmlToText(product.short_description || product.description) || undefined,
+    image: images.map((image) => image.url),
+    sku: product.sku,
+    brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
+    category: product.category?.name_mn ?? undefined,
+    url: canonicalUrl,
+    offers: {
+      "@type": "Offer",
+      url: canonicalUrl,
+      priceCurrency: "MNT",
+      price: Number(product.price),
+      availability:
+        product.stock > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+    },
+  };
+  const breadcrumbItems = [
+    { name: "Нүүр", item: SITE_URL },
+    { name: "Бүтээгдэхүүн", item: `${SITE_URL}/products` },
+    ...(product.category?.slug
+      ? [{ name: product.category.name_mn, item: `${SITE_URL}/categories/${product.category.slug}` }]
+      : []),
+    { name: product.name_mn, item: canonicalUrl },
+  ];
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      ...item,
+    })),
+  };
 
   return (
     <div className="my-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      <ViewItemEvent
+        item={{
+          item_id: product.id,
+          item_name: product.name_mn,
+          item_category: product.category?.name_mn ?? undefined,
+          price: Number(product.price),
+          quantity: 1,
+        }}
+      />
       {/* Breadcrumb */}
-      <nav className="mb-5 flex items-center gap-2 text-xs text-ink-500">
+      <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-xs text-ink-500">
         <Link href="/" className="hover:text-brand-700">Нүүр</Link>
         <span>/</span>
         <Link href="/products" className="hover:text-brand-700">Бүтээгдэхүүн</Link>
@@ -54,7 +135,7 @@ export default async function ProductDetailPage({
           <>
             <span>/</span>
             <Link
-              href={`/products?category=${product.category.slug}`}
+              href={`/categories/${product.category.slug}`}
               className="hover:text-brand-700"
             >
               {product.category.name_mn}
@@ -107,13 +188,6 @@ export default async function ProductDetailPage({
           <p className="mt-3 whitespace-pre-line text-sm text-ink-700">
             {htmlToText(product.short_description)}
           </p>
-
-          {/* Rating */}
-          <div className="mt-3 flex items-center gap-3 text-sm">
-            <span className="text-[#f5b942]">★★★★★</span>
-            <span className="font-bold text-ink-900">4.8</span>
-            <span className="text-ink-500">· 150+ үнэлгээ</span>
-          </div>
 
           {/* Price */}
           <div className="mt-4 flex items-baseline gap-3">
@@ -230,7 +304,7 @@ export default async function ProductDetailPage({
               Холбоотой бүтээгдэхүүн
             </h2>
             <Link
-              href={`/products?category=${product.category?.slug}`}
+              href={product.category?.slug ? `/categories/${product.category.slug}` : "/products"}
               className="text-sm font-bold text-brand-600 hover:text-brand-700"
             >
               Ангилал бүхэлд нь →

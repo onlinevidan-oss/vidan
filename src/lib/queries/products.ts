@@ -1,22 +1,24 @@
 /**
  * Бүтээгдэхүүний query-үүд (Server-side)
  */
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 const PRODUCT_SELECT = `
   *,
   category:categories(id, name_mn, slug, color_gradient),
+  brand:brands(id, name, slug),
   images:product_images(id, url, sort_order)
 `;
 
 const PRODUCT_SELECT_WITH_INNER_CAT = `
   *,
   category:categories!inner(id, name_mn, slug, color_gradient),
+  brand:brands(id, name, slug),
   images:product_images(id, url, sort_order)
 `;
 
 export async function getFeaturedProducts(limit = 4) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -29,7 +31,7 @@ export async function getFeaturedProducts(limit = 4) {
 }
 
 export async function getNewArrivals(limit = 4) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)
@@ -45,7 +47,7 @@ export async function getNewArrivals(limit = 4) {
 // Brands
 // =========================================================
 export async function getBrands() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("brands")
     .select("id, name, slug, logo_url, card_from, card_to, logo_mode")
@@ -56,7 +58,7 @@ export async function getBrands() {
 }
 
 export async function getBrandsWithProductCount() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const [{ data: brands }, { data: prods }] = await Promise.all([
     supabase
       .from("brands")
@@ -80,7 +82,7 @@ export async function getBrandsWithProductCount() {
 }
 
 export async function getBrandBySlug(slug: string) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("brands")
     .select("id, name, slug, logo_url, card_from, card_to, logo_mode")
@@ -92,7 +94,7 @@ export async function getBrandBySlug(slug: string) {
 }
 
 export async function getCategories() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("categories")
     .select("id, name_mn, slug, emoji, color_gradient")
@@ -102,8 +104,20 @@ export async function getCategories() {
   return data ?? [];
 }
 
+export async function getCategoryBySlug(slug: string) {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("categories")
+    .select("id, name_mn, name_en, slug, emoji, color_gradient")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getCategoriesWithProductCount() {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const [{ data: cats }, { data: prods }] = await Promise.all([
     supabase
       .from("categories")
@@ -146,7 +160,7 @@ export async function getProducts(opts: {
   sort?: ProductSort;
   limit?: number;
 } = {}) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   let q = supabase
     .from("products")
@@ -188,12 +202,13 @@ export async function getProducts(opts: {
 }
 
 export async function getProductBySlug(slug: string) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(`
       *,
       category:categories(id, name_mn, slug, emoji, color_gradient),
+      brand:brands(id, name, slug),
       images:product_images(id, url, sort_order)
     `)
     .eq("slug", slug)
@@ -208,7 +223,7 @@ export async function getRelatedProducts(
   excludeId: string,
   limit = 4,
 ) {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_SELECT)

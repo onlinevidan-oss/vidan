@@ -7,8 +7,12 @@ import {
   getFeaturedProducts,
   getNewArrivals,
 } from "@/lib/queries/products";
-import { getHeroSlides } from "@/lib/queries/settings";
+import { getPublicHeroSlides } from "@/lib/queries/public-settings";
 import { HeroCarousel } from "@/components/customer/HeroCarousel";
+import type { Metadata } from "next";
+import { ViewItemListEvent } from "@/components/analytics/EcommerceEvents";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export const revalidate = 60; // ISR: 1 минут
 
@@ -17,11 +21,13 @@ export default async function HomePage() {
     getBrandsWithProductCount(),
     getFeaturedProducts(4),
     getNewArrivals(4),
-    getHeroSlides(),
+    getPublicHeroSlides(),
   ]);
 
   return (
     <>
+      <ViewItemListEvent listId="featured" listName="Онцлох бүтээгдэхүүн" items={featured.map((product) => ({ item_id: product.id, item_name: product.name_mn, item_category: product.category?.name_mn ?? undefined, price: Number(product.price), quantity: 1 }))} />
+      <ViewItemListEvent listId="new_arrivals" listName="Шинээр нэмэгдсэн" items={newArrivals.map((product) => ({ item_id: product.id, item_name: product.name_mn, item_category: product.category?.name_mn ?? undefined, price: Number(product.price), quantity: 1 }))} />
       {/* ============ HERO CAROUSEL ============ */}
       <HeroCarousel slides={slides} />
 

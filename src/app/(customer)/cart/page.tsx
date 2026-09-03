@@ -1,9 +1,9 @@
 import { CartView } from "@/components/customer/CartView";
-import { getCommerceSettings } from "@/lib/queries/settings";
+import { getPublicCommerceSettings } from "@/lib/queries/public-settings";
 
-export const metadata = { title: "Сагс | VIDAN" };
+export const metadata = { title: "Сагс", robots: { index: false, follow: false } };
 
 export default async function CartPage() {
-  const settings = await getCommerceSettings();
+  const settings = await getPublicCommerceSettings();
   return <CartView settings={settings} />;
 }
