@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     template: "%s | VIDAN",
   },
   description: DEFAULT_DESCRIPTION,
+  verification: {
+    google: "kuguFc54fjihAeEkwtu2hKeTjYRR1gePBrVpncZ_EMg",
+  },
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
