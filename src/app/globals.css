@@ -88,3 +88,50 @@
   60%  { transform: scale(1.15); }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ============================================================
+   ХЭВЛЭХ — админы тайланг санхүүд цаасаар өгдөг.
+   Sidebar/TopBar нь `print:hidden`-ээр нуугдана; энд цаасны
+   тохиргоо болон өнгө/зайг зохицуулна.
+   ============================================================ */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  html, body {
+    background: #fff !important;
+    font-size: 10.5pt;
+  }
+
+  /* Хэвлэхэд хэрэггүй удирдлагууд */
+  .print-hide { display: none !important; }
+
+  /* Дэлгэцэнд харагдахгүй, зөвхөн цаасан дээр гарах толгой */
+  .print-only { display: block !important; }
+
+  /* Хүрээ, сүүдэр — цаасан дээр хөнгөн болгоно */
+  .print-card {
+    border: 1px solid #c8c0b6 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Хэсэг дундуур хуудас таслахгүй */
+  .print-block { break-inside: avoid; }
+  .print-break { break-before: page; }
+
+  /* Хүснэгтийн толгой хуудас бүрд давтагдана */
+  thead { display: table-header-group; }
+  tr, img, svg { break-inside: avoid; }
+
+  /* Өнгийг цаасан дээр хадгалах (график, тэмдэглэгээ) */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  a[href]::after { content: none !important; }
+}
+
+/* Зөвхөн хэвлэхэд гарах элемент — дэлгэцэнд нуух */
+.print-only { display: none; }

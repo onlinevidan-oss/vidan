@@ -22,7 +22,7 @@ export default async function AdminLayout({
       .join("") || "S";
 
   return (
-    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-[#f6f3ec] text-ink-900">
+    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-[#f6f3ec] text-ink-900 print:block print:min-h-0 print:bg-white">
       <Sidebar
         user={{
           fullName: staff.full_name,

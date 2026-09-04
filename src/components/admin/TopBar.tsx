@@ -8,7 +8,7 @@ export function TopBar({
   crumb?: string;
 }) {
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-6 border-b border-ink-200 bg-white px-7">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-6 border-b border-ink-200 bg-white px-7 print:hidden">
       <div className="font-display text-lg font-extrabold text-ink-900">
         {title}
         {crumb && (
