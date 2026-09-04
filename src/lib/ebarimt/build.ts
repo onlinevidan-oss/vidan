@@ -65,6 +65,49 @@ export interface BuildReceiptInput {
 
 const VAT_RATE = 0.1; // НӨАТ 10%
 
+/** Хөнгөлөлт хуваарилахад хэрэгтэй хамгийн бага мэдээлэл */
+export interface DiscountableLine {
+  unitPrice: number;
+  qty: number;
+}
+
+/**
+ * Захиалгын түвшний хөнгөлөлтийг барааны мөрүүдэд харьцаагаар хуваарилна.
+ *
+ * ЯАГААД ХЭРЭГТЭЙ: промо код бүх захиалгад нэг дүнгээр бууна (orders.discount),
+ * харин order_items.unit_price нь хөнгөлөлтийн ӨМНӨХ үнэ. Баримт бодит төлсөн
+ * дүнг тусгах ёстой тул нэгжийн үнийг харьцаагаар бууруулна.
+ *
+ * ЭНЭ ФУНКЦИЙГ ХОЁР ГАЗАР ДУУДНА — PosAPI руу илгээх баримт (createOrderEbarimt)
+ * ба хэрэглэгчид харуулах баримт (ebarimtDisplayFromOrder). Нэг эх сурвалж
+ * байснаар илгээсэн ба харуулсан баримт зөрөх боломжгүй.
+ *
+ * ҮЛДЭГДЭЛ: нэгжийн үнэ бүхэл төгрөг байх ёстой тул qty > 1 үед харьцаа яг
+ * тэгш хуваагдахгүй байж болно (жнь. 2 ширхэгт 46,667₮ хуваарилах). Үлдсэн
+ * хэдэн төгрөгийг `residual`-аар буцаана — дуудагч бүртгэнэ.
+ *
+ * Хүргэлтийн мөрийг ОРУУЛАХГҮЙ — промо зөвхөн бараанд хамаарна.
+ */
+export function allocateOrderDiscount<T extends DiscountableLine>(
+  lines: T[],
+  discount: number,
+): { lines: T[]; residual: number } {
+  const goodsTotal = lines.reduce((s, li) => s + li.unitPrice * li.qty, 0);
+  // Хөнгөлөлтийг [0, goodsTotal] завсарт таслана — pricing.ts-тэй ижил дүрэм
+  const applied = Math.max(0, Math.min(Math.round(discount) || 0, goodsTotal));
+  if (applied === 0 || goodsTotal === 0) {
+    return { lines: lines.map((li) => ({ ...li })), residual: 0 };
+  }
+
+  const ratio = (goodsTotal - applied) / goodsTotal;
+  const scaled = lines.map((li) => ({
+    ...li,
+    unitPrice: Math.max(0, Math.round(li.unitPrice * ratio)),
+  }));
+  const after = scaled.reduce((s, li) => s + li.unitPrice * li.qty, 0);
+  return { lines: scaled, residual: goodsTotal - applied - after };
+}
+
 /** НӨАТ тооцоо — үнэ НӨАТ-гүй (net) гэж үзнэ (VAT_ABLE → net × 10%) */
 function vatOf(net: number, taxType: TaxType): number {
   return taxType === "VAT_ABLE" ? Math.round(net * VAT_RATE) : 0;

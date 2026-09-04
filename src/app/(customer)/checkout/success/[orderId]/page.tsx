@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
-import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/orders";
+import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/display";
 import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 import { PurchaseEvent } from "@/components/analytics/EcommerceEvents";

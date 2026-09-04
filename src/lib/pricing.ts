@@ -52,7 +52,11 @@ export function calculateOrderTotals(
   itemCount = 0,
   discount = 0,
 ): OrderTotals {
-  const afterDiscount = Math.max(0, subtotal - discount);
+  // Хөнгөлөлтийг [0, subtotal] завсарт таслана — DB-ийн calc_order_totals дахь
+  // greatest(0, least(discount, subtotal))-тэй яг ижил. Сөрөг утга нийт дүнг
+  // нэмэгдүүлэх, дэд дүнгээс их утга хураангуйд буруу тоо харуулахаас сэргийлнэ.
+  const clampedDiscount = Math.max(0, Math.min(discount, subtotal));
+  const afterDiscount = subtotal - clampedDiscount;
   let shipping =
     itemCount > settings.shipping_qty_threshold
       ? settings.shipping_over
@@ -62,5 +66,5 @@ export function calculateOrderTotals(
   }
   const tax = Math.round(afterDiscount * TAX_RATE);
   const total = afterDiscount + shipping + tax;
-  return { subtotal, discount, shipping, tax, total };
+  return { subtotal, discount: clampedDiscount, shipping, tax, total };
 }

@@ -2,20 +2,21 @@
  * Захиалга ↔ E-Barimt холбогч логик (admin client).
  *  · createOrderEbarimt — төлбөр батлагдсаны дараа баримт үүсгэж, хадгална
  *    (idempotent: order.ebarimt_id байвал алгасна; best-effort).
- *  · ebarimtDisplayFromOrder — хадгалсан талбараас баримт харуулах объект угсрах.
+ *
+ * Баримтыг ХАРУУЛАХ талын цэвэр логик `./display.ts`-д байна (тестлэгддэг).
  *
  * ⚠️ Compliance: lottery/qr зөвхөн тухайн худалдан авагчид баримтаа харуулах
  *    зорилгоор л хадгалагдана.
  */
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildReceiptRequest, type EbarimtLineItem } from "./build";
+import {
+  allocateOrderDiscount,
+  buildReceiptRequest,
+  type EbarimtLineItem,
+} from "./build";
 import { createReceipt, isEbarimtConfigured } from "./posapi";
-import type {
-  EbarimtReceiptResponse,
-  PaymentCode,
-  ReceiptType,
-} from "./types";
+import type { PaymentCode, ReceiptType } from "./types";
 
 /** Барааны ангиллын код олдохгүй үед сүүлчийн fallback */
 const DEFAULT_CLASSIFICATION =
@@ -77,7 +78,7 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
       }
     }
 
-    const lineItems: EbarimtLineItem[] = items.map((it) => ({
+    const goodsLines: EbarimtLineItem[] = items.map((it) => ({
       name: it.product_name,
       classificationCode:
         (it.product_id && codeByProduct.get(it.product_id)) || DEFAULT_CLASSIFICATION,
@@ -88,25 +89,15 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
     }));
 
     // ПРОМО ХӨНГӨЛӨЛТ — баримт бодит төлсөн дүнг тусгах ёстой.
-    // Захиалгын түвшний хөнгөлөлтийг мөр бүрд харьцаагаар хуваарилж,
-    // нэгжийн үнийг бууруулна (unitPrice × qty = мөрийн бодит дүн).
-    const discount = Number(order.discount) || 0;
-    if (discount > 0) {
-      const goodsTotal = lineItems.reduce((s, li) => s + li.unitPrice * li.qty, 0);
-      if (goodsTotal > 0) {
-        const ratio = (goodsTotal - discount) / goodsTotal;
-        for (const li of lineItems) {
-          li.unitPrice = Math.max(0, Math.round(li.unitPrice * ratio));
-        }
-        // Бүхэл тоонд хуваарилахад үлдэгдэл гарч болзошгүй — хянахын тулд log
-        const after = lineItems.reduce((s, li) => s + li.unitPrice * li.qty, 0);
-        const residual = goodsTotal - discount - after;
-        if (residual !== 0) {
-          console.warn(
-            `[ebarimt] хөнгөлөлт хуваарилахад ${residual}₮ зөрүү үлдлээ order=${orderId}`,
-          );
-        }
-      }
+    // Хуваарилалт нь ebarimtDisplayFromOrder-той нийтлэг функцээр явна.
+    const { lines: lineItems, residual } = allocateOrderDiscount(
+      goodsLines,
+      Number(order.discount) || 0,
+    );
+    if (residual !== 0) {
+      console.warn(
+        `[ebarimt] хөнгөлөлт хуваарилахад ${residual}₮ зөрүү үлдлээ order=${orderId}`,
+      );
     }
 
     // Хүргэлтийн төлбөр — тусдаа мөр (НӨАТ-гүй, одоогийн үнэ бодлоготой нийцүүлэв)
@@ -155,83 +146,3 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
   }
 }
 
-/**
- * Хадгалсан order талбараас ReceiptView-д зориулсан объект угсрах.
- * ebarimt_id байхгүй бол null.
- */
-export function ebarimtDisplayFromOrder(
-  order: {
-    ebarimt_id: string | null;
-    ebarimt_date: string | null;
-    ebarimt_type: string | null;
-    ebarimt_lottery: string | null;
-    ebarimt_qr: string | null;
-    tax: number;
-    total: number;
-    shipping: number;
-  },
-  items: { product_name: string; quantity: number; unit_price: number }[],
-): EbarimtReceiptResponse | null {
-  if (!order.ebarimt_id || !order.ebarimt_qr) return null;
-
-  const type = (order.ebarimt_type as ReceiptType) ?? "B2C_RECEIPT";
-  const receiptItems = items.map((it) => {
-    const net = Number(it.unit_price) * it.quantity;
-    const vat = Math.round(net * 0.1);
-    return {
-      name: it.product_name,
-      classificationCode: "",
-      qty: it.quantity,
-      unitPrice: Number(it.unit_price),
-      totalVAT: vat,
-      totalCityTax: 0,
-      totalAmount: net + vat,
-    };
-  });
-  const shipping = Number(order.shipping) || 0;
-  if (shipping > 0) {
-    receiptItems.push({
-      name: "Хүргэлтийн үйлчилгээ",
-      classificationCode: "",
-      qty: 1,
-      unitPrice: shipping,
-      totalVAT: 0,
-      totalCityTax: 0,
-      totalAmount: shipping,
-    });
-  }
-
-  const totalAmount = receiptItems.reduce((a, i) => a + i.totalAmount, 0);
-  const totalVAT = receiptItems.reduce((a, i) => a + i.totalVAT, 0);
-
-  return {
-    id: order.ebarimt_id,
-    version: "3.0",
-    totalAmount,
-    totalVAT,
-    totalCityTax: 0,
-    branchNo: "",
-    districtCode: "",
-    merchantTin: process.env.EBARIMT_MERCHANT_TIN ?? "",
-    posNo: "",
-    type,
-    receipts: [
-      {
-        id: order.ebarimt_id,
-        totalAmount,
-        taxType: "VAT_ABLE",
-        items: receiptItems,
-        merchantTin: process.env.EBARIMT_MERCHANT_TIN ?? "",
-        totalVAT,
-        totalCityTax: 0,
-      },
-    ],
-    payments: [],
-    posId: 0,
-    status: "SUCCESS",
-    qrData: order.ebarimt_qr,
-    lottery: order.ebarimt_lottery ?? undefined,
-    date: order.ebarimt_date ?? "",
-    easy: false,
-  };
-}
