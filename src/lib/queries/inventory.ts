@@ -28,6 +28,11 @@ export type InventoryRow = {
 export type InventoryData = {
   period: ReportPeriod;
   rows: InventoryRow[];
+  /**
+   * Орлого/зарлагын бүртгэл идэвхтэй эсэх — migration 0028 ажилласан бол true.
+   * Ажиллаагүй үед орлого нэмэх товчийг нуухад ашиглана (дарвал алдаа өгөхөөс).
+   */
+  ledgerReady: boolean;
   totals: {
     skuCount: number;
     units: number;
@@ -42,7 +47,7 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
   const supabase = await createClient();
   const { since, until } = periodToUtcRange(period);
 
-  const [{ data: products }, { data: orders }] = await Promise.all([
+  const [{ data: products }, { data: orders }, ledger] = await Promise.all([
     supabase
       .from("products")
       .select(
@@ -57,6 +62,8 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
       .lt("created_at", until.toISOString())
       .eq("payment_status", "paid")
       .neq("status", "cancelled"),
+    // head:true нь байхгүй хүснэгтэд ч 204 буцаадаг тул энгийн select-ээр шалгана
+    supabase.from("stock_movements").select("id").limit(1),
   ]);
 
   const soldMap = soldQuantityByProduct((orders ?? []) as unknown as ReportOrder[]);
@@ -101,6 +108,7 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
   return {
     period,
     rows,
+    ledgerReady: !ledger.error,
     totals: {
       skuCount: rows.length,
       units: rows.reduce((s, r) => s + r.stock, 0),
@@ -109,5 +117,61 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
       lowCount: rows.filter((r) => r.low).length,
       outCount: rows.filter((r) => r.out).length,
     },
+  };
+}
+
+export type StockMovement = {
+  id: string;
+  productName: string;
+  sku: string;
+  kind: "in" | "out" | "adjust";
+  quantity: number;
+  note: string | null;
+  occurredAt: string;
+  orderId: string | null;
+};
+
+export type MovementsResult =
+  | { ready: true; rows: StockMovement[]; totalIn: number; totalOut: number }
+  /** Migration 0028 хараахан ажиллаагүй — хүснэгт байхгүй */
+  | { ready: false; error: string };
+
+/** Орлого, зарлагын түүх — шинэхнээс нь */
+export async function getStockMovements(limit = 300): Promise<MovementsResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("stock_movements")
+    .select("id, kind, quantity, note, occurred_at, order_id, product:products(name_mn, sku)")
+    .order("occurred_at", { ascending: false })
+    .limit(limit);
+
+  if (error) return { ready: false, error: error.message };
+
+  type Row = {
+    id: string;
+    kind: "in" | "out" | "adjust";
+    quantity: number;
+    note: string | null;
+    occurred_at: string;
+    order_id: string | null;
+    product: { name_mn: string; sku: string } | null;
+  };
+
+  const rows: StockMovement[] = ((data ?? []) as unknown as Row[]).map((m) => ({
+    id: m.id,
+    productName: m.product?.name_mn ?? "—",
+    sku: m.product?.sku ?? "—",
+    kind: m.kind,
+    quantity: Number(m.quantity),
+    note: m.note,
+    occurredAt: m.occurred_at,
+    orderId: m.order_id,
+  }));
+
+  return {
+    ready: true,
+    rows,
+    totalIn: rows.filter((r) => r.quantity > 0).reduce((s, r) => s + r.quantity, 0),
+    totalOut: rows.filter((r) => r.quantity < 0).reduce((s, r) => s + r.quantity, 0),
   };
 }

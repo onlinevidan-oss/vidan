@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { TopBar } from "@/components/admin/TopBar";
 import { ReportToolbar } from "@/components/admin/ReportToolbar";
+import { StockInForm } from "@/components/admin/StockInForm";
+import Link from "next/link";
 import { getInventory } from "@/lib/queries/inventory";
 import { PERIOD_PRESETS, resolvePeriod } from "@/lib/report-period";
 import { ubDateKey } from "@/lib/datetime";
@@ -29,7 +31,8 @@ export default async function AdminInventory({
     to: one(sp.to),
   });
 
-  const { rows, totals } = await getInventory(period);
+  const { rows, totals, ledgerReady } = await getInventory(period);
+  const today = ubDateKey();
 
   const stats = [
     { label: "Нэр төрөл", value: `${totals.skuCount}` },
@@ -103,7 +106,7 @@ export default async function AdminInventory({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px]">
+              <table className="w-full min-w-[840px]">
                 <thead className="bg-ink-100/60">
                   <tr>
                     <th className={`${TH} w-12`}>№</th>
@@ -115,6 +118,9 @@ export default async function AdminInventory({
                     <th className={`${TH} text-right`}>Зарлага</th>
                     <th className={`${TH} text-right`}>Нэгж үнэ</th>
                     <th className={`${TH} text-right`}>Дүн</th>
+                    {ledgerReady && (
+                      <th className={`${TH} print:hidden`}>Орлого</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -182,6 +188,15 @@ export default async function AdminInventory({
                       <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
                         {formatMnt(r.value)}
                       </td>
+                      {ledgerReady && (
+                        <td className="px-3 py-2 print:hidden">
+                          <StockInForm
+                            productId={r.id}
+                            productName={r.name}
+                            today={today}
+                          />
+                        </td>
+                      )}
                     </tr>
                   ))}
                   <tr className="border-t-2 border-ink-200 bg-ink-100/60">
@@ -201,10 +216,22 @@ export default async function AdminInventory({
                     <td className={`${TD_NUM} font-display font-black text-ink-900`}>
                       {formatMnt(totals.value)}
                     </td>
+                    {ledgerReady && <td className="print:hidden" />}
                   </tr>
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+
+        <div className="print-hide flex justify-end">
+          {ledgerReady && (
+          <Link
+            href="/admin/inventory/movements"
+            className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+          >
+            📜 Орлого, зарлагын түүх →
+          </Link>
           )}
         </div>
 
