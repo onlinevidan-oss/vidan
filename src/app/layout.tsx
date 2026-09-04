@@ -68,37 +68,40 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-cream text-ink-900">
         {children}
+        {/* JSON-LD ба аналитик нь <body> ДОТОР байх ёстой — <html>-ийн шууд
+            хүүхэд болбол хүчингүй HTML болж, бүх хуудсанд hydration алдаа өгнө */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: safeJsonLd({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "@id": `${SITE_URL}/#organization`,
+              name: "Дөрвөн Өлзий ХХК",
+              alternateName: "VIDAN",
+              url: SITE_URL,
+              logo: `${SITE_URL}/vidan-logo.png`,
+              foundingDate: "1996",
+              email: "info@durvun-ulzii.mn",
+              telephone: ["+976-7575-2525", "+976-9407-0800"],
+              address: {
+                "@type": "PostalAddress",
+                addressCountry: "MN",
+                addressLocality: "Улаанбаатар",
+                streetAddress:
+                  "Баянгол дүүрэг, 20-р хороо, Үйлдвэрийн баруун бүс ХД-50",
+              },
+              sameAs: [
+                "https://www.facebook.com/vidanofficial",
+                "https://www.instagram.com/vidan.brand/",
+                "https://www.linkedin.com/company/durvun-ulzii-llc/",
+                "https://www.youtube.com/@Marketingdurvunulzii",
+              ],
+            }),
+          }}
+        />
+        <GoogleAnalytics />
       </body>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: safeJsonLd({
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            "@id": `${SITE_URL}/#organization`,
-            name: "Дөрвөн Өлзий ХХК",
-            alternateName: "VIDAN",
-            url: SITE_URL,
-            logo: `${SITE_URL}/vidan-logo.png`,
-            foundingDate: "1996",
-            email: "info@durvun-ulzii.mn",
-            telephone: ["+976-7575-2525", "+976-9407-0800"],
-            address: {
-              "@type": "PostalAddress",
-              addressCountry: "MN",
-              addressLocality: "Улаанбаатар",
-              streetAddress: "Баянгол дүүрэг, 20-р хороо, Үйлдвэрийн баруун бүс ХД-50",
-            },
-            sameAs: [
-              "https://www.facebook.com/vidanofficial",
-              "https://www.instagram.com/vidan.brand/",
-              "https://www.linkedin.com/company/durvun-ulzii-llc/",
-              "https://www.youtube.com/@Marketingdurvunulzii",
-            ],
-          }),
-        }}
-      />
-      <GoogleAnalytics />
     </html>
   );
 }
