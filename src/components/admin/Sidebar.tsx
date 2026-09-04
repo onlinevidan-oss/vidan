@@ -8,6 +8,7 @@ const MAIN_NAV = [
   { href: "/admin",            label: "Хяналтын самбар", icon: "📊" },
   { href: "/admin/orders",     label: "Захиалга",        icon: "📦", badge: 0 },
   { href: "/admin/products",   label: "Бүтээгдэхүүн",    icon: "🛒" },
+  { href: "/admin/inventory",  label: "Агуулах",         icon: "🏬" },
   { href: "/admin/customers",  label: "Хэрэглэгч",       icon: "👥" },
 ];
 
@@ -31,7 +32,7 @@ export function Sidebar({
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen flex-col gap-4 bg-ink-900 p-3.5 text-white/85">
+    <aside className="sticky top-0 flex h-screen flex-col gap-4 bg-ink-900 p-3.5 text-white/85 print:hidden">
       {/* Logo */}
       <Link
         href="/admin"
