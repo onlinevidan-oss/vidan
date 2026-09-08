@@ -43,3 +43,11 @@ next-env.d.ts
 
 # Supabase CLI
 supabase/.temp/
+
+# Service account түлхүүр — хэзээ ч git-д оруулж болохгүй
+*-*.json
+!package.json
+!tsconfig.json
+!pnpm-workspace.yaml
+gcp-*.json
+service-account*.json

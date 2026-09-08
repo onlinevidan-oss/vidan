@@ -16,6 +16,7 @@ const OTHER_NAV = [
   { href: "/admin/categories", label: "Ангилал",         icon: "🏷️" },
   { href: "/admin/promotions", label: "Урамшуулал",      icon: "🎁" },
   { href: "/admin/reports",    label: "Тайлан",          icon: "📈" },
+  { href: "/admin/traffic",    label: "Traffic",         icon: "🌐" },
   { href: "/admin/settings",   label: "Тохиргоо",        icon: "⚙️" },
 ];
 
