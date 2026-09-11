@@ -11,19 +11,43 @@
  */
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { QpayInvoiceLine } from "./ebarimt-lines";
 
 const QPAY_BASE_URL = process.env.QPAY_BASE_URL ?? "https://merchant.qpay.mn/v2";
 
-function getConfig() {
-  const username = process.env.QPAY_USERNAME;
-  const password = process.env.QPAY_PASSWORD;
-  const invoiceCode = process.env.QPAY_INVOICE_CODE;
+/**
+ * QPay-д хоёр тусдаа эрх бий:
+ *  · "default"  — энгийн нэхэмжлэх (и-баримтгүй)
+ *  · "ebarimt"  — и-баримт үүсгэдэг нэхэмжлэх. QPay 2026-09-11-нд тусдаа
+ *                 client/password/invoice code өгсөн. Тусад нь token авна.
+ */
+export type QpayAccount = "default" | "ebarimt";
+
+/** qpay_tokens хүснэгтийн мөрийн id — эрх тус бүр өөрийн token-тэй */
+const TOKEN_ROW_ID: Record<QpayAccount, number> = { default: 1, ebarimt: 2 };
+
+function getConfig(account: QpayAccount = "default") {
+  const [u, p, c] =
+    account === "ebarimt"
+      ? ["QPAY_EB_USERNAME", "QPAY_EB_PASSWORD", "QPAY_EB_INVOICE_CODE"]
+      : ["QPAY_USERNAME", "QPAY_PASSWORD", "QPAY_INVOICE_CODE"];
+  const username = process.env[u];
+  const password = process.env[p];
+  const invoiceCode = process.env[c];
   if (!username || !password || !invoiceCode) {
-    throw new Error(
-      "QPay тохиргоо дутуу: QPAY_USERNAME, QPAY_PASSWORD, QPAY_INVOICE_CODE шаардлагатай",
-    );
+    throw new Error(`QPay тохиргоо дутуу: ${u}, ${p}, ${c} шаардлагатай`);
   }
   return { username, password, invoiceCode };
+}
+
+/** И-баримттай нэхэмжлэх идэвхтэй эсэх */
+export function isEbarimtEnabled(): boolean {
+  if (process.env.EBARIMT_ENABLED?.trim() !== "true") return false;
+  return !!(
+    process.env.QPAY_EB_USERNAME &&
+    process.env.QPAY_EB_PASSWORD &&
+    process.env.QPAY_EB_INVOICE_CODE
+  );
 }
 
 // ============================================================
@@ -59,6 +83,18 @@ export type QpayCheckRow = {
   payment_date?: string;
 };
 
+/** /ebarimt_v3/create-ийн хариу (хэрэгтэй талбарууд) */
+export type QpayEbarimtResponse = {
+  id: string;
+  ebarimt_lottery?: string | null;
+  ebarimt_qr_data?: string | null;
+  ebarimt_status?: string;
+  ebarimt_status_date?: string | null;
+  amount?: number;
+  vat_amount?: number;
+  city_tax_amount?: number;
+};
+
 export type QpayCheckResponse = {
   count: number;
   paid_amount: number;
@@ -70,8 +106,10 @@ export type QpayCheckResponse = {
 // ============================================================
 const EXPIRY_BUFFER_SEC = 60; // дуусахаас 60 сек өмнө сэргээнэ
 
-async function fetchNewToken(): Promise<{ token: string; expiresAtIso: string }> {
-  const { username, password } = getConfig();
+async function fetchNewToken(
+  account: QpayAccount = "default",
+): Promise<{ token: string; expiresAtIso: string }> {
+  const { username, password } = getConfig(account);
   const basic = Buffer.from(`${username}:${password}`).toString("base64");
 
   const res = await fetch(`${QPAY_BASE_URL}/auth/token`, {
@@ -99,7 +137,7 @@ async function fetchNewToken(): Promise<{ token: string; expiresAtIso: string }>
   // DB-д cache хийх (service role — RLS bypass)
   const admin = createAdminClient();
   await admin.from("qpay_tokens").upsert({
-    id: 1,
+    id: TOKEN_ROW_ID[account],
     access_token: data.access_token,
     refresh_token: data.refresh_token,
     expires_at: expiresAtIso,
@@ -109,12 +147,14 @@ async function fetchNewToken(): Promise<{ token: string; expiresAtIso: string }>
   return { token: data.access_token, expiresAtIso };
 }
 
-export async function getAccessToken(): Promise<string> {
+export async function getAccessToken(
+  account: QpayAccount = "default",
+): Promise<string> {
   const admin = createAdminClient();
   const { data: cached } = await admin
     .from("qpay_tokens")
     .select("access_token, expires_at")
-    .eq("id", 1)
+    .eq("id", TOKEN_ROW_ID[account])
     .maybeSingle();
 
   if (cached?.access_token && cached.expires_at) {
@@ -125,7 +165,7 @@ export async function getAccessToken(): Promise<string> {
     }
   }
 
-  const { token } = await fetchNewToken();
+  const { token } = await fetchNewToken(account);
   return token;
 }
 
@@ -133,8 +173,9 @@ export async function getAccessToken(): Promise<string> {
 async function authedFetch(
   path: string,
   init: RequestInit,
+  account: QpayAccount = "default",
 ): Promise<Response> {
-  let token = await getAccessToken();
+  let token = await getAccessToken(account);
   const doFetch = (t: string) =>
     fetch(`${QPAY_BASE_URL}${path}`, {
       ...init,
@@ -149,7 +190,7 @@ async function authedFetch(
   let res = await doFetch(token);
   if (res.status === 401) {
     // Cache-д байсан token хүчингүй болсон байж магадгүй — шинээр аваад дахин оролдоно.
-    token = (await fetchNewToken()).token;
+    token = (await fetchNewToken(account)).token;
     res = await doFetch(token);
   }
   return res;
@@ -219,22 +260,88 @@ export async function cancelInvoice(invoiceId: string): Promise<void> {
 }
 
 // ============================================================
+// И-баримттай нэхэмжлэх (QPay e-barimt 3.0)
+// ============================================================
+/**
+ * И-баримт үүсгэх боломжтой нэхэмжлэх.
+ *
+ * ⚠️ Энгийн нэхэмжлэхээс ялгаатай нь `amount` талбар БАЙХГҮЙ — QPay нийт
+ *    дүнг `lines`-ээс тооцно. Тиймээс мөрүүдийн нийлбэр захиалгын төлөх
+ *    дүнтэй таарч байгааг дуудагч тал заавал шалгана.
+ */
+export async function createEbarimtInvoice(params: {
+  senderInvoiceNo: string;
+  description: string;
+  callbackUrl: string;
+  receiverCode?: string;
+  /** Хэрэглэгчийн мэдээлэл — и-баримт нь энэ утас/имэйл рүү очно */
+  receiver?: { register?: string; name?: string; email?: string; phone?: string };
+  /** 1: НӨАТ тооцогдох · 2: чөлөөлөгдөх · 3: НӨАТ 0 */
+  taxType?: "1" | "2" | "3";
+  districtCode: string;
+  branchCode?: string;
+  lines: QpayInvoiceLine[];
+}): Promise<QpayInvoiceResponse> {
+  const { invoiceCode } = getConfig("ebarimt");
+  const res = await authedFetch(
+    "/invoice",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        invoice_code: invoiceCode,
+        sender_invoice_no: params.senderInvoiceNo,
+        ...(params.branchCode ? { sender_branch_code: params.branchCode } : {}),
+        invoice_receiver_code: params.receiverCode ?? "terminal",
+        ...(params.receiver ? { invoice_receiver_data: params.receiver } : {}),
+        invoice_description: params.description,
+        tax_type: params.taxType ?? "1",
+        district_code: params.districtCode,
+        callback_url: params.callbackUrl,
+        lines: params.lines,
+      }),
+    },
+    "ebarimt",
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(
+      `QPay и-баримттай нэхэмжлэх үүсгэж чадсангүй (${res.status}): ${body}`,
+    );
+  }
+  return (await res.json()) as QpayInvoiceResponse;
+}
+
+// ============================================================
 // E-Barimt үүсгэх (best-effort, төлбөр баталгаажсаны дараа)
 // ============================================================
-export async function createEbarimt(
+/**
+ * Төлбөр төлөгдсөний дараа и-баримт бүртгүүлнэ.
+ * Сугалааны дугаар, QR нь энэ хариунаас ирнэ.
+ */
+export async function createEbarimtReceipt(
   qpayPaymentId: string,
-  receiverType: "CITIZEN" | "COMPANY" = "CITIZEN",
-): Promise<unknown> {
-  const res = await authedFetch("/ebarimt/create", {
-    method: "POST",
-    body: JSON.stringify({
-      payment_id: qpayPaymentId,
-      ebarimt_receiver_type: receiverType,
-    }),
-  });
+  opts: {
+    receiverType?: "CITIZEN" | "COMPANY";
+    /** Иргэн бол и-баримтад бүртгэлтэй утас, ААН бол регистр */
+    receiver?: string | null;
+  } = {},
+): Promise<QpayEbarimtResponse> {
+  const res = await authedFetch(
+    "/ebarimt_v3/create",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        payment_id: qpayPaymentId,
+        ebarimt_receiver_type: opts.receiverType ?? "CITIZEN",
+        ...(opts.receiver ? { ebarimt_receiver: opts.receiver } : {}),
+      }),
+    },
+    "ebarimt",
+  );
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`QPay e-barimt үүсгэж чадсангүй (${res.status}): ${body}`);
   }
-  return res.json();
+  return (await res.json()) as QpayEbarimtResponse;
 }
