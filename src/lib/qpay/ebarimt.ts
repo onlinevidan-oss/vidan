@@ -173,7 +173,19 @@ export async function createOrderEbarimtViaQpay(
 
     await sendLotterySms(order.contact_phone, order.order_number, res.ebarimt_lottery);
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
     console.error(`[ebarimt qpay failed] order=${orderId}`, e);
+    // Алдааг захиалгын түүхэнд үлдээнэ — console лог руу хандах боломжгүй тул
+    // энэгүйгээр яагаад баримт гараагүйг хожим олох аргагүй болдог.
+    try {
+      await createAdminClient().from("order_events").insert({
+        order_id: orderId,
+        event_type: "ebarimt_failed",
+        description: `E-barimt үүсгэж чадсангүй: ${message.slice(0, 400)}`,
+      });
+    } catch {
+      // бүртгэл ч бичигдэхгүй бол хийх зүйлгүй
+    }
   }
 }
 

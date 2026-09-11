@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CheckoutView } from "@/components/customer/CheckoutView";
 import { getCommerceSettings } from "@/lib/queries/settings";
 import { isEbarimtConfigured } from "@/lib/ebarimt/posapi";
+import { isEbarimtEnabled } from "@/lib/qpay/client";
 import { getCurrentStaff } from "@/lib/queries/staff";
 
 export const metadata = { title: "Захиалга өгөх", robots: { index: false, follow: false } };
@@ -40,7 +41,8 @@ export default async function CheckoutPage() {
       profile={profile}
       addresses={addresses ?? []}
       settings={settings}
-      ebarimtEnabled={isEbarimtConfigured()}
+      // QPay-ийн и-баримт (шинэ) эсвэл PosAPI (хуучин) аль нэг нь идэвхтэй бол
+      ebarimtEnabled={isEbarimtEnabled() || isEbarimtConfigured()}
       isStaff={!!staff}
     />
   );
