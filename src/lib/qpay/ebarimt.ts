@@ -23,7 +23,7 @@ const DEFAULT_CLASSIFICATION =
 
 /** Хүргэлтийн үйлчилгээний ангиллын код */
 const SHIPPING_CLASSIFICATION =
-  process.env.EBARIMT_SHIPPING_CLASSIFICATION_CODE?.trim() || "6512000";
+  process.env.EBARIMT_SHIPPING_CLASSIFICATION_CODE?.trim() || "6813000";
 
 export function getDistrictCode(): string {
   return process.env.EBARIMT_DISTRICT_CODE?.trim() || "2620";
