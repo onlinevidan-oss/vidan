@@ -305,3 +305,67 @@ describe("buildEbarimtLines — бодит захиалга", () => {
     assert.equal(r.total, 7_000);
   });
 });
+
+describe("buildEbarimtLines — goodsGrossTotal (НӨАТ багтсан дүн)", () => {
+  // ⚠️ Манай сайт барааны цэвэр үнэн дээр НӨАТ 10%-ийг НЭМЖ боддог.
+  // И-баримтад НӨАТ багтсан үнэ явах ёстой тул зорилтот дүнг гаднаас өгнө.
+  test("өгсөн дүнг мөрүүдэд яг хуваарилна", () => {
+    const r = buildEbarimtLines({
+      items: [item({ unitPrice: 10_000, quantity: 1 })],
+      goodsGrossTotal: 11_000,
+      ...DEFAULTS,
+    });
+    assert.equal(r.total, 11_000);
+    assert.equal(r.lines[0].line_unit_price, "11000");
+  });
+
+  test("хүргэлт дээр нь нэмэгдэнэ", () => {
+    const r = buildEbarimtLines({
+      items: [item({ unitPrice: 10_000 })],
+      goodsGrossTotal: 11_000,
+      shipping: 7_000,
+      ...DEFAULTS,
+    });
+    assert.equal(r.total, 18_000);
+  });
+
+  test("өгсөн үед discount үл хэрэгсэгдэнэ", () => {
+    const r = buildEbarimtLines({
+      items: [item({ unitPrice: 10_000 })],
+      goodsGrossTotal: 11_000,
+      discount: 9_999,
+      ...DEFAULTS,
+    });
+    assert.equal(r.total, 11_000);
+  });
+
+  test("#10299 маягийн бодит захиалга — цэвэр үнэ → НӨАТ багтсан", () => {
+    // Дэд дүн 252,250 (НӨАТ-гүй) + НӨАТ 25,225 + хүргэлт 14,000 = 291,475
+    const items = [
+      item({ unitPrice: 6_100, quantity: 5 }),
+      item({ unitPrice: 4_600, quantity: 5 }),
+      item({ unitPrice: 40_150, quantity: 1 }),
+    ];
+    const subtotal = 5 * 6_100 + 5 * 4_600 + 40_150;
+    const grossGoods = subtotal + Math.round(subtotal * 0.1);
+    const r = buildEbarimtLines({
+      items,
+      goodsGrossTotal: grossGoods,
+      shipping: 14_000,
+      ...DEFAULTS,
+    });
+    assert.equal(r.total, grossGoods + 14_000);
+    assert.equal(r.residual, 0);
+    // НӨАТ нь НӨАТ багтсан дүнгийн 1/11 — цэвэр дүнгийн 10%-тай тэнцүү
+    assert.ok(Math.abs(r.vatTotal - (grossGoods + 14_000) / 11) < 0.01);
+  });
+
+  test("тэг дүн өгвөл мөрүүд тэг болно", () => {
+    const r = buildEbarimtLines({
+      items: [item({ unitPrice: 5_000 })],
+      goodsGrossTotal: 0,
+      ...DEFAULTS,
+    });
+    assert.equal(r.total, 0);
+  });
+});

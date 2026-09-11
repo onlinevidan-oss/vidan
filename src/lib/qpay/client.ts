@@ -23,8 +23,15 @@ const QPAY_BASE_URL = process.env.QPAY_BASE_URL ?? "https://merchant.qpay.mn/v2"
  */
 export type QpayAccount = "default" | "ebarimt";
 
-/** qpay_tokens хүснэгтийн мөрийн id — эрх тус бүр өөрийн token-тэй */
-const TOKEN_ROW_ID: Record<QpayAccount, number> = { default: 1, ebarimt: 2 };
+/**
+ * Token cache хоёр төрөлтэй:
+ *  · default — qpay_tokens хүснэгтэд (id=1). Хүснэгт дээр `id = 1` гэсэн
+ *    check constraint байгаа тул өөр мөр нэмэх боломжгүй.
+ *  · ebarimt — процессын дотор. Serverless instance тус бүр өөрийн
+ *    cache-тэй байх нь хэвийн: token авах нь хямд, харин хүсэлт бүрд
+ *    авах нь илүүц. (GA4 клиент ч ижил зарчимтай.)
+ */
+let ebarimtToken: { token: string; expiresAtMs: number } | null = null;
 
 function getConfig(account: QpayAccount = "default") {
   const [u, p, c] =
@@ -134,15 +141,22 @@ async function fetchNewToken(
     data.expires_in > nowSec ? data.expires_in : nowSec + data.expires_in;
   const expiresAtIso = new Date(expiresAtSec * 1000).toISOString();
 
-  // DB-д cache хийх (service role — RLS bypass)
-  const admin = createAdminClient();
-  await admin.from("qpay_tokens").upsert({
-    id: TOKEN_ROW_ID[account],
-    access_token: data.access_token,
-    refresh_token: data.refresh_token,
-    expires_at: expiresAtIso,
-    updated_at: new Date().toISOString(),
-  });
+  if (account === "ebarimt") {
+    ebarimtToken = {
+      token: data.access_token,
+      expiresAtMs: expiresAtSec * 1000,
+    };
+  } else {
+    // DB-д cache хийх (service role — RLS bypass)
+    const admin = createAdminClient();
+    await admin.from("qpay_tokens").upsert({
+      id: 1,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_at: expiresAtIso,
+      updated_at: new Date().toISOString(),
+    });
+  }
 
   return { token: data.access_token, expiresAtIso };
 }
@@ -150,11 +164,21 @@ async function fetchNewToken(
 export async function getAccessToken(
   account: QpayAccount = "default",
 ): Promise<string> {
+  if (account === "ebarimt") {
+    if (
+      ebarimtToken &&
+      ebarimtToken.expiresAtMs - EXPIRY_BUFFER_SEC * 1000 > Date.now()
+    ) {
+      return ebarimtToken.token;
+    }
+    return (await fetchNewToken("ebarimt")).token;
+  }
+
   const admin = createAdminClient();
   const { data: cached } = await admin
     .from("qpay_tokens")
     .select("access_token, expires_at")
-    .eq("id", TOKEN_ROW_ID[account])
+    .eq("id", 1)
     .maybeSingle();
 
   if (cached?.access_token && cached.expires_at) {

@@ -52,6 +52,14 @@ export type BuildLinesInput = {
   shipping?: number;
   /** Захиалгын түвшний хөнгөлөлт — барааны мөрүүдэд хуваарилагдана */
   discount?: number;
+  /**
+   * Барааны мөрүүдэд хуваарилах ЯГ энэ дүн (НӨАТ багтсан, бүхэл төгрөг).
+   *
+   * Манай сайт барааны үнэн дээр НӨАТ-ыг НЭМЖ боддог (unit_price нь цэвэр
+   * үнэ), харин и-баримтад НӨАТ багтсан үнэ явах ёстой. Тиймээс дуудагч
+   * тал бодит төлөх дүнг энд дамжуулна. Өгвөл `discount` үл хэрэгсэгдэнэ.
+   */
+  goodsGrossTotal?: number;
   /** Ангиллын код олдохгүй үед ашиглах нөөц код */
   defaultClassificationCode: string;
   /** Хүргэлтийн үйлчилгээний ангиллын код */
@@ -138,12 +146,14 @@ export function buildEbarimtLines(input: BuildLinesInput): BuildLinesResult {
   const grossTotals = goods.map((it) => it.unitPrice * it.quantity);
   const goodsTotal = grossTotals.reduce((s, v) => s + v, 0);
 
-  // 2) Хөнгөлөлтийг [0, goodsTotal] завсарт таслаад хуваарилна
-  const appliedDiscount = Math.max(
-    0,
-    Math.min(Math.round(discount) || 0, goodsTotal),
-  );
-  const targetGoods = goodsTotal - appliedDiscount;
+  // 2) Барааны мөрүүдэд хуваарилах зорилтот дүн.
+  //    goodsGrossTotal өгсөн бол түүнийг шууд ашиглана (НӨАТ багтсан),
+  //    эс бөгөөс хөнгөлөлтийг [0, goodsTotal] завсарт таслаж хасна.
+  const targetGoods =
+    input.goodsGrossTotal !== undefined
+      ? Math.max(0, Math.round(input.goodsGrossTotal))
+      : goodsTotal -
+        Math.max(0, Math.min(Math.round(discount) || 0, goodsTotal));
   const lineTotals = allocateByLargestRemainder(grossTotals, targetGoods);
 
   const lines: QpayInvoiceLine[] = goods.map((it, i) =>

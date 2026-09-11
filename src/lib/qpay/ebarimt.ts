@@ -15,6 +15,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createEbarimtReceipt } from "./client";
 import { buildEbarimtLines, type QpayInvoiceLine } from "./ebarimt-lines";
+import { TAX_RATE } from "@/lib/pricing";
 import { normalizePhone, sendSms } from "@/lib/sms/client";
 
 /** Ангиллын код олдохгүй үед ашиглах нөөц код */
@@ -74,6 +75,17 @@ export async function buildOrderEbarimtLines(
     }
   }
 
+  // ⚠️ Манай үнэ бодолт: order_items.unit_price нь НӨАТ-ГҮЙ цэвэр үнэ.
+  //    Хэрэглэгч төлөхдөө (дэд дүн − хөнгөлөлт) + НӨАТ 10% + хүргэлт төлдөг
+  //    (pricing.ts::calculateOrderTotals). И-баримтад НӨАТ БАГТСАН үнэ явна.
+  const subtotal = items.reduce(
+    (s, it) => s + Number(it.unit_price) * it.quantity,
+    0,
+  );
+  const afterDiscount =
+    subtotal - Math.max(0, Math.min(Number(order.discount) || 0, subtotal));
+  const goodsGrossTotal = afterDiscount + Math.round(afterDiscount * TAX_RATE);
+
   const built = buildEbarimtLines({
     items: items.map((it) => {
       const m = it.product_id ? meta.get(it.product_id) : undefined;
@@ -86,7 +98,7 @@ export async function buildOrderEbarimtLines(
       };
     }),
     shipping: Number(order.shipping) || 0,
-    discount: Number(order.discount) || 0,
+    goodsGrossTotal,
     defaultClassificationCode: DEFAULT_CLASSIFICATION,
     shippingClassificationCode: SHIPPING_CLASSIFICATION,
   });
