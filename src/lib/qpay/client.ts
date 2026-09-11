@@ -16,33 +16,29 @@ import type { QpayInvoiceLine } from "./ebarimt-lines";
 const QPAY_BASE_URL = process.env.QPAY_BASE_URL ?? "https://merchant.qpay.mn/v2";
 
 /**
- * QPay-д хоёр тусдаа эрх бий:
- *  · "default"  — энгийн нэхэмжлэх (и-баримтгүй)
- *  · "ebarimt"  — и-баримт үүсгэдэг нэхэмжлэх. QPay 2026-09-11-нд тусдаа
- *                 client/password/invoice code өгсөн. Тусад нь token авна.
+ * QPay дээр НЭГ мерчант эрхтэй ба түүн дор ХОЁР нэхэмжлэхийн код бий:
+ *  · "default" — энгийн нэхэмжлэх (amount-аар)
+ *  · "ebarimt" — и-баримт үүсгэдэг нэхэмжлэх (lines, district_code шаардана)
+ *
+ * Эрх нэг тул token нэг — нэг token хоёуланг нь харна (шалгасан).
+ * Зөвхөн invoice_code л ялгаатай.
  */
 export type QpayAccount = "default" | "ebarimt";
 
-/**
- * Token cache хоёр төрөлтэй:
- *  · default — qpay_tokens хүснэгтэд (id=1). Хүснэгт дээр `id = 1` гэсэн
- *    check constraint байгаа тул өөр мөр нэмэх боломжгүй.
- *  · ebarimt — процессын дотор. Serverless instance тус бүр өөрийн
- *    cache-тэй байх нь хэвийн: token авах нь хямд, харин хүсэлт бүрд
- *    авах нь илүүц. (GA4 клиент ч ижил зарчимтай.)
- */
-let ebarimtToken: { token: string; expiresAtMs: number } | null = null;
+
 
 function getConfig(account: QpayAccount = "default") {
-  const [u, p, c] =
+  // Эрх нэг — QPAY_EB_USERNAME/PASSWORD нь зөвхөн нөөц (өгөөгүй бол үндсэнийг)
+  const username = process.env.QPAY_EB_USERNAME || process.env.QPAY_USERNAME;
+  const password = process.env.QPAY_EB_PASSWORD || process.env.QPAY_PASSWORD;
+  const invoiceCode =
     account === "ebarimt"
-      ? ["QPAY_EB_USERNAME", "QPAY_EB_PASSWORD", "QPAY_EB_INVOICE_CODE"]
-      : ["QPAY_USERNAME", "QPAY_PASSWORD", "QPAY_INVOICE_CODE"];
-  const username = process.env[u];
-  const password = process.env[p];
-  const invoiceCode = process.env[c];
+      ? process.env.QPAY_EB_INVOICE_CODE
+      : process.env.QPAY_INVOICE_CODE;
   if (!username || !password || !invoiceCode) {
-    throw new Error(`QPay тохиргоо дутуу: ${u}, ${p}, ${c} шаардлагатай`);
+    throw new Error(
+      "QPay тохиргоо дутуу: QPAY_USERNAME, QPAY_PASSWORD ба нэхэмжлэхийн код шаардлагатай",
+    );
   }
   return { username, password, invoiceCode };
 }
@@ -50,11 +46,7 @@ function getConfig(account: QpayAccount = "default") {
 /** И-баримттай нэхэмжлэх идэвхтэй эсэх */
 export function isEbarimtEnabled(): boolean {
   if (process.env.EBARIMT_ENABLED?.trim() !== "true") return false;
-  return !!(
-    process.env.QPAY_EB_USERNAME &&
-    process.env.QPAY_EB_PASSWORD &&
-    process.env.QPAY_EB_INVOICE_CODE
-  );
+  return !!process.env.QPAY_EB_INVOICE_CODE;
 }
 
 // ============================================================
@@ -141,22 +133,15 @@ async function fetchNewToken(
     data.expires_in > nowSec ? data.expires_in : nowSec + data.expires_in;
   const expiresAtIso = new Date(expiresAtSec * 1000).toISOString();
 
-  if (account === "ebarimt") {
-    ebarimtToken = {
-      token: data.access_token,
-      expiresAtMs: expiresAtSec * 1000,
-    };
-  } else {
-    // DB-д cache хийх (service role — RLS bypass)
-    const admin = createAdminClient();
-    await admin.from("qpay_tokens").upsert({
-      id: 1,
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      expires_at: expiresAtIso,
-      updated_at: new Date().toISOString(),
-    });
-  }
+  // DB-д cache хийх (service role — RLS bypass). Эрх нэг тул мөр нэг.
+  const admin = createAdminClient();
+  await admin.from("qpay_tokens").upsert({
+    id: 1,
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: expiresAtIso,
+    updated_at: new Date().toISOString(),
+  });
 
   return { token: data.access_token, expiresAtIso };
 }
@@ -164,16 +149,6 @@ async function fetchNewToken(
 export async function getAccessToken(
   account: QpayAccount = "default",
 ): Promise<string> {
-  if (account === "ebarimt") {
-    if (
-      ebarimtToken &&
-      ebarimtToken.expiresAtMs - EXPIRY_BUFFER_SEC * 1000 > Date.now()
-    ) {
-      return ebarimtToken.token;
-    }
-    return (await fetchNewToken("ebarimt")).token;
-  }
-
   const admin = createAdminClient();
   const { data: cached } = await admin
     .from("qpay_tokens")
@@ -253,6 +228,10 @@ export async function createInvoice(params: {
 // ============================================================
 // Төлбөр шалгах (INVOICE-аар)
 // ============================================================
+/**
+ * Төлбөр шалгах. Эрх нэг тул и-баримттай ба энгийн нэхэмжлэх хоёуланг нь
+ * ижил token-оор харна (шалгасан) — нэмэлт fallback шаардахгүй.
+ */
 export async function checkPayment(
   invoiceId: string,
 ): Promise<QpayCheckResponse> {
