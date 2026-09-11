@@ -41,12 +41,15 @@ export function CheckoutView({
   addresses,
   settings = COMMERCE_DEFAULTS,
   ebarimtEnabled = false,
+  isStaff = false,
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
   addresses: Address[];
   settings?: CommerceSettings;
   ebarimtEnabled?: boolean;
+  /** Ажилтан доод дүнгийн хязгаарлалтад үл хамаарна */
+  isStaff?: boolean;
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
@@ -126,7 +129,8 @@ export function CheckoutView({
     itemCount,
     discount,
   );
-  const belowMinOrder = subtotal < settings.min_order_amount;
+  // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
+  const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
 
   async function applyPromo() {
     setPromoError(null);

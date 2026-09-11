@@ -15,8 +15,11 @@ import { ecommerceItems, trackEvent } from "@/lib/analytics";
 
 export function CartView({
   settings = COMMERCE_DEFAULTS,
+  isStaff = false,
 }: {
   settings?: CommerceSettings;
+  /** Ажилтан доод дүнгийн хязгаарлалтад үл хамаарна */
+  isStaff?: boolean;
 }) {
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
@@ -55,7 +58,8 @@ export function CartView({
   }
 
   const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
-  const belowMinOrder = subtotal < settings.min_order_amount;
+  // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
+  const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
 
   return (
     <div className="my-6">
