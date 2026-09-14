@@ -32,14 +32,39 @@ export function shippingVat(shipping: number): number {
   return Math.round(shipping * TAX_RATE);
 }
 
+/**
+ * Ширхгийн тооноос хүргэлтийн төлбөрийг гаргана (үнэгүй хүргэлтээс өмнө).
+ *
+ *   1 … threshold      → base            (жнь. 1–7ш   → 7,000₮)
+ *   threshold+1 … max  → over            (жнь. 8–15ш  → 14,000₮)
+ *   max-аас дээш       → over + step_qty ширхэг тутамд step_price
+ *                        (жнь. 16–25ш → 21,000₮ · 26–35ш → 28,000₮)
+ */
+export function shippingForQty(
+  itemCount: number,
+  s: CommerceSettings = COMMERCE_DEFAULTS,
+): number {
+  if (itemCount <= s.shipping_qty_threshold) return s.shipping_base;
+  if (itemCount <= s.shipping_tier2_max) return s.shipping_over;
+  const stepQty = Math.max(1, s.shipping_step_qty);
+  const steps = Math.ceil((itemCount - s.shipping_tier2_max) / stepQty);
+  return s.shipping_over + steps * s.shipping_step_price;
+}
+
 export type CommerceSettings = {
   min_order_amount: number;
   /** threshold ба түүнээс доош ширхэгт хүргэлт */
   shipping_base: number;
-  /** threshold-с дээш ширхэгт хүргэлт */
+  /** threshold-с дээш, tier2_max хүртэл ширхэгт хүргэлт */
   shipping_over: number;
   /** хүргэлтийн ширхгийн босго (үүнээс дээш бол shipping_over) */
   shipping_qty_threshold: number;
+  /** 2-р шатны дээд ширхэг — үүнээс дээш бол шатлан нэмэгдэнэ */
+  shipping_tier2_max: number;
+  /** Дээд шатанд хэдэн ширхэг тутамд нэмэгдэх вэ */
+  shipping_step_qty: number;
+  /** Тэр ширхэг тутамд нэмэгдэх төлбөр (₮) */
+  shipping_step_price: number;
   free_shipping_enabled: boolean;
   free_shipping_min: number;
 };
@@ -49,6 +74,9 @@ export const COMMERCE_DEFAULTS: CommerceSettings = {
   shipping_base: 7_000,
   shipping_over: 14_000,
   shipping_qty_threshold: 7,
+  shipping_tier2_max: 15,
+  shipping_step_qty: 10,
+  shipping_step_price: 7_000,
   free_shipping_enabled: false,
   free_shipping_min: 50_000,
 };
@@ -80,10 +108,7 @@ export function calculateOrderTotals(
   // нэмэгдүүлэх, дэд дүнгээс их утга хураангуйд буруу тоо харуулахаас сэргийлнэ.
   const clampedDiscount = Math.max(0, Math.min(discount, subtotal));
   const afterDiscount = subtotal - clampedDiscount;
-  let shipping =
-    itemCount > settings.shipping_qty_threshold
-      ? settings.shipping_over
-      : settings.shipping_base;
+  let shipping = shippingForQty(itemCount, settings);
   if (settings.free_shipping_enabled && afterDiscount >= settings.free_shipping_min) {
     shipping = 0;
   }

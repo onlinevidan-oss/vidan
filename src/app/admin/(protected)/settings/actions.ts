@@ -118,7 +118,10 @@ export async function updateCommerceSettings(
   const shipping = Math.round(Number(payload.shipping_base));
   const shipOver = Math.round(Number(payload.shipping_over));
   const qtyThresh = Math.round(Number(payload.shipping_qty_threshold));
-  const freeMin  = Math.round(Number(payload.free_shipping_min));
+  const tier2Max  = Math.round(Number(payload.shipping_tier2_max));
+  const stepQty   = Math.round(Number(payload.shipping_step_qty));
+  const stepPrice = Math.round(Number(payload.shipping_step_price));
+  const freeMin   = Math.round(Number(payload.free_shipping_min));
 
   if (!Number.isFinite(minOrder) || minOrder < 0 || minOrder > 10_000_000) {
     return { ok: false, error: "Захиалгын доод дүн буруу байна" };
@@ -132,6 +135,18 @@ export async function updateCommerceSettings(
   if (!Number.isFinite(qtyThresh) || qtyThresh < 1 || qtyThresh > 1_000) {
     return { ok: false, error: "Ширхгийн босго буруу байна" };
   }
+  if (!Number.isFinite(tier2Max) || tier2Max <= qtyThresh || tier2Max > 10_000) {
+    return {
+      ok: false,
+      error: "2-р шатны дээд ширхэг нь босгоос их байх ёстой",
+    };
+  }
+  if (!Number.isFinite(stepQty) || stepQty < 1 || stepQty > 1_000) {
+    return { ok: false, error: "Нэмэгдэх ширхгийн алхам буруу байна" };
+  }
+  if (!Number.isFinite(stepPrice) || stepPrice < 0 || stepPrice > 1_000_000) {
+    return { ok: false, error: "Нэмэгдэх хүргэлтийн төлбөр буруу байна" };
+  }
   if (!Number.isFinite(freeMin) || freeMin < 0 || freeMin > 100_000_000) {
     return { ok: false, error: "Үнэгүй хүргэлтийн босго буруу байна" };
   }
@@ -141,6 +156,9 @@ export async function updateCommerceSettings(
     shipping_base: shipping,
     shipping_over: shipOver,
     shipping_qty_threshold: qtyThresh,
+    shipping_tier2_max: tier2Max,
+    shipping_step_qty: stepQty,
+    shipping_step_price: stepPrice,
     free_shipping_enabled: !!payload.free_shipping_enabled,
     free_shipping_min: freeMin,
   };

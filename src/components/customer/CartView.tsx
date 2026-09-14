@@ -177,9 +177,13 @@ export function CartView({
             <h3 className="font-display mb-4 text-base font-extrabold tracking-tight text-ink-900">
               Захиалгын дүн
             </h3>
-            <Row label={`Барааны дүн (${items.length} бараа)`} value={formatMnt(subtotal)} />
+            {/* Хүргэлт нь ШИРХГИЙН тооноос хамаардаг тул ширхгийг харуулна */}
             <Row
-              label="Хүргэлт"
+              label={`Барааны дүн (${itemCount} ширхэг)`}
+              value={formatMnt(subtotal)}
+            />
+            <Row
+              label={shipping === 0 ? "Хүргэлт" : `Хүргэлт (${itemCount} ширхэгт)`}
               value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
               accent={shipping === 0 ? "success" : undefined}
             />

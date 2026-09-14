@@ -62,11 +62,45 @@ export function CommerceSettingsForm({
             onChange={(v) => setNum("shipping_base", v)}
           />
           <Field
-            label={`> ${form.shipping_qty_threshold} ширхэг (₮)`}
-            hint="Босгоос дээш"
+            label={`${form.shipping_qty_threshold + 1}–${form.shipping_tier2_max} ширхэг (₮)`}
+            hint="2-р шат"
             value={form.shipping_over}
             onChange={(v) => setNum("shipping_over", v)}
           />
+        </div>
+
+        <div className="mt-3 border-t border-ink-200 pt-3">
+          <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
+            Дээд шат — {form.shipping_tier2_max} ширхэгээс дээш
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field
+              label="2-р шатны дээд (ширхэг)"
+              hint="Үүнээс дээш бол шатлана"
+              value={form.shipping_tier2_max}
+              onChange={(v) => setNum("shipping_tier2_max", v)}
+            />
+            <Field
+              label="Алхам (ширхэг)"
+              hint="Хэдэн ширхэг тутамд"
+              value={form.shipping_step_qty}
+              onChange={(v) => setNum("shipping_step_qty", v)}
+            />
+            <Field
+              label="Алхам тутамд нэмэх (₮)"
+              hint="Тэр бүрд нэмэгдэх"
+              value={form.shipping_step_price}
+              onChange={(v) => setNum("shipping_step_price", v)}
+            />
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-500">
+            Жишээ: {form.shipping_tier2_max + 1}–
+            {form.shipping_tier2_max + form.shipping_step_qty} ширхэг →{" "}
+            {formatMnt(form.shipping_over + form.shipping_step_price)} ·{" "}
+            {form.shipping_tier2_max + form.shipping_step_qty + 1}–
+            {form.shipping_tier2_max + form.shipping_step_qty * 2} ширхэг →{" "}
+            {formatMnt(form.shipping_over + form.shipping_step_price * 2)}
+          </p>
         </div>
       </div>
 
@@ -112,8 +146,10 @@ export function CommerceSettingsForm({
       <div className="rounded-xl bg-ink-100 p-4 text-[13px] leading-relaxed text-ink-700">
         <strong className="text-ink-900">Одоогийн дүрэм:</strong>{" "}
         {formatMnt(form.min_order_amount)}-с доош захиалга авахгүй · Хүргэлт:{" "}
-        {form.shipping_qty_threshold} ширхэг хүртэл {formatMnt(form.shipping_base)},
-        дээш бол {formatMnt(form.shipping_over)}
+        1–{form.shipping_qty_threshold}ш {formatMnt(form.shipping_base)} ·{" "}
+        {form.shipping_qty_threshold + 1}–{form.shipping_tier2_max}ш{" "}
+        {formatMnt(form.shipping_over)} · дараа нь {form.shipping_step_qty}ш тутамд +
+        {formatMnt(form.shipping_step_price)}
         {form.free_shipping_enabled
           ? ` · ${formatMnt(form.free_shipping_min)}-с дээш бол үнэгүй`
           : ""}

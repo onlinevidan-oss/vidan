@@ -14,6 +14,7 @@ import {
   calculateOrderTotals,
   COMMERCE_DEFAULTS,
   TAX_RATE,
+  shippingForQty,
   type CommerceSettings,
 } from "./pricing.ts";
 
@@ -59,6 +60,59 @@ describe("calculateOrderTotals — үндсэн тооцоо", () => {
   });
 });
 
+describe("хүргэлт — шатлалт үнэ", () => {
+  // 1–7ш → 7,000 · 8–15ш → 14,000 · дараа нь 10ш тутамд +7,000
+  const cases: [number, number][] = [
+    [1, 7_000], [7, 7_000],
+    [8, 14_000], [15, 14_000],
+    [16, 21_000], [25, 21_000],
+    [26, 28_000], [35, 28_000],
+    [36, 35_000], [45, 35_000],
+    [46, 42_000],
+  ];
+
+  for (const [qty, expected] of cases) {
+    test(`${qty} ширхэг → ${expected.toLocaleString()}₮`, () => {
+      assert.equal(shippingForQty(qty), expected);
+    });
+  }
+
+  test("calculateOrderTotals мөн ижил хүргэлт өгнө", () => {
+    for (const [qty, expected] of cases) {
+      assert.equal(
+        calculateOrderTotals(100_000, settings(), qty).shipping,
+        expected,
+        `${qty} ширхэг`,
+      );
+    }
+  });
+
+  test("НӨАТ нь шатласан хүргэлтийн 10% байна", () => {
+    const t = calculateOrderTotals(100_000, settings(), 26);
+    assert.equal(t.shipping, 28_000);
+    assert.equal(t.tax, 2_800);
+    assert.equal(t.total, 100_000 + 28_000 + 2_800);
+  });
+
+  test("15 → 16 ширхэгт шат үсэрнэ, дундуур нь үсрэхгүй", () => {
+    assert.equal(shippingForQty(15), 14_000);
+    assert.equal(shippingForQty(16), 21_000);
+    for (let q = 16; q <= 25; q++) assert.equal(shippingForQty(q), 21_000, `${q}ш`);
+  });
+
+  test("алхмын тохиргоо өөрчлөгдвөл дагана", () => {
+    const s = settings({ shipping_step_qty: 5, shipping_step_price: 3_000 });
+    assert.equal(shippingForQty(16, s), 17_000, "14,000 + 3,000");
+    assert.equal(shippingForQty(20, s), 17_000);
+    assert.equal(shippingForQty(21, s), 20_000);
+  });
+
+  test("алхам 0 байсан ч хуваахад алдаа гаргахгүй", () => {
+    const s = settings({ shipping_step_qty: 0 });
+    assert.ok(Number.isFinite(shippingForQty(100, s)));
+  });
+});
+
 describe("хүргэлт — ширхгийн босго", () => {
   const s = settings({
     shipping_base: 7_000,
@@ -72,6 +126,10 @@ describe("хүргэлт — ширхгийн босго", () => {
 
   test("босгоос дээш бол over үнэ (8 ширхэг → 14,000₮)", () => {
     assert.equal(calculateOrderTotals(50_000, s, 8).shipping, 14_000);
+  });
+
+  test("2-р шатны дээдээс дээш бол шатлан нэмэгдэнэ (16 ширхэг)", () => {
+    assert.equal(calculateOrderTotals(50_000, s, 16).shipping, 21_000);
   });
 
   test("ширхэг дамжуулаагүй бол base үнэ", () => {
