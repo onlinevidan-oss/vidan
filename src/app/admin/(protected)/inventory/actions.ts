@@ -10,14 +10,34 @@ export type StockInResult =
   | { ok: true; newStock: number }
   | { ok: false; error: string };
 
+/** Гараар бүртгэх хөдөлгөөний төрөл */
+export type StockMovementKind = "in" | "out" | "adjust";
+
+/** RPC-ийн алдааг хүнд ойлгомжтой болгоно */
+function humanError(message: string): string {
+  if (message.includes("FORBIDDEN")) return "Танд эрх алга";
+  if (message.includes("PRODUCT_NOT_FOUND")) return "Бүтээгдэхүүн олдсонгүй";
+  if (message.includes("INVALID_QUANTITY")) return "Тоо ширхэг буруу";
+  if (message.includes("INVALID_KIND")) return "Хөдөлгөөний төрөл буруу";
+  if (message.includes("INSUFFICIENT_STOCK")) {
+    return "Үлдэгдэл хүрэлцэхгүй — агуулахын тоо сөрөг болно";
+  }
+  return message;
+}
+
 /**
- * Агуулахын ОРЛОГО бүртгэх — үлдэгдэл дээр нэмнэ.
+ * Агуулахын хөдөлгөөн бүртгэх — орлого, зарлага, тооллогын засвар.
  *
- * Тоог энд шууд update хийхгүй: `record_stock_in` RPC нь products.stock ба
- * stock_movements хоёрыг ЗЭРЭГ шинэчилдэг тул тэнцэл задрахгүй.
+ * Тоог шууд update хийхгүй: RPC нь products.stock ба stock_movements
+ * хоёрыг ЗЭРЭГ шинэчилдэг тул тэнцэл задрахгүй.
+ *
+ *  · in     — орлого, тоо эерэг
+ *  · out    — зарлага (гэмтэл, дотоод хэрэглээ), тоог эерэгээр өгнө
+ *  · adjust — тооллогын засвар, тэмдэгтэй (+/−)
  */
-export async function recordStockIn(input: {
+export async function recordStockMovement(input: {
   productId: string;
+  kind: StockMovementKind;
   quantity: number;
   /** "YYYY-MM-DD" (УБ өдөр). Хоосон бол өнөөдөр. */
   date?: string;
@@ -25,6 +45,10 @@ export async function recordStockIn(input: {
 }): Promise<StockInResult> {
   const guard = await requireAdmin();
   if (!guard.ok) return { ok: false, error: guard.error };
+
+  if (!["in", "out", "adjust"].includes(input.kind)) {
+    return { ok: false, error: "Хөдөлгөөний төрөл буруу" };
+  }
 
   const qty = Math.trunc(Number(input.quantity));
   if (!Number.isFinite(qty) || qty === 0) {
@@ -38,30 +62,22 @@ export async function recordStockIn(input: {
   if (date && !isValidDateKey(date)) {
     return { ok: false, error: "Огноо буруу байна" };
   }
-  // УБ өдрийн эхлэл — тайлан огноогоор шүүхэд зөв хэсэгт унана
   const occurredAt = date ? ubDayStart(date).toISOString() : new Date().toISOString();
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("record_stock_in", {
+  const { data, error } = await supabase.rpc("record_stock_movement", {
     p_product_id: input.productId,
+    p_kind: input.kind,
     p_qty: qty,
-    p_note: input.note?.trim() || null,
+    p_note: input.note?.trim() || undefined,
     p_occurred_at: occurredAt,
   });
 
-  if (error) {
-    const msg = error.message.includes("FORBIDDEN")
-      ? "Танд эрх алга"
-      : error.message.includes("PRODUCT_NOT_FOUND")
-        ? "Бүтээгдэхүүн олдсонгүй"
-        : error.message.includes("INVALID_QUANTITY")
-          ? "Тоо ширхэг буруу"
-          : error.message;
-    return { ok: false, error: msg };
-  }
+  if (error) return { ok: false, error: humanError(error.message) };
 
   const row = Array.isArray(data) ? data[0] : data;
   revalidatePath("/admin/inventory");
+  revalidatePath("/admin/inventory/movements");
   revalidatePath("/admin/reports");
   return { ok: true, newStock: Number(row?.new_stock ?? 0) };
 }

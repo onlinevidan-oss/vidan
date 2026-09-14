@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { TopBar } from "@/components/admin/TopBar";
 import { ReportToolbar } from "@/components/admin/ReportToolbar";
-import { StockInForm } from "@/components/admin/StockInForm";
+import { StockMovementForm } from "@/components/admin/StockMovementForm";
 import Link from "next/link";
 import { getInventory } from "@/lib/queries/inventory";
 import { PERIOD_PRESETS, resolvePeriod } from "@/lib/report-period";
@@ -119,7 +119,7 @@ export default async function AdminInventory({
                     <th className={`${TH} text-right`}>Нэгж үнэ</th>
                     <th className={`${TH} text-right`}>Дүн</th>
                     {ledgerReady && (
-                      <th className={`${TH} print:hidden`}>Орлого</th>
+                      <th className={`${TH} print:hidden`}>Хөдөлгөөн</th>
                     )}
                   </tr>
                 </thead>
@@ -189,9 +189,10 @@ export default async function AdminInventory({
                       </td>
                       {ledgerReady && (
                         <td className="px-3 py-2 print:hidden">
-                          <StockInForm
+                          <StockMovementForm
                             productId={r.id}
                             productName={r.name}
+                            currentStock={r.stock}
                             today={today}
                           />
                         </td>
