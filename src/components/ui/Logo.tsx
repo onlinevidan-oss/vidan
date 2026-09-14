@@ -15,7 +15,7 @@ export function Logo({
         alt="VIDAN"
         width={Math.round(height * (630 / 282))}
         height={height}
-        priority
+        loading="eager"
       />
     </Link>
   );

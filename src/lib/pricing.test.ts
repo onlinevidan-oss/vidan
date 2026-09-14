@@ -23,20 +23,31 @@ function settings(over: Partial<CommerceSettings> = {}): CommerceSettings {
 }
 
 describe("calculateOrderTotals — үндсэн тооцоо", () => {
-  test("НӨАТ 10%, хүргэлт нэмэгдэж нийт дүн гарна", () => {
+  test("НӨАТ нийт дүн дээр НЭМЭГДЭХГҮЙ — үнэд шингэсэн", () => {
     const t = calculateOrderTotals(30_000, settings(), 3);
     assert.deepEqual(t, {
       subtotal: 30_000,
       discount: 0,
       shipping: 7_000,
-      tax: 3_000,
-      total: 40_000,
+      tax: 2_727, // 30,000-д багтсан НӨАТ (хүргэлтэд НӨАТ байхгүй)
+      total: 37_000, // 30,000 + 7,000 — НӨАТ нэмэгдээгүй
     });
   });
 
-  test("total нь үргэлж (дэд дүн − хөнгөлөлт) + хүргэлт + НӨАТ", () => {
+  test("total нь үргэлж (дэд дүн − хөнгөлөлт) + хүргэлт", () => {
     const t = calculateOrderTotals(47_500, settings(), 4, 2_500);
-    assert.equal(t.total, 47_500 - 2_500 + t.shipping + t.tax);
+    assert.equal(t.total, 47_500 - 2_500 + t.shipping);
+  });
+
+  test("tax нь БАРААНЫ дүнд багтсан НӨАТ — хүргэлт оролцохгүй", () => {
+    const t = calculateOrderTotals(47_500, settings(), 4, 2_500);
+    assert.equal(t.tax, Math.round(45_000 / 11));
+  });
+
+  test("НӨАТ-гүй дүн + НӨАТ = нийт дүн (задаргаа тэнцэнэ)", () => {
+    const t = calculateOrderTotals(30_000, settings(), 3);
+    assert.equal(t.total - t.tax + t.tax, t.total);
+    assert.ok(t.tax < t.total, "НӨАТ нийт дүнгийн дотор байна");
   });
 
   test("TAX_RATE өөрчлөгдвөл тест мэдэгдэнэ (10% гэж бататгав)", () => {
@@ -85,10 +96,10 @@ describe("үнэгүй хүргэлт", () => {
 });
 
 describe("хөнгөлөлт", () => {
-  test("НӨАТ хөнгөлсний ДАРААХ дүнгээс тооцогдоно", () => {
+  test("НӨАТ хөнгөлсний ДАРААХ нийт дүнгээс задлагдана", () => {
     const t = calculateOrderTotals(50_000, settings(), 2, 5_000);
-    assert.equal(t.tax, 4_500, "45,000-ийн 10%");
-    assert.equal(t.total, 45_000 + 7_000 + 4_500);
+    assert.equal(t.total, 45_000 + 7_000, "НӨАТ нэмэгдэхгүй");
+    assert.equal(t.tax, Math.round(45_000 / 11), "барааны 45,000-д багтсан НӨАТ");
   });
 
   test("дэд дүн нь хөнгөлөлтөөр өөрчлөгдөхгүй (баримтад бүтэн дүн үлдэнэ)", () => {
@@ -99,8 +110,8 @@ describe("хөнгөлөлт", () => {
   test("хөнгөлөлт дэд дүнгээс их бол дэд дүнгээр таслагдана (SQL: least(discount, subtotal))", () => {
     const t = calculateOrderTotals(20_000, settings(), 2, 35_000);
     assert.equal(t.discount, 20_000, "мэдээлсэн хөнгөлөлт дэд дүнгээс хэтрэхгүй");
-    assert.equal(t.tax, 0);
-    assert.equal(t.total, 0 + t.shipping + 0, "зөвхөн хүргэлт үлдэнэ");
+    assert.equal(t.total, t.shipping, "зөвхөн хүргэлт үлдэнэ");
+    assert.equal(t.tax, 0, "хүргэлтэд НӨАТ тооцохгүй");
   });
 
   test("сөрөг хөнгөлөлт нийт дүнг НЭМЭГДҮҮЛЖ болохгүй (SQL: greatest(0, …))", () => {
@@ -111,16 +122,18 @@ describe("хөнгөлөлт", () => {
 
   test("хөнгөлөлт яг дэд дүнтэй тэнцвэл барааны төлбөр 0", () => {
     const t = calculateOrderTotals(30_000, settings(), 3, 30_000);
-    assert.equal(t.tax, 0);
     assert.equal(t.total, t.shipping);
   });
 });
 
 describe("бүхэлчлэл", () => {
-  test("НӨАТ хамгийн ойрын төгрөгт бүхэлчлэгдэнэ", () => {
-    // 10% нь .5-аар төгсөх дүн — дээш бүхэлчилнэ (SQL round-тай ижил)
-    assert.equal(calculateOrderTotals(20_005, settings(), 1).tax, 2_001);
-    assert.equal(calculateOrderTotals(20_004, settings(), 1).tax, 2_000);
+  test("багтсан НӨАТ хамгийн ойрын төгрөгт бүхэлчлэгдэнэ", () => {
+    // Багтсан НӨАТ = нийт дүн × 10/110, SQL round-тай ижил
+    const a = calculateOrderTotals(20_005, settings(), 1);
+    assert.equal(a.tax, Math.round((20_005 * 0.1) / 1.1));
+    const b = calculateOrderTotals(20_004, settings(), 1);
+    assert.equal(b.tax, Math.round((20_004 * 0.1) / 1.1));
+    assert.notEqual(a.tax, 0);
   });
 
   test("буцаах бүх талбар бүхэл тоо байна", () => {

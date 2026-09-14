@@ -194,7 +194,6 @@ export function AboutBrochureForm({ initial }: { initial: AboutBrochure | null }
                 width={p.width}
                 height={p.height}
                 sizes="120px"
-                unoptimized={p.url.startsWith("http")}
                 className="w-full"
               />
             </div>

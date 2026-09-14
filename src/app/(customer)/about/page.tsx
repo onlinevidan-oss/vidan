@@ -49,8 +49,7 @@ export default async function AboutPage() {
               width={page.width}
               height={page.height}
               sizes="(max-width: 940px) 100vw, 900px"
-              priority={i === 0}
-              loading={i === 0 ? undefined : "lazy"}
+              loading={i === 0 ? "eager" : "lazy"}
               className="w-full rounded-[14px] border border-ink-200 bg-white shadow-[var(--shadow-brand-sm)]"
             />
           ))}

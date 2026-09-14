@@ -117,7 +117,7 @@ function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
           className={`pointer-events-none object-center ${
             hasText ? "object-cover" : "object-contain"
           }`}
-          priority={priority}
+          preload={priority}
           sizes="100vw"
         />
       )}

@@ -176,6 +176,7 @@ export function buildEbarimtLines(input: BuildLinesInput): BuildLinesResult {
         lineTotal: shippingAmount,
         barcode: null,
         classificationCode: shippingClassificationCode,
+        vatable: false,
       }),
     );
   }
@@ -202,6 +203,8 @@ function makeLine(a: {
   lineTotal: number;
   barcode?: string | null;
   classificationCode: string;
+  /** false бол таксын мөр огт явуулахгүй (жнь. хүргэлт) */
+  vatable?: boolean;
 }): QpayInvoiceLine {
   // Нэгж үнэ = мөрийн дүн / тоо. Хуваагдахгүй үед 4 орны нарийвчлал
   // хэрэглэнэ — тоо × нэгж үнэ нь мөрийн дүнг эргүүлж өгнө.
@@ -216,13 +219,18 @@ function makeLine(a: {
       : String(unitPrice),
     note: "",
     classification_code: a.classificationCode,
-    taxes: [
-      {
-        tax_code: "VAT",
-        description: "НӨАТ",
-        amount: vatFromGross(a.lineTotal),
-        note: "НӨАТ",
-      },
-    ],
+    // Хүргэлтэд НӨАТ тооцохгүй (pricing.ts-тэй ижил шийдвэр) — таксын
+    // мөргүй явуулна. QPay-ийн баримт бичигт `taxes` нь заавал биш.
+    taxes:
+      a.vatable === false
+        ? []
+        : [
+            {
+              tax_code: "VAT",
+              description: "НӨАТ",
+              amount: vatFromGross(a.lineTotal),
+              note: "НӨАТ",
+            },
+          ],
   };
 }

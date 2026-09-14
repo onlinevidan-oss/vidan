@@ -24,7 +24,8 @@ export function ProductGallery({
           fill
           className="object-cover"
           sizes="(max-width: 1024px) 100vw, 50vw"
-          priority
+          loading="eager"
+          fetchPriority="high"
         />
         {tag && tagText && (
           <span

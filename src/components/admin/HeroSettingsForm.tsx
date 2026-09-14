@@ -154,7 +154,6 @@ export function HeroSettingsForm({ initial }: { initial: HeroSettings }) {
                 alt="preview"
                 fill
                 className="object-contain p-1"
-                unoptimized={isSupabaseUrl}
               />
             </div>
             <span className="text-xs text-ink-500">Урьдчилан харах</span>

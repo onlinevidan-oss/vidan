@@ -100,16 +100,20 @@ describe("allocateOrderDiscount", () => {
 });
 
 describe("buildReceiptRequest", () => {
-  test("НӨАТ нь мөрийн цэвэр дүнгийн 10%, totalAmount дээр нь нэмэгдэнэ", () => {
+  test("НӨАТ нь дүнд БАГТСАН (1/11), totalAmount дээр нэмэгдэхгүй", () => {
     const req = buildReceiptRequest({
       type: "B2C_RECEIPT",
       items: [goods({ qty: 2, unitPrice: 10_000 })],
       payment: { code: "BANK_TRANSFER_QPAY", paidAmount: 0 },
       merchant: MERCHANT,
     });
-    assert.equal(req.totalVAT, 2_000);
-    assert.equal(req.totalAmount, 22_000);
-    assert.equal(req.receipts[0].items[0].unitPrice, 10_000, "нэгжийн үнэ цэвэр дүн");
+    assert.equal(req.totalAmount, 20_000, "НӨАТ нэмэгдэхгүй");
+    assert.equal(req.totalVAT, Math.round(20_000 / 11), "багтсан НӨАТ");
+    assert.equal(
+      req.receipts[0].items[0].unitPrice,
+      10_000,
+      "нэгжийн үнэ — НӨАТ шингэсэн дүн",
+    );
   });
 
   test("NO_VAT мөр НӨАТ төлүүлэхгүй", () => {

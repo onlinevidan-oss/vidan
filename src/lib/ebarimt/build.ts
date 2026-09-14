@@ -4,7 +4,8 @@
  * VIDAN бизнес дүрмүүд:
  *   · Үнэ НӨАТ-гүй (VAT-exclusive, net) — дээр нь 10% НӨАТ нэмнэ.
  *     (pricing.ts: total = subtotal + shipping + tax, tax = net × 10%)
- *     → unitPrice = net, totalVAT = net × 10%, totalAmount = net + НӨАТ.
+ *     → unitPrice-д НӨАТ ШИНГЭСЭН; totalVAT = дүнгийн 1/11,
+ *       totalAmount = дүн (НӨАТ дээр нь нэмэгдэхгүй).
  *   · НХАТ (city tax) = 0 (хүнсний жижиглэн). Шаардвал тохируулна.
  *   · Бараа бүр `classificationCode`-той байх ёстой (products хүснэгтэд нэмэх).
  */
@@ -108,9 +109,14 @@ export function allocateOrderDiscount<T extends DiscountableLine>(
   return { lines: scaled, residual: goodsTotal - applied - after };
 }
 
-/** НӨАТ тооцоо — үнэ НӨАТ-гүй (net) гэж үзнэ (VAT_ABLE → net × 10%) */
-function vatOf(net: number, taxType: TaxType): number {
-  return taxType === "VAT_ABLE" ? Math.round(net * VAT_RATE) : 0;
+/**
+ * НӨАТ тооцоо — үнэд НӨАТ ШИНГЭСЭН гэж үзнэ (санхүү, 2026-09-14).
+ * Багтсан НӨАТ = дүн × 10/110 = дүн / 11. Дээр нь нэмэгдэхгүй.
+ */
+function vatOf(gross: number, taxType: TaxType): number {
+  return taxType === "VAT_ABLE"
+    ? Math.round((gross * VAT_RATE) / (1 + VAT_RATE))
+    : 0;
 }
 
 /** НХАТ тооцоо — одоогоор 0 (хүнсний жижиглэн). Шаардвал энд өөрчилнө. */
@@ -149,7 +155,7 @@ export function buildReceiptRequest(
       unitPrice: li.unitPrice, // net нэгжийн үнэ
       totalVAT,
       totalCityTax,
-      totalAmount: lineNet + totalVAT + totalCityTax, // НӨАТ шингэсэн эцсийн дүн
+      totalAmount: lineNet + totalCityTax, // НӨАТ аль хэдийн шингэсэн
     };
     const arr = groups.get(taxType);
     if (arr) arr.push(item);

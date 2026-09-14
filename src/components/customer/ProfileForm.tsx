@@ -111,7 +111,6 @@ export function ProfileForm({ initial }: { initial: ProfileInitial }) {
               alt=""
               width={80}
               height={80}
-              unoptimized={avatarUrl.startsWith("http")}
               className="h-full w-full object-cover"
             />
           ) : (

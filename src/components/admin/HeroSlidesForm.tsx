@@ -216,7 +216,6 @@ function SlideEditor({
               alt=""
               fill
               className="object-cover"
-              unoptimized={isSupabase}
             />
           </div>
         )}

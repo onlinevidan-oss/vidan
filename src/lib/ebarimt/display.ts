@@ -49,7 +49,8 @@ export function ebarimtDisplayFromOrder(
 
   const receiptItems = discounted.map((it) => {
     const net = it.unitPrice * it.qty;
-    const vat = Math.round(net * 0.1);
+    // Үнэд НӨАТ шингэсэн (санхүү, 2026-09-14) — багтсаныг задална, нэмэхгүй
+    const vat = Math.round((net * 0.1) / 1.1);
     return {
       name: it.name,
       classificationCode: "",
@@ -57,7 +58,7 @@ export function ebarimtDisplayFromOrder(
       unitPrice: it.unitPrice,
       totalVAT: vat,
       totalCityTax: 0,
-      totalAmount: net + vat,
+      totalAmount: net,
     };
   });
   const shipping = Number(order.shipping) || 0;

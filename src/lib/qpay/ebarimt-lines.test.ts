@@ -256,14 +256,24 @@ describe("buildEbarimtLines — мөрийн талбарууд", () => {
 });
 
 describe("buildEbarimtLines — НӨАТ", () => {
-  test("нийт НӨАТ нь нийт дүнгийн 1/11", () => {
+  test("НӨАТ зөвхөн бараанаас — хүргэлт НӨАТ-гүй", () => {
     const r = buildEbarimtLines({
       items: [item({ unitPrice: 11_000, quantity: 2 })],
       shipping: 11_000,
       ...DEFAULTS,
     });
     assert.equal(r.total, 33_000);
-    assert.equal(r.vatTotal, 3_000);
+    assert.equal(r.vatTotal, 2_000, "зөвхөн 22,000-ийн НӨАТ");
+  });
+
+  test("хүргэлтийн мөрөнд таксын бичлэг огт байхгүй", () => {
+    const r = buildEbarimtLines({
+      items: [item({ unitPrice: 10_000 })],
+      shipping: 7_000,
+      ...DEFAULTS,
+    });
+    assert.deepEqual(r.lines[1].taxes, []);
+    assert.equal(r.lines[0].taxes.length, 1);
   });
 
   test("мөр бүрийн НӨАТ 4 орноос хэтрэхгүй", () => {
@@ -356,8 +366,8 @@ describe("buildEbarimtLines — goodsGrossTotal (НӨАТ багтсан дүн)
     });
     assert.equal(r.total, grossGoods + 14_000);
     assert.equal(r.residual, 0);
-    // НӨАТ нь НӨАТ багтсан дүнгийн 1/11 — цэвэр дүнгийн 10%-тай тэнцүү
-    assert.ok(Math.abs(r.vatTotal - (grossGoods + 14_000) / 11) < 0.01);
+    // НӨАТ зөвхөн бараанаас — хүргэлт оролцохгүй
+    assert.ok(Math.abs(r.vatTotal - grossGoods / 11) < 0.01);
   });
 
   test("тэг дүн өгвөл мөрүүд тэг болно", () => {

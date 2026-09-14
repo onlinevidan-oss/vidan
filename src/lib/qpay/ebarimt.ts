@@ -15,7 +15,6 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createEbarimtReceipt } from "./client";
 import { buildEbarimtLines, type QpayInvoiceLine } from "./ebarimt-lines";
-import { TAX_RATE } from "@/lib/pricing";
 import { normalizePhone, sendSms } from "@/lib/sms/client";
 
 /** Ангиллын код олдохгүй үед ашиглах нөөц код */
@@ -75,16 +74,14 @@ export async function buildOrderEbarimtLines(
     }
   }
 
-  // ⚠️ Манай үнэ бодолт: order_items.unit_price нь НӨАТ-ГҮЙ цэвэр үнэ.
-  //    Хэрэглэгч төлөхдөө (дэд дүн − хөнгөлөлт) + НӨАТ 10% + хүргэлт төлдөг
-  //    (pricing.ts::calculateOrderTotals). И-баримтад НӨАТ БАГТСАН үнэ явна.
+  // Барааны үнэд НӨАТ шингэсэн (pricing.ts, 2026-09-14) тул и-баримтад
+  // unit_price шууд явна — хөрвүүлэх шаардлагагүй. Хөнгөлөлтийг л хасна.
   const subtotal = items.reduce(
     (s, it) => s + Number(it.unit_price) * it.quantity,
     0,
   );
-  const afterDiscount =
+  const goodsGrossTotal =
     subtotal - Math.max(0, Math.min(Number(order.discount) || 0, subtotal));
-  const goodsGrossTotal = afterDiscount + Math.round(afterDiscount * TAX_RATE);
 
   const built = buildEbarimtLines({
     items: items.map((it) => {

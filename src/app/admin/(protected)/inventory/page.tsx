@@ -139,7 +139,6 @@ export default async function AdminInventory({
                               width={44}
                               height={44}
                               className="h-full w-full object-contain"
-                              unoptimized
                               // Хэвлэхэд бүх зураг бэлэн байх ёстой — lazy бол
                               // доод мөрүүдийн зураг цаасан дээр хоосон гарна
                               loading="eager"
