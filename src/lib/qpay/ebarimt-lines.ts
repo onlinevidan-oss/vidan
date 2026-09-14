@@ -48,7 +48,7 @@ export type EbarimtSourceItem = {
 
 export type BuildLinesInput = {
   items: EbarimtSourceItem[];
-  /** Хүргэлтийн төлбөр (0 бол мөр нэмэхгүй) */
+  /** Хүргэлтийн төлбөр — НӨАТ НЭМСЭН дүн (0 бол мөр нэмэхгүй) */
   shipping?: number;
   /** Захиалгын түвшний хөнгөлөлт — барааны мөрүүдэд хуваарилагдана */
   discount?: number;
@@ -176,7 +176,6 @@ export function buildEbarimtLines(input: BuildLinesInput): BuildLinesResult {
         lineTotal: shippingAmount,
         barcode: null,
         classificationCode: shippingClassificationCode,
-        vatable: false,
       }),
     );
   }
@@ -219,8 +218,7 @@ function makeLine(a: {
       : String(unitPrice),
     note: "",
     classification_code: a.classificationCode,
-    // Хүргэлтэд НӨАТ тооцохгүй (pricing.ts-тэй ижил шийдвэр) — таксын
-    // мөргүй явуулна. QPay-ийн баримт бичигт `taxes` нь заавал биш.
+    // vatable === false үед таксын мөргүй явна. QPay-д `taxes` заавал биш.
     taxes:
       a.vatable === false
         ? []

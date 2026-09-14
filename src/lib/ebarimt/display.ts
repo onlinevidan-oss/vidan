@@ -13,6 +13,7 @@
 // Node-ийн тест энэ модулийг шууд ачаалдаг тул өргөтгөл заавал (ESM шаардлага)
 import { allocateOrderDiscount } from "./build.ts";
 import type { EbarimtReceiptResponse, ReceiptType } from "./types";
+import { shippingVat } from "../pricing.ts";
 
 /**
  * Хадгалсан order талбараас ReceiptView-д зориулсан объект угсрах.
@@ -61,16 +62,18 @@ export function ebarimtDisplayFromOrder(
       totalAmount: net,
     };
   });
-  const shipping = Number(order.shipping) || 0;
-  if (shipping > 0) {
+  // Хүргэлтийн үнэн дээр НӨАТ нэмэгддэг — баримтад НӨАТ нэмсэн дүнгээр очно
+  const shippingNet = Number(order.shipping) || 0;
+  if (shippingNet > 0) {
+    const vat = shippingVat(shippingNet);
     receiptItems.push({
       name: "Хүргэлтийн үйлчилгээ",
       classificationCode: "",
       qty: 1,
-      unitPrice: shipping,
-      totalVAT: 0,
+      unitPrice: shippingNet + vat,
+      totalVAT: vat,
       totalCityTax: 0,
-      totalAmount: shipping,
+      totalAmount: shippingNet + vat,
     });
   }
 

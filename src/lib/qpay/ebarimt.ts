@@ -16,6 +16,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createEbarimtReceipt } from "./client";
 import { buildEbarimtLines, type QpayInvoiceLine } from "./ebarimt-lines";
 import { normalizePhone, sendSms } from "@/lib/sms/client";
+import { shippingVat } from "@/lib/pricing";
 
 /** Ангиллын код олдохгүй үед ашиглах нөөц код */
 const DEFAULT_CLASSIFICATION =
@@ -83,6 +84,10 @@ export async function buildOrderEbarimtLines(
   const goodsGrossTotal =
     subtotal - Math.max(0, Math.min(Number(order.discount) || 0, subtotal));
 
+  // Хүргэлтэд НӨАТ НЭМЭГДДЭГ тул баримтын мөр нь НӨАТ-той дүнгээр очно
+  const shippingNet = Number(order.shipping) || 0;
+  const shippingGross = shippingNet + shippingVat(shippingNet);
+
   const built = buildEbarimtLines({
     items: items.map((it) => {
       const m = it.product_id ? meta.get(it.product_id) : undefined;
@@ -94,7 +99,8 @@ export async function buildOrderEbarimtLines(
         classificationCode: m?.code ?? null,
       };
     }),
-    shipping: Number(order.shipping) || 0,
+    // Хүргэлтийн мөр нь НӨАТ нэмсэн дүнгээрээ явна (7,000 → 7,700)
+    shipping: shippingGross,
     goodsGrossTotal,
     defaultClassificationCode: DEFAULT_CLASSIFICATION,
     shippingClassificationCode: SHIPPING_CLASSIFICATION,

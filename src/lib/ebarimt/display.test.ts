@@ -64,15 +64,17 @@ describe("хөнгөлөлтгүй захиалга", () => {
     assert.equal(r.totalAmount, totals.total);
   });
 
-  test("баримтын НӨАТ = захиалгын НӨАТ", () => {
-    assert.equal(r.totalVAT, totals.tax);
+  test("баримтын НӨАТ нь хүргэлтийн НӨАТ-аас их — бараанд шингэснийг ч заана", () => {
+    // totals.tax = зөвхөн хүргэлт дээр НЭМСЭН НӨАТ.
+    // Баримт нь татварын бичиг тул барааны үнэд ШИНГЭСЭН НӨАТ-ыг ч заана.
+    assert.ok(r.totalVAT > totals.tax);
   });
 
-  test("хүргэлт тусдаа мөр болж, НӨАТ төлүүлэхгүй", () => {
+  test("хүргэлт тусдаа мөр — НӨАТ нэмэгдсэн дүнгээр", () => {
     const ship = r.receipts[0].items.find((i) => i.name === "Хүргэлтийн үйлчилгээ");
     assert.ok(ship);
-    assert.equal(ship.totalAmount, totals.shipping);
-    assert.equal(ship.totalVAT, 0);
+    assert.equal(ship.totalVAT, totals.tax, "хүргэлтийн НӨАТ");
+    assert.equal(ship.totalAmount, totals.shipping + totals.tax);
   });
 
   test("сугалаа ба QR дамжина", () => {
@@ -110,10 +112,10 @@ describe("промо хөнгөлөлттэй захиалга", () => {
     assert.equal(line.unitPrice, 18_000, "20,000₮ − 10%");
   });
 
-  test("хүргэлтэд хөнгөлөлт хамаарахгүй", () => {
+  test("хүргэлтэд хөнгөлөлт хамаарахгүй (НӨАТ-той дүнгээр)", () => {
     const ship = r.receipts[0].items.find((i) => i.name === "Хүргэлтийн үйлчилгээ");
     assert.ok(ship);
-    assert.equal(ship.unitPrice, totals.shipping);
+    assert.equal(ship.unitPrice, totals.shipping + totals.tax);
   });
 
   test("дэд баримтын дүн нь толгойн дүнтэй тэнцэнэ", () => {

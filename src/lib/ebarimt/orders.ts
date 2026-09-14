@@ -17,6 +17,7 @@ import {
 } from "./build";
 import { createReceipt, isEbarimtConfigured } from "./posapi";
 import type { PaymentCode, ReceiptType } from "./types";
+import { shippingVat } from "@/lib/pricing";
 
 /** Барааны ангиллын код олдохгүй үед сүүлчийн fallback */
 const DEFAULT_CLASSIFICATION =
@@ -100,15 +101,16 @@ export async function createOrderEbarimt(orderId: string): Promise<void> {
       );
     }
 
-    // Хүргэлтийн төлбөр — тусдаа мөр (НӨАТ-гүй, одоогийн үнэ бодлоготой нийцүүлэв)
-    const shipping = Number(order.shipping) || 0;
-    if (shipping > 0) {
+    // Хүргэлтийн төлбөр — тусдаа мөр. Хүргэлтийн үнэн дээр НӨАТ нэмэгддэг тул
+    // баримтад НӨАТ нэмсэн дүнгээр (7,000 → 7,700) орно.
+    const shippingNet = Number(order.shipping) || 0;
+    if (shippingNet > 0) {
       lineItems.push({
         name: "Хүргэлтийн үйлчилгээ",
         classificationCode: DEFAULT_CLASSIFICATION,
         qty: 1,
-        unitPrice: shipping,
-        taxType: "NO_VAT",
+        unitPrice: shippingNet + shippingVat(shippingNet),
+        taxType: "VAT_ABLE",
         measureUnit: "удаа",
       });
     }

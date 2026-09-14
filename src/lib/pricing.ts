@@ -13,14 +13,23 @@
 export const TAX_RATE = 0.1;
 
 /**
- * ⚠️ Барааны үнэ бүрд НӨАТ АЛЬ ХЭДИЙН ШИНГЭСЭН байдаг (санхүүгээс тодруулсан,
- *    2026-09-14). Тиймээс НӨАТ-ыг нийт дүн дээр НЭМЭХГҮЙ — багтсан НӨАТ-ыг
- *    зөвхөн задалж харуулна: 10% НӨАТ-д багтсан дүнгийн 1/11 нь НӨАТ.
- *    Хүргэлтийн төлбөрт НӨАТ тооцохгүй (өмнөх шийдвэрийн дагуу) — баримт
- *    дээр ч хүргэлт НӨАТ-гүй мөр болж очно.
+ * ⚠️ НӨАТ-ын дүрэм (эзний эцсийн шийдвэр, 2026-09-14):
+ *
+ *    · БАРАА — үнэд нь НӨАТ аль хэдийн шингэсэн тул дээр нь НӨАТ БОДОХГҮЙ.
+ *    · ХҮРГЭЛТ — хүргэлтийн үнэн дээр НӨАТ 10%-ийг НЭМЖ бодно.
+ *
+ *      total = (дэд дүн − хөнгөлөлт) + хүргэлт + хүргэлтийн НӨАТ
+ *      tax   = хүргэлтийн НӨАТ
  */
+
+/** Дүнд БАГТСАН НӨАТ (brutto → НӨАТ). И-баримтын мөрийн задаргаанд хэрэгтэй. */
 export function vatIncludedIn(grossAmount: number): number {
   return Math.round((grossAmount * TAX_RATE) / (1 + TAX_RATE));
+}
+
+/** Хүргэлтийн үнэн ДЭЭР нэмэгдэх НӨАТ */
+export function shippingVat(shipping: number): number {
+  return Math.round(shipping * TAX_RATE);
 }
 
 export type CommerceSettings = {
@@ -48,7 +57,7 @@ export type OrderTotals = {
   subtotal: number;
   discount: number;
   shipping: number;
-  /** Нийт дүнд БАГТСАН НӨАТ — дээр нь нэмэгддэггүй, зөвхөн задаргаа */
+  /** Хүргэлтийн үнэн дээр нэмэгдсэн НӨАТ (бараанд НӨАТ нэмэгдэхгүй) */
   tax: number;
   total: number;
 };
@@ -58,7 +67,7 @@ export type OrderTotals = {
  * Хүргэлт: сонгосон бүтээгдэхүүний ТОО (ширхэг)-оос хамаарна —
  * босгоос дээш бол shipping_over, эс бол shipping_base.
  *
- * НӨАТ нь нийт дүнд БАГТСАН — `tax` нь задаргаа бөгөөд `total`-д нэмэгдэхгүй.
+ * НӨАТ зөвхөн ХҮРГЭЛТЭД нэмэгдэнэ — бараанд нэмэгдэхгүй (үнэд шингэсэн).
  */
 export function calculateOrderTotals(
   subtotal: number,
@@ -78,9 +87,8 @@ export function calculateOrderTotals(
   if (settings.free_shipping_enabled && afterDiscount >= settings.free_shipping_min) {
     shipping = 0;
   }
-  // Үнэд НӨАТ шингэсэн тул нийт дүн = бараа + хүргэлт. НӨАТ дээр нь нэмэгдэхгүй.
-  // НӨАТ нь зөвхөн БАРААНЫ дүнд багтсан — хүргэлтэд НӨАТ тооцохгүй.
-  const total = afterDiscount + shipping;
-  const tax = vatIncludedIn(afterDiscount);
+  // Бараанд НӨАТ нэмэгдэхгүй (үнэд шингэсэн). Хүргэлтийн үнэн дээр л НӨАТ нэмнэ.
+  const tax = shippingVat(shipping);
+  const total = afterDiscount + shipping + tax;
   return { subtotal, discount: clampedDiscount, shipping, tax, total };
 }

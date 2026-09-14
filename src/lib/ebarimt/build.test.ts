@@ -209,8 +209,14 @@ describe("баримтын дүн ↔ захиалгын дүн", () => {
     );
     const receiptLines: EbarimtLineItem[] = [...lines];
     if (order.shipping > 0) {
+      // Хүргэлтийн үнэн дээр НӨАТ нэмэгддэг тул баримтад НӨАТ-той дүнгээр
       receiptLines.push(
-        goods({ name: "Хүргэлт", qty: 1, unitPrice: order.shipping, taxType: "NO_VAT" }),
+        goods({
+          name: "Хүргэлт",
+          qty: 1,
+          unitPrice: order.shipping + order.tax,
+          taxType: "VAT_ABLE",
+        }),
       );
     }
     const receipt = buildReceiptRequest({
@@ -228,7 +234,6 @@ describe("баримтын дүн ↔ захиалгын дүн", () => {
       0,
     );
     assert.equal(receipt.totalAmount, order.total);
-    assert.equal(receipt.totalVAT, order.tax);
   });
 
   test("хөнгөлөлттэй захиалгад дүн таарна (жигд хуваагдах тохиолдол)", () => {
@@ -238,7 +243,14 @@ describe("баримтын дүн ↔ захиалгын дүн", () => {
       5_000,
     );
     assert.equal(receipt.totalAmount, order.total);
-    assert.equal(receipt.totalVAT, order.tax);
+  });
+
+  test("баримтын НӨАТ нь хүргэлтийн НӨАТ-аас ИХ — барааны үнэд шингэснийг ч заана", () => {
+    // order.tax нь зөвхөн хүргэлт дээр НЭМСЭН НӨАТ.
+    // Баримт нь татварын бичиг тул барааны үнэд ШИНГЭСЭН НӨАТ-ыг ч заана.
+    const { order, receipt } = receiptForOrder([{ qty: 2, unitPrice: 15_000 }], 0);
+    assert.ok(receipt.totalVAT > order.tax);
+    assert.equal(receipt.totalVAT, Math.round(30_000 / 11) + order.tax);
   });
 
   test("жигд хуваагдахгүй үед ч зөрүү нь бүхэлчлэлийн хэмжээнд л байна", () => {
@@ -252,13 +264,13 @@ describe("баримтын дүн ↔ захиалгын дүн", () => {
     );
   });
 
-  test("хүргэлт баримтад НӨАТ-гүй мөр болж орно", () => {
+  test("хүргэлт баримтад НӨАТ-той мөр болж орно", () => {
     const { order, receipt } = receiptForOrder([{ qty: 2, unitPrice: 15_000 }], 0);
     const shippingLine = receipt.receipts
       .flatMap((r) => r.items)
       .find((i) => i.name === "Хүргэлт");
     assert.ok(shippingLine, "хүргэлтийн мөр байх ёстой");
-    assert.equal(shippingLine.totalVAT, 0);
-    assert.equal(shippingLine.totalAmount, order.shipping);
+    assert.equal(shippingLine.totalVAT, order.tax, "хүргэлтийн НӨАТ");
+    assert.equal(shippingLine.totalAmount, order.shipping + order.tax);
   });
 });

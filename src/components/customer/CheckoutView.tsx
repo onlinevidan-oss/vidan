@@ -601,7 +601,7 @@ export function CheckoutView({
             )}
             <Row label="Хүргэлт" value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
               accent={shipping === 0 ? "success" : undefined} />
-            <Row label="үүнд НӨАТ (10%)" value={formatMnt(tax)} muted />
+            <Row label="Хүргэлтийн НӨАТ (10%)" value={formatMnt(tax)} />
             <div className="my-3 h-px bg-ink-100" />
             <div className="mb-5 flex items-baseline justify-between">
               <div className="text-sm font-bold text-ink-900">Нийт</div>
