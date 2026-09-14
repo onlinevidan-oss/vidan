@@ -159,7 +159,7 @@ export function CheckoutView({
     setError(null);
     if (belowMinOrder) {
       setError(
-        `Захиалгын барааны доод дүн ${formatMnt(settings.min_order_amount)} (хүргэлт, НӨАТ ороогүй) — сагсандаа бараа нэмнэ үү`,
+        `Захиалгын барааны доод дүн ${formatMnt(settings.min_order_amount)} (хүргэлт ороогүй) — сагсандаа бараа нэмнэ үү`,
       );
       return;
     }
@@ -601,7 +601,7 @@ export function CheckoutView({
             )}
             <Row label="Хүргэлт" value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
               accent={shipping === 0 ? "success" : undefined} />
-            <Row label="НӨАТ (10%)" value={formatMnt(tax)} />
+            <Row label="үүнд НӨАТ (10%)" value={formatMnt(tax)} muted />
             <div className="my-3 h-px bg-ink-100" />
             <div className="mb-5 flex items-baseline justify-between">
               <div className="text-sm font-bold text-ink-900">Нийт</div>
@@ -718,20 +718,24 @@ function PhoneField({
 }
 
 function Row({
-  label, value, accent,
+  label, value, accent, muted,
 }: {
   label: string;
   value: string;
   accent?: "success";
+  /** Нийт дүнд БАГТСАН мөр — нэмэгддэггүй гэдгийг сулруулж харуулна */
+  muted?: boolean;
 }) {
   return (
     <div className="mb-2 flex justify-between text-sm">
-      <span className="text-ink-500">{label}</span>
+      <span className={muted ? "text-ink-400" : "text-ink-500"}>{label}</span>
       <span
         className={
           accent === "success"
             ? "font-semibold text-[#2da764]"
-            : "font-semibold text-ink-900"
+            : muted
+              ? "text-ink-500"
+              : "font-semibold text-ink-900"
         }
       >
         {value}

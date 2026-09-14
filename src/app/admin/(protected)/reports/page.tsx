@@ -140,7 +140,7 @@ export default async function AdminReports({
                   </td>
                 </tr>
                 <tr className="border-b border-ink-100">
-                  <td className={TD}>НӨАТ (10%)</td>
+                  <td className={TD}>үүнд НӨАТ (10%)</td>
                   <td className={TD} />
                   <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
                     {formatMnt(finance.tax)}

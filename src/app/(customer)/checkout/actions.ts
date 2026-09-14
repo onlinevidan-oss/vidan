@@ -46,7 +46,7 @@ function translateError(message: string, minOrder: number): string {
   if (message.includes("INVALID_PAYMENT_METHOD")) return "Төлбөрийн арга буруу";
   if (message.includes("INVALID_QUANTITY")) return "Барааны тоо буруу";
   if (message.includes("MIN_ORDER_NOT_MET")) {
-    return `Захиалгын барааны доод дүн ${formatMnt(minOrder)} (хүргэлт, НӨАТ ороогүй) — сагсандаа бараа нэмнэ үү`;
+    return `Захиалгын барааны доод дүн ${formatMnt(minOrder)} (хүргэлт ороогүй) — сагсандаа бараа нэмнэ үү`;
   }
   if (message.includes("PROMO_INVALID")) {
     const key = message.split("PROMO_INVALID:")[1]?.trim() ?? "";

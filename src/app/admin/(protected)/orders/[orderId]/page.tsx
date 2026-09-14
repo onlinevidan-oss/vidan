@@ -109,7 +109,7 @@ export default async function AdminOrderDetail({
                   label="Хүргэлт"
                   value={Number(order.shipping) === 0 ? "Үнэгүй" : formatMnt(Number(order.shipping))}
                 />
-                <Row label="НӨАТ" value={formatMnt(Number(order.tax))} />
+                <Row label="үүнд НӨАТ" value={formatMnt(Number(order.tax))} />
                 <div className="my-2 h-px bg-ink-100" />
                 <div className="flex justify-between">
                   <span className="font-bold">Нийт</span>
