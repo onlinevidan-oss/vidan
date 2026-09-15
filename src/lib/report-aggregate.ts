@@ -16,6 +16,8 @@ export type ReportOrderItem = {
 };
 
 export type ReportOrder = {
+  /** Ажилтны өөрийн (туршилтын, дотоод) захиалга эсэх */
+  is_internal?: boolean;
   subtotal: number;
   discount: number;
   shipping: number;
@@ -240,4 +242,66 @@ export function soldQuantityByProduct(
     }
   }
   return map;
+}
+
+// ============================================================
+// Агуулахын тэнцэл — санхүүгийн гол асуулт
+// ============================================================
+/**
+ * Санхүү гурван зүйл асуудаг:
+ *   1. Агуулахаас нийт хэдэн ширхэг авсан бэ?
+ *   2. Одоо хэдэн ширхэг үлдсэн бэ?
+ *   3. Зарагдсан барааны дүн таарч байна уу?
+ *
+ * Энэ функц эхний хоёрт хариулж, тэнцэл задарсан эсэхийг шалгана.
+ */
+export type StockMovementRow = {
+  kind: "in" | "out" | "adjust";
+  /** Тэмдэгтэй: орлого +, зарлага − */
+  quantity: number;
+  /** Захиалгатай холбоотой эсэх (борлуулалт/буцаалт) */
+  order_id: string | null;
+};
+
+export type StockFlowSummary = {
+  /** Агуулахаас хүлээж авсан (захиалгатай холбоогүй орлого) */
+  received: number;
+  /** Цуцлагдсан захиалгаас сэргээгдсэн */
+  restored: number;
+  /** Худалдсан (эерэг тоогоор) */
+  sold: number;
+  /** Гараар хассан — гэмтэл, дотоод хэрэглээ (эерэг тоогоор) */
+  issued: number;
+  /** Тооллогын засвар (тэмдэгтэй) */
+  adjusted: number;
+  /** Бүх хөдөлгөөний нийлбэр */
+  net: number;
+  /** Бодит үлдэгдэл (products.stock-ийн нийлбэр) */
+  stock: number;
+  /** net === stock эсэх — задарсан бол тайлан итгэл алдана */
+  balanced: boolean;
+};
+
+export function summarizeStockFlow(
+  movements: StockMovementRow[],
+  currentStock: number,
+): StockFlowSummary {
+  let received = 0, restored = 0, sold = 0, issued = 0, adjusted = 0;
+  for (const m of movements) {
+    const q = Number(m.quantity) || 0;
+    if (m.kind === "adjust") {
+      adjusted += q;
+    } else if (q > 0) {
+      if (m.order_id) restored += q;
+      else received += q;
+    } else {
+      if (m.order_id) sold += -q;
+      else issued += -q;
+    }
+  }
+  const net = received + restored - sold - issued + adjusted;
+  return {
+    received, restored, sold, issued, adjusted,
+    net, stock: currentStock, balanced: net === currentStock,
+  };
 }

@@ -42,7 +42,7 @@ export default async function AdminReports({
   });
 
   const data = await getReports(period);
-  const { finance, inventory } = data;
+  const { finance, inventory, stockFlow, internal } = data;
   const maxRev = Math.max(1, ...data.byDay.map((d) => d.revenue));
   const maxProduct = Math.max(1, ...data.soldProducts.map((p) => p.revenue));
   const totalSoldUnits = data.soldProducts.reduce((s, p) => s + p.sold, 0);
@@ -165,13 +165,104 @@ export default async function AdminReports({
               </tbody>
             </table>
             <p className="border-t border-ink-100 px-5 py-3 text-[11px] leading-relaxed text-ink-500">
-              НӨАТ-ын суурь 2026-09-15-нд өөрчлөгдсөн: тэр өдрөөс өмнөх
+              Эдгээр тоонд зөвхөн ХЭРЭГЛЭГЧИЙН захиалга орсон. Ажилтны
+              туршилтын захиалга доор тусад нь харагдана.
+              {" "}НӨАТ-ын суурь 2026-09-15-нд өөрчлөгдсөн: тэр өдрөөс өмнөх
               захиалгад НӨАТ нь барааны дүнгээс, хойшхид нь зөвхөн
               хүргэлтийн үнээс бодогдсон. Дүнгүүд нь хэрэглэгчийн бодитоор
               төлсөн дүн тул хойшлуулан дахин тооцоолоогүй.
             </p>
           </div>
         </div>
+
+        {/* ---------- Агуулахын тэнцэл ---------- */}
+        <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-200 px-5 py-4">
+            <div>
+              <h3 className="font-display text-[15px] font-extrabold">
+                Агуулахын тэнцэл
+              </h3>
+              <p className="mt-0.5 text-xs text-ink-500">
+                Орлогодсоноос үлдэгдэл хүртэл — бүх хугацаа
+              </p>
+            </div>
+            <span
+              className={
+                stockFlow.balanced
+                  ? "rounded-full bg-lime-100 px-3 py-1 text-[11px] font-extrabold text-lime-700"
+                  : "rounded-full bg-brand-100 px-3 py-1 text-[11px] font-extrabold text-brand-700"
+              }
+            >
+              {stockFlow.balanced ? "✓ Тэнцэж байна" : "⚠️ Тэнцэхгүй байна"}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <tbody>
+                <FlowRow label="Агуулахаас хүлээж авсан" value={stockFlow.received} sign="+" />
+                {stockFlow.restored > 0 && (
+                  <FlowRow label="Цуцлагдсан захиалгаас сэргээгдсэн" value={stockFlow.restored} sign="+" />
+                )}
+                <FlowRow label="Худалдсан" value={-stockFlow.sold} sign="−" />
+                {stockFlow.issued > 0 && (
+                  <FlowRow label="Гэмтэл, дотоод хэрэглээ" value={-stockFlow.issued} sign="−" />
+                )}
+                {stockFlow.adjusted !== 0 && (
+                  <FlowRow label="Тооллогын засвар" value={stockFlow.adjusted} />
+                )}
+                <tr className="bg-brand-50">
+                  <td className={`${TD} font-display text-[15px] font-extrabold text-ink-900`}>
+                    ҮЛДЭГДЭЛ
+                  </td>
+                  <td className={`${TD_NUM} font-display text-[17px] font-black text-brand-700`}>
+                    {stockFlow.stock.toLocaleString()} ш
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="border-t border-ink-100 px-5 py-3 text-[11px] leading-relaxed text-ink-500">
+            &bdquo;Худалдсан&ldquo; нь агуулахаас гарсан БҮХ захиалгын бараа —
+            ажилтны туршилтын захиалга, цуцлагдсан захиалга ч орсон.
+            Цуцлагдсаных нь дээрх сэргээлтийн мөрөөр буцаж ирдэг тул
+            санхүүгийн задаргааны {finance.orders} захиалгын тооноос зөрж болно.
+          </p>
+          {!stockFlow.balanced && (
+            <p className="border-t border-ink-100 px-5 py-3 text-[11px] font-semibold text-brand-700">
+              Хөдөлгөөний нийлбэр {stockFlow.net.toLocaleString()} ш нь бодит
+              үлдэгдэл {stockFlow.stock.toLocaleString()} ш-тэй таарахгүй байна.
+              Агуулахын бүртгэлийг шалгана уу.
+            </p>
+          )}
+        </div>
+
+        {/* ---------- Ажилтны дотоод захиалга ---------- */}
+        {internal.orders > 0 && (
+          <div className="print-card print-block rounded-2xl border border-ink-200 bg-[#faf8f3]">
+            <div className="border-b border-ink-200 px-5 py-4">
+              <h3 className="font-display text-[15px] font-extrabold">
+                Ажилтны захиалга
+              </h3>
+              <p className="mt-0.5 text-xs text-ink-500">
+                Туршилтын болон дотоод захиалга — дээрх санхүүгийн тоонд
+                ОРООГҮЙ
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-px bg-ink-200 sm:grid-cols-4">
+              {[
+                ["Захиалга", `${internal.orders}`],
+                ["Барааны дүн", formatMnt(internal.netGoods)],
+                ["Хүргэлт", formatMnt(internal.shipping)],
+                ["Нийт", formatMnt(internal.total)],
+              ].map(([k, v]) => (
+                <div key={k} className="bg-[#faf8f3] px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-wide text-ink-500">{k}</div>
+                  <div className="mt-0.5 font-display text-[15px] font-extrabold text-ink-900">{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ---------- KPI ---------- */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-4 print:gap-2">
@@ -472,5 +563,29 @@ export default async function AdminReports({
         </div>
       </div>
     </>
+  );
+}
+
+/** Агуулахын тэнцлийн нэг мөр */
+function FlowRow({
+  label,
+  value,
+  sign,
+}: {
+  label: string;
+  value: number;
+  sign?: "+" | "−";
+}) {
+  return (
+    <tr className="border-b border-ink-100">
+      <td className={TD}>
+        {sign && <span className="mr-1.5 text-ink-400">{sign}</span>}
+        {label}
+      </td>
+      <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+        {value > 0 ? "+" : ""}
+        {value.toLocaleString()} ш
+      </td>
+    </tr>
   );
 }
