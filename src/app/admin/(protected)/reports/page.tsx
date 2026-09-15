@@ -140,7 +140,12 @@ export default async function AdminReports({
                   </td>
                 </tr>
                 <tr className="border-b border-ink-100">
-                  <td className={TD}>Хүргэлтийн НӨАТ (10%)</td>
+                  <td className={TD}>
+                    НӨАТ
+                    <span className="ml-1.5 text-[11px] font-normal text-ink-500">
+                      (2026-09-15-наас хүргэлтийн үнээс)
+                    </span>
+                  </td>
                   <td className={TD} />
                   <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
                     {formatMnt(finance.tax)}
@@ -159,6 +164,12 @@ export default async function AdminReports({
                 </tr>
               </tbody>
             </table>
+            <p className="border-t border-ink-100 px-5 py-3 text-[11px] leading-relaxed text-ink-500">
+              НӨАТ-ын суурь 2026-09-15-нд өөрчлөгдсөн: тэр өдрөөс өмнөх
+              захиалгад НӨАТ нь барааны дүнгээс, хойшхид нь зөвхөн
+              хүргэлтийн үнээс бодогдсон. Дүнгүүд нь хэрэглэгчийн бодитоор
+              төлсөн дүн тул хойшлуулан дахин тооцоолоогүй.
+            </p>
           </div>
         </div>
 
