@@ -10,7 +10,7 @@ import {
   summarizeByDay,
   summarizeByPayment,
   summarizeFinance,
-  summarizeStockFlow,
+  summarizeWarehouse,
   summarizeInventory,
   summarizeSoldProducts,
   soldQuantityByProduct,
@@ -345,67 +345,72 @@ describe("soldQuantityByProduct — агуулахын зарлага", () => {
   });
 });
 
-describe("summarizeStockFlow — агуулахын тэнцэл", () => {
+describe("summarizeWarehouse — орлого, зарлага, үлдэгдэл", () => {
   const mv = (
     kind: "in" | "out" | "adjust",
     quantity: number,
     order_id: string | null = null,
-  ) => ({ kind, quantity, order_id });
+    name = "Бараа",
+    sku: string | null = "S1",
+  ) => ({ kind, quantity, order_id, product: { name_mn: name, sku } });
 
-  test("орлого, борлуулалт, үлдэгдэл тэнцэнэ", () => {
-    const r = summarizeStockFlow(
-      [mv("in", 100), mv("out", -30, "o1"), mv("out", -5)],
+  test("орлогын тоо, удаа, үлдэгдэл", () => {
+    const r = summarizeWarehouse(
+      [mv("in", 60), mv("in", 30), mv("out", -20, "o1")],
+      70,
+    );
+    assert.equal(r.intakeTimes, 2, "хоёр удаа орлогодсон");
+    assert.equal(r.intakeQty, 90);
+    assert.equal(r.soldQty, 20);
+    assert.equal(r.stockQty, 70);
+  });
+
+  test("бараа тус бүрээр бүлэглэж, их орлоготойг нь эхэнд тавина", () => {
+    const r = summarizeWarehouse(
+      [mv("in", 10, null, "Бага"), mv("in", 50, null, "Их"), mv("in", 5, null, "Их")],
       65,
     );
-    assert.equal(r.received, 100);
-    assert.equal(r.sold, 30);
-    assert.equal(r.issued, 5);
-    assert.equal(r.net, 65);
-    assert.equal(r.balanced, true);
+    assert.deepEqual(
+      r.intakeByProduct.map((x) => [x.name, x.times, x.qty]),
+      [["Их", 2, 55], ["Бага", 1, 10]],
+    );
   });
 
-  test("тэнцэл задарсныг илрүүлнэ", () => {
-    const r = summarizeStockFlow([mv("in", 100), mv("out", -30, "o1")], 60);
-    assert.equal(r.net, 70);
-    assert.equal(r.balanced, false, "70 ≠ 60 тул тэнцэхгүй");
+  test("цуцлагдсан захиалгын сэргээлт ОРЛОГО биш, зарлагаас хасагдана", () => {
+    const r = summarizeWarehouse(
+      [mv("in", 100), mv("out", -20, "o1"), mv("in", 6, "o1")],
+      86,
+    );
+    assert.equal(r.intakeTimes, 1);
+    assert.equal(r.intakeQty, 100, "зөвхөн агуулахаас авсан нь");
+    assert.equal(r.soldQty, 14, "20 гарч 6 буцсан → цэвэр 14");
   });
 
-  test("захиалгатай орлого нь СЭРГЭЭЛТ — агуулахын орлогод тооцохгүй", () => {
-    // Цуцлагдсан захиалгын нөөц буцаалт (release_stale_orders)
-    const r = summarizeStockFlow([mv("in", 100), mv("in", 5, "o1")], 105);
-    assert.equal(r.received, 100, "агуулахаас авсан нь зөвхөн 100");
-    assert.equal(r.restored, 5);
-    assert.equal(r.balanced, true);
+  test("гараар хийсэн зарлага борлуулалтад ороогүй", () => {
+    const r = summarizeWarehouse([mv("in", 50), mv("out", -6, "o1"), mv("out", -4)], 40);
+    assert.equal(r.soldQty, 6, "зөвхөн захиалгын зарлага");
   });
 
-  test("тооллогын засвар тэмдэгтэйгээ ордог", () => {
-    const r = summarizeStockFlow([mv("in", 50), mv("adjust", -8), mv("adjust", 3)], 45);
-    assert.equal(r.adjusted, -5);
-    assert.equal(r.net, 45);
-    assert.equal(r.balanced, true);
-  });
-
-  test("гараар хийсэн зарлага борлуулалтаас тусдаа", () => {
-    const r = summarizeStockFlow([mv("in", 20), mv("out", -6, "o1"), mv("out", -4)], 10);
-    assert.equal(r.sold, 6, "борлуулалт");
-    assert.equal(r.issued, 4, "гэмтэл/дотоод хэрэглээ");
-    assert.equal(r.balanced, true);
+  test("тооллогын засвар орлогод тооцогдохгүй", () => {
+    const r = summarizeWarehouse([mv("in", 50), mv("adjust", 8), mv("adjust", -3)], 55);
+    assert.equal(r.intakeTimes, 1);
+    assert.equal(r.intakeQty, 50);
   });
 
   test("хөдөлгөөнгүй бол бүх тоо тэг", () => {
-    const r = summarizeStockFlow([], 0);
-    assert.equal(r.net, 0);
-    assert.equal(r.balanced, true);
+    const r = summarizeWarehouse([], 0);
+    assert.equal(r.intakeTimes, 0);
+    assert.equal(r.intakeByProduct.length, 0);
   });
 
-  test("бодит тоо — 1,501 орлого − 252 борлуулалт − 58 засвар = 1,191", () => {
-    const r = summarizeStockFlow(
-      [mv("in", 1_501), mv("out", -252, "o1"), mv("adjust", -58)],
-      1_191,
+  test("бодит тоо — 43 удаа 1,501ш орлого, 252ш зарагдаж, 1,191ш үлдсэн", () => {
+    const ins = Array.from({ length: 43 }, (_, i) =>
+      mv("in", i === 0 ? 1_501 - 42 : 1, null, `Бараа${i}`),
     );
-    assert.equal(r.received, 1_501);
-    assert.equal(r.sold, 252);
-    assert.equal(r.adjusted, -58);
-    assert.equal(r.balanced, true);
+    const r = summarizeWarehouse([...ins, mv("out", -252, "o1")], 1_191);
+    assert.equal(r.intakeTimes, 43);
+    assert.equal(r.intakeQty, 1_501);
+    assert.equal(r.soldQty, 252);
+    assert.equal(r.stockQty, 1_191);
   });
 });

@@ -245,63 +245,90 @@ export function soldQuantityByProduct(
 }
 
 // ============================================================
-// Агуулахын тэнцэл — санхүүгийн гол асуулт
+// Агуулах — орлого, зарлага, үлдэгдэл
 // ============================================================
-/**
- * Санхүү гурван зүйл асуудаг:
- *   1. Агуулахаас нийт хэдэн ширхэг авсан бэ?
- *   2. Одоо хэдэн ширхэг үлдсэн бэ?
- *   3. Зарагдсан барааны дүн таарч байна уу?
- *
- * Энэ функц эхний хоёрт хариулж, тэнцэл задарсан эсэхийг шалгана.
- */
 export type StockMovementRow = {
   kind: "in" | "out" | "adjust";
   /** Тэмдэгтэй: орлого +, зарлага − */
   quantity: number;
   /** Захиалгатай холбоотой эсэх (борлуулалт/буцаалт) */
   order_id: string | null;
+  product?: { name_mn: string; sku: string | null } | null;
 };
 
-export type StockFlowSummary = {
-  /** Агуулахаас хүлээж авсан (захиалгатай холбоогүй орлого) */
-  received: number;
-  /** Цуцлагдсан захиалгаас сэргээгдсэн */
-  restored: number;
-  /** Худалдсан (эерэг тоогоор) */
-  sold: number;
-  /** Гараар хассан — гэмтэл, дотоод хэрэглээ (эерэг тоогоор) */
-  issued: number;
+/** Бараа тус бүрийн орлого */
+export type IntakeRow = {
+  name: string;
+  sku: string | null;
+  /** Хэдэн удаа орлогодсон */
+  times: number;
+  /** Нийт хэдэн ширхэг */
+  qty: number;
+};
+
+export type WarehouseSummary = {
+  /** Нийт хэдэн удаа орлого хийсэн */
+  intakeTimes: number;
+  /** Орлогын нийт тоо ширхэг */
+  intakeQty: number;
+  /** Бараа тус бүрээр — их орлоготойгоос нь */
+  intakeByProduct: IntakeRow[];
+  /** Зарагдсан цэвэр тоо ширхэг (цуцлагдаж буцсаныг хассан) */
+  soldQty: number;
   /** Тооллогын засвар (тэмдэгтэй) */
-  adjusted: number;
-  /** Бүх хөдөлгөөний нийлбэр */
-  net: number;
-  /** Бодит үлдэгдэл (products.stock-ийн нийлбэр) */
-  stock: number;
-  /** net === stock эсэх — задарсан бол тайлан итгэл алдана */
-  balanced: boolean;
+  adjustedQty: number;
+  /** Одоогийн үлдэгдэл */
+  stockQty: number;
 };
 
-export function summarizeStockFlow(
+/**
+ * Агуулахын хөдөлгөөнийг санхүүд ойлгомжтой гурван тоо болгоно:
+ * хэдэн удаа юу орлогодсон · хэд зарагдсан · одоо хэд үлдсэн.
+ *
+ * Орлого гэдэгт зөвхөн агуулахаас хүлээж авсныг тооцно —
+ * цуцлагдсан захиалгын нөөц сэргээлт (order_id-тай) орлого биш.
+ */
+export function summarizeWarehouse(
   movements: StockMovementRow[],
   currentStock: number,
-): StockFlowSummary {
-  let received = 0, restored = 0, sold = 0, issued = 0, adjusted = 0;
+): WarehouseSummary {
+  const byProduct = new Map<string, IntakeRow>();
+  let intakeTimes = 0;
+  let intakeQty = 0;
+  let soldQty = 0;
+  let adjustedQty = 0;
+
   for (const m of movements) {
     const q = Number(m.quantity) || 0;
-    if (m.kind === "adjust") {
-      adjusted += q;
-    } else if (q > 0) {
-      if (m.order_id) restored += q;
-      else received += q;
-    } else {
-      if (m.order_id) sold += -q;
-      else issued += -q;
+    if (m.kind === "in" && !m.order_id) {
+      intakeTimes += 1;
+      intakeQty += q;
+      const name = m.product?.name_mn ?? "—";
+      const row = byProduct.get(name) ?? {
+        name,
+        sku: m.product?.sku ?? null,
+        times: 0,
+        qty: 0,
+      };
+      row.times += 1;
+      row.qty += q;
+      byProduct.set(name, row);
+    } else if (m.kind === "adjust") {
+      adjustedQty += q;
+    } else if (m.order_id) {
+      // Захиалгаар гарсан хасах цуцлагдаж буцаж ирсэн = цэвэр борлуулалт
+      soldQty += -q;
     }
   }
-  const net = received + restored - sold - issued + adjusted;
+
   return {
-    received, restored, sold, issued, adjusted,
-    net, stock: currentStock, balanced: net === currentStock,
+    intakeTimes,
+    intakeQty,
+    intakeByProduct: [...byProduct.values()].sort(
+      (a, b) => b.qty - a.qty || a.name.localeCompare(b.name, "mn"),
+    ),
+    soldQty,
+    adjustedQty,
+    stockQty: currentStock,
   };
 }

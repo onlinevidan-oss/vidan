@@ -13,7 +13,7 @@ import {
   summarizeFinance,
   summarizeInventory,
   summarizeSoldProducts,
-  summarizeStockFlow,
+  summarizeWarehouse,
   type CategoryShare,
   type DailyRevenue,
   type FinanceSummary,
@@ -21,7 +21,7 @@ import {
   type PaymentShare,
   type ReportOrder,
   type SoldProduct,
-  type StockFlowSummary,
+  type WarehouseSummary,
   type StockMovementRow,
   type StockRow,
 } from "@/lib/report-aggregate";
@@ -42,9 +42,9 @@ export type ReportsData = {
   byCategory: CategoryShare[];
   byPayment: PaymentShare[];
   inventory: InventorySummary;
-  /** Агуулахын тэнцэл — орлогоос үлдэгдэл хүртэл */
-  stockFlow: StockFlowSummary;
-  /** Ажилтны дотоод/туршилтын захиалгын хэсэг */
+  /** Агуулах — орлого, зарлага, үлдэгдэл */
+  warehouse: WarehouseSummary;
+  /** Ажилтны дотоод/туршилтын захиалгын задаргаа (нийт дүнд ОРСОН) */
   internal: FinanceSummary;
 };
 
@@ -80,7 +80,9 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
       // Ажилтны захиалгыг хэрэглэгчийнхээс салгахад
       supabase.from("staff").select("id"),
       // Агуулахын тэнцэл нь ОДООГИЙН байдал — хугацаанаас хамаарахгүй
-      supabase.from("stock_movements").select("kind, quantity, order_id"),
+      supabase
+        .from("stock_movements")
+        .select("kind, quantity, order_id, product:products(name_mn, sku)"),
     ]);
 
   const staffIds = new Set((staff ?? []).map((s) => s.id));
@@ -89,24 +91,23 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
     ...o,
     is_internal: !!o.user_id && staffIds.has(o.user_id),
   }));
-  // Санхүүгийн үндсэн тоо нь ЗӨВХӨН хэрэглэгчийн захиалга
-  const customerOrders = list.filter((o) => !o.is_internal);
+  // Санхүүгийн тоонд БҮХ захиалга орно; ажилтных нь тусдаа мөрөөр харагдана
   const internalOrders = list.filter((o) => o.is_internal);
   const stockTotal = (products ?? []).reduce((s, p) => s + Number(p.stock ?? 0), 0);
 
   return {
     period,
-    finance: summarizeFinance(customerOrders),
+    finance: summarizeFinance(list),
     internal: summarizeFinance(internalOrders),
-    stockFlow: summarizeStockFlow(
+    warehouse: summarizeWarehouse(
       (movements ?? []) as unknown as StockMovementRow[],
       stockTotal,
     ),
     customers: customers ?? 0,
-    byDay: summarizeByDay(customerOrders, periodDayKeys(period), ubDateKey),
-    soldProducts: summarizeSoldProducts(customerOrders),
-    byCategory: summarizeByCategory(customerOrders),
-    byPayment: summarizeByPayment(customerOrders),
+    byDay: summarizeByDay(list, periodDayKeys(period), ubDateKey),
+    soldProducts: summarizeSoldProducts(list),
+    byCategory: summarizeByCategory(list),
+    byPayment: summarizeByPayment(list),
     inventory: summarizeInventory((products ?? []) as unknown as StockRow[]),
   };
 }
