@@ -305,6 +305,7 @@ export async function updateSmsSettings(
 
   const paid = payload.paid_template.trim();
   const cancelled = payload.cancelled_template.trim();
+  const unpaid = payload.unpaid_template.trim();
 
   if (payload.paid_enabled && !paid) {
     return { ok: false, error: "Баталгаажсан SMS-ийн текст хоосон байна" };
@@ -312,9 +313,22 @@ export async function updateSmsSettings(
   if (payload.cancelled_enabled && !cancelled) {
     return { ok: false, error: "Цуцлагдсан SMS-ийн текст хоосон байна" };
   }
+  if (payload.unpaid_enabled && !unpaid) {
+    return { ok: false, error: "Сануулга SMS-ийн текст хоосон байна" };
+  }
   // Хэт урт SMS = олон segment = илүү төлбөр. 3 segment-ээр хязгаарлав.
-  if (paid.length > 210 || cancelled.length > 210) {
+  if (paid.length > 210 || cancelled.length > 210 || unpaid.length > 210) {
     return { ok: false, error: "SMS хэт урт байна (дээд тал нь 210 тэмдэгт)" };
+  }
+
+  // Сануулга нь захиалга цуцлагдахаас (120 мин) өмнө очих ёстой —
+  // эс бөгөөс аль хэдийн хаагдсан захиалгыг төл гэж хэлнэ.
+  const afterMinutes = Math.round(Number(payload.unpaid_after_minutes));
+  if (!Number.isFinite(afterMinutes) || afterMinutes < 5 || afterMinutes > 110) {
+    return {
+      ok: false,
+      error: "Сануулгын хугацаа 5-110 минутын хооронд байх ёстой",
+    };
   }
 
   const value: SmsSettings = {
@@ -322,6 +336,9 @@ export async function updateSmsSettings(
     paid_template: paid,
     cancelled_enabled: !!payload.cancelled_enabled,
     cancelled_template: cancelled,
+    unpaid_enabled: !!payload.unpaid_enabled,
+    unpaid_template: unpaid,
+    unpaid_after_minutes: afterMinutes,
   };
 
   const supabase = await createClient();

@@ -1,8 +1,9 @@
 /**
  * Захиалгын SMS мэдэгдэл (best-effort)
- *  · Хэрэглэгчид ЗӨВХӨН хоёр тохиолдолд SMS явна:
+ *  · Хэрэглэгчид ЗӨВХӨН гурван тохиолдолд SMS явна:
  *      paid      — төлбөр баталгаажсан (захиалга бүрт нэг удаа)
  *      cancelled — захиалга цуцлагдсан
+ *      unpaid    — төлбөр хүлээгдэж байна (нэг удаагийн сануулга)
  *    Хүргэлтийн явцыг (бэлтгэж байна / хүргэлтэд / хүргэгдсэн) захиалгын
  *    хуудсан дээрх "Захиалгын явц" хэсэг real-time харуулна — SMS явуулахгүй.
  *  · SMS амжилтгүй болох нь гол урсгалыг ХЭЗЭЭ Ч тасалдуулахгүй — алдааг log хийгээд өнгөрнө.
@@ -16,19 +17,24 @@ import {
   type SmsSettings,
 } from "@/lib/queries/settings";
 
-export type SmsKind = "paid" | "cancelled";
+export type SmsKind = "paid" | "cancelled" | "unpaid";
 
 /**
  * Загварт орлуулах утгууд — админы тохиргоотой ижил байх ёстой:
  *   {order} — захиалгын дугаар, {total} — нийт дүн
+ *   {left}  — нөөц барих үлдсэн хугацаа (зөвхөн unpaid)
+ *   {link}  — төлбөрийн хуудасны холбоос (зөвхөн unpaid)
  */
 export function renderSmsTemplate(
   template: string,
   order: { order_number: string; total: number },
+  extra: { left?: string; link?: string } = {},
 ): string {
   return template
     .replaceAll("{order}", order.order_number)
-    .replaceAll("{total}", `${Number(order.total).toLocaleString("en-US")}₮`);
+    .replaceAll("{total}", `${Number(order.total).toLocaleString("en-US")}₮`)
+    .replaceAll("{left}", extra.left ?? "")
+    .replaceAll("{link}", extra.link ?? "");
 }
 
 /**
@@ -38,6 +44,7 @@ export function renderSmsTemplate(
 export async function sendOrderSms(
   orderId: string,
   kind: SmsKind,
+  extra: { left?: string; link?: string } = {},
 ): Promise<void> {
   try {
     // SMS тохиргоогүй орчинд (жишээ нь local dev) чимээгүй алгасна.
@@ -63,14 +70,23 @@ export async function sendOrderSms(
       ...((cfgRow?.value ?? {}) as Partial<SmsSettings>),
     };
 
-    const enabled = kind === "paid" ? cfg.paid_enabled : cfg.cancelled_enabled;
+    const enabled =
+      kind === "paid"
+        ? cfg.paid_enabled
+        : kind === "cancelled"
+          ? cfg.cancelled_enabled
+          : cfg.unpaid_enabled;
     if (!enabled) {
       console.info(`[sms disabled by admin] order=${orderId} kind=${kind}`);
       return;
     }
 
     const template =
-      kind === "paid" ? cfg.paid_template : cfg.cancelled_template;
+      kind === "paid"
+        ? cfg.paid_template
+        : kind === "cancelled"
+          ? cfg.cancelled_template
+          : cfg.unpaid_template;
     if (!template.trim()) return;
 
     const profile = Array.isArray(order.profiles)
@@ -100,7 +116,7 @@ export async function sendOrderSms(
       return;
     }
 
-    const text = renderSmsTemplate(template, order);
+    const text = renderSmsTemplate(template, order, extra);
     const result = await sendSms({ to: phone, text });
 
     // Илгээсний дараа message_id-г нөхөж бичнэ (мөрдөх, тооцоо хийхэд)

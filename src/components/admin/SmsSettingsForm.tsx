@@ -22,7 +22,9 @@ const SEGMENT_CHARS = 70;
 function preview(template: string): string {
   return template
     .replaceAll("{order}", "#10281")
-    .replaceAll("{total}", "26,690₮");
+    .replaceAll("{total}", "26,690₮")
+    .replaceAll("{left}", "1 цаг 35 минут")
+    .replaceAll("{link}", "vidan.mn/t/10281");
 }
 
 function segments(text: string): number {
@@ -72,6 +74,33 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
         onTemplate={(v) => set("cancelled_template", v)}
       />
 
+      <SmsBlock
+        title="Төлбөр хүлээгдэж байна — сануулга"
+        desc="Захиалга үүсгээд төлбөрөө хийгээгүй бол нэг удаа сануулна"
+        enabled={form.unpaid_enabled}
+        onToggle={(v) => set("unpaid_enabled", v)}
+        template={form.unpaid_template}
+        onTemplate={(v) => set("unpaid_template", v)}
+      >
+        <label className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink-700">
+          Захиалга үүссэнээс хойш
+          <input
+            type="number"
+            min={5}
+            max={110}
+            value={form.unpaid_after_minutes}
+            onChange={(e) =>
+              set("unpaid_after_minutes", Number(e.target.value))
+            }
+            className="w-20 rounded-[8px] border-[1.5px] border-ink-200 bg-white px-2 py-1 text-sm font-bold outline-none transition focus:border-brand-500"
+          />
+          минутын дараа
+          <span className="text-ink-500">
+            (захиалга 120 минутад цуцлагддаг)
+          </span>
+        </label>
+      </SmsBlock>
+
       <div className="rounded-xl bg-cream px-4 py-3 text-xs leading-relaxed text-ink-700">
         <strong className="text-ink-900">Орлуулах утга:</strong>{" "}
         <code className="rounded bg-white px-1.5 py-0.5 font-bold">
@@ -81,7 +110,15 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
         <code className="rounded bg-white px-1.5 py-0.5 font-bold">
           {"{total}"}
         </code>{" "}
-        нийт дүн
+        нийт дүн ·{" "}
+        <code className="rounded bg-white px-1.5 py-0.5 font-bold">
+          {"{left}"}
+        </code>{" "}
+        үлдсэн хугацаа ·{" "}
+        <code className="rounded bg-white px-1.5 py-0.5 font-bold">
+          {"{link}"}
+        </code>{" "}
+        төлбөрийн холбоос (сүүлийн хоёр нь зөвхөн сануулгад)
         <div className="mt-2 text-ink-500">
           Хүргэлтийн явцын SMS (бэлтгэж байна / хүргэлтэд / хүргэгдсэн)
           илгээгддэггүй — захиалагч сайт дээрээсээ шууд хардаг. Нэг захиалгад
@@ -112,7 +149,7 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
 }
 
 function SmsBlock({
-  title, desc, enabled, onToggle, template, onTemplate,
+  title, desc, enabled, onToggle, template, onTemplate, children,
 }: {
   title: string;
   desc: string;
@@ -120,6 +157,8 @@ function SmsBlock({
   onToggle: (v: boolean) => void;
   template: string;
   onTemplate: (v: string) => void;
+  /** Нэмэлт тохиргоо — зөвхөн идэвхтэй үед харагдана */
+  children?: React.ReactNode;
 }) {
   const text = preview(template);
   const seg = segments(text);
@@ -166,6 +205,8 @@ function SmsBlock({
               {seg > 1 && " (төлбөр өснө)"}
             </span>
           </div>
+
+          {children}
         </div>
       )}
     </div>

@@ -177,6 +177,11 @@ export type SmsSettings = {
   paid_template: string;
   cancelled_enabled: boolean;
   cancelled_template: string;
+  /** Төлбөр хийгээгүй орхисон захиалгад сануулга */
+  unpaid_enabled: boolean;
+  unpaid_template: string;
+  /** Захиалга үүссэнээс хойш хэдэн минутын дараа сануулах вэ */
+  unpaid_after_minutes: number;
 };
 
 export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
@@ -185,6 +190,12 @@ export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
     "Таны {order} дугаартай захиалга баталгаажлаа. Таны захиалга 24 цагийн дотор хүргэгдэнэ баярлалаа. Видан",
   cancelled_enabled: true,
   cancelled_template: "VIDAN: Захиалга {order} цуцлагдлаа.",
+  // Захиалга 120 минутын дараа цуцлагддаг (release_stale_orders) тул
+  // сануулга түүнээс эрт очиж, төлөх цаг үлдсэн байх ёстой.
+  unpaid_enabled: false,
+  unpaid_template:
+    "VIDAN: {order} захиалгын {total} төлбөр хүлээгдэж байна. Барааг тань {left} нөөцөлсөн. Төлөх: {link}",
+  unpaid_after_minutes: 25,
 };
 
 export async function getSmsSettings(): Promise<SmsSettings> {
