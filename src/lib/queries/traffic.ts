@@ -140,6 +140,9 @@ export async function getTraffic(period: ReportPeriod): Promise<TrafficData> {
           sessions: r.metrics[0],
           users: r.metrics[1],
         })),
+        // Сешнгүй сувгийг ч харуулна — хүснэгт хугацаа болгонд ижил
+        // бүтэцтэй байж, ямар суваг хэмжигдэж байгаа нь харагдана.
+        { includeEmpty: true },
       ),
       devices: asRows(deviceRows),
       pages: pageRows.map((r) => ({

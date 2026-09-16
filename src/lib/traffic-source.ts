@@ -139,14 +139,22 @@ export type ClassifiedTraffic = {
 };
 
 /**
- * Түүхий мөрүүдийг сувгаар нэгтгэнэ. Сешнгүй суваг хүснэгтэд гарахгүй.
+ * Түүхий мөрүүдийг сувгаар нэгтгэнэ.
+ *
+ * `includeEmpty` — сешнгүй сувгийг ч буцаана. Хүснэгт хугацаа болгонд
+ * ижил бүтэцтэй байж, ямар суваг хэмжигдэж байгаа нь харагдана:
+ * "Messenger 0" гэдэг нь "чатаар холбоос тараагаагүй эсвэл шошгогүй"
+ * гэсэн мэдээлэл — мөр огт байхгүй байснаас хавьгүй хэрэгтэй.
  *
  * ⚠️ Хэрэглэгчийн тоог НЭМЖ БОЛОХГҮЙ гэж бодож магадгүй — гэвч GA4 нь
  * мөр бүрт тухайн сувгийн хэрэглэгчийг өгдөг тул нэг хүн хоёр сувгаар
  * орсон бол хоёуланд нь тоологдоно. Facebook-ийн 4 домэйнийг нэгтгэхэд
  * энэ давхардал үлдэнэ — тиймээс хүснэгтэд СЕШН-ийг гол болгоно.
  */
-export function classifyTraffic(rows: TrafficSourceRow[]): ClassifiedTraffic[] {
+export function classifyTraffic(
+  rows: TrafficSourceRow[],
+  opts: { includeEmpty?: boolean } = {},
+): ClassifiedTraffic[] {
   const acc = new Map<TrafficKey, { sessions: number; users: number }>();
 
   for (const r of rows) {
@@ -157,10 +165,14 @@ export function classifyTraffic(rows: TrafficSourceRow[]): ClassifiedTraffic[] {
     acc.set(key, cur);
   }
 
-  return TRAFFIC_ORDER.filter((k) => (acc.get(k)?.sessions ?? 0) > 0).map((k) => ({
+  const keys = opts.includeEmpty
+    ? TRAFFIC_ORDER
+    : TRAFFIC_ORDER.filter((k) => (acc.get(k)?.sessions ?? 0) > 0);
+
+  return keys.map((k) => ({
     key: k,
     label: TRAFFIC_LABEL[k],
-    sessions: acc.get(k)!.sessions,
-    users: acc.get(k)!.users,
+    sessions: acc.get(k)?.sessions ?? 0,
+    users: acc.get(k)?.users ?? 0,
   }));
 }

@@ -119,10 +119,25 @@ describe("classifyTraffic", () => {
     assert.equal(out.reduce((s, r) => s + r.sessions, 0), total);
   });
 
-  test("сешнгүй суваг хүснэгтэд гарахгүй", () => {
+  test("өгөгдмөлөөр сешнгүй суваг гарахгүй", () => {
     const out = classifyTraffic(real);
     assert.equal(out.some((r) => r.key === "messenger"), false);
     assert.equal(out.some((r) => r.sessions === 0), false);
+  });
+
+  test("includeEmpty — бүх суваг гарна", () => {
+    const out = classifyTraffic(real, { includeEmpty: true });
+    assert.equal(out.length, TRAFFIC_ORDER.length);
+    // Хэмжигдэж байгаа ч ирээгүй суваг 0-ээр харагдана
+    assert.equal(out.find((r) => r.key === "messenger")?.sessions, 0);
+    assert.equal(out.find((r) => r.key === "qr")?.sessions, 0);
+    // Тоонууд гуйвахгүй
+    assert.equal(out.find((r) => r.key === "facebook")?.sessions, 195);
+  });
+
+  test("includeEmpty дээр ч эрэмбэ тогтмол", () => {
+    const out = classifyTraffic(real, { includeEmpty: true });
+    assert.deepEqual(out.map((r) => r.key), [...TRAFFIC_ORDER]);
   });
 
   test("эрэмбэ тогтмол", () => {
