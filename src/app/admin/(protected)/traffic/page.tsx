@@ -17,16 +17,18 @@ function duration(sec: number): string {
 }
 
 /** GA4-ийн сувгийн нэрийг монголоор */
-const CHANNEL_LABEL: Record<string, string> = {
-  "Organic Social": "Сошиал (органик)",
-  "Paid Social": "Сошиал (төлбөртэй)",
-  "Organic Search": "Хайлт (органик)",
-  "Paid Search": "Хайлт (төлбөртэй)",
-  Direct: "Шууд орсон",
-  Referral: "Бусад сайтаас",
-  Email: "И-мэйл",
-  "Cross-network": "Сүлжээ хооронд",
-  Unassigned: "Тодорхойгүй",
+/** Суваг бүрийн өнгө — мөрийн зүүн ирмэг дээр */
+const CHANNEL_COLOR: Record<string, string> = {
+  facebook: "bg-[#1877F2]",
+  facebook_ads: "bg-[#1877F2]/55",
+  instagram: "bg-[#E1306C]",
+  instagram_ads: "bg-[#E1306C]/55",
+  messenger: "bg-[#8B5CF6]",
+  google: "bg-[#EA4335]",
+  google_ads: "bg-[#EA4335]/55",
+  direct: "bg-ink-400",
+  referral: "bg-lime-500",
+  other: "bg-ink-300",
 };
 
 const DEVICE_LABEL: Record<string, string> = {
@@ -214,23 +216,51 @@ export default async function AdminTraffic({
                 <tr>
                   <th className={TH}>Суваг</th>
                   <th className={`${TH} text-right`}>Сешн</th>
+                  <th className={`${TH} text-right`}>Хүн</th>
                   <th className={`${TH} text-right`}>Хувь</th>
                 </tr>
               </thead>
               <tbody>
-                {channels.map((c) => (
-                  <tr key={c.label} className="border-t border-ink-100">
-                    <td className={`${TD} font-semibold text-ink-900`}>
-                      {CHANNEL_LABEL[c.label] ?? c.label}
-                    </td>
-                    <td className={`${TD_NUM} font-display font-extrabold`}>
-                      {num(c.sessions)}
-                    </td>
-                    <td className={TD_NUM}>
-                      {Math.round((c.sessions / totalChannelSessions) * 100)}%
-                    </td>
-                  </tr>
-                ))}
+                {channels.map((c) => {
+                  const pct = totalChannelSessions
+                    ? (c.sessions / totalChannelSessions) * 100
+                    : 0;
+                  return (
+                    <tr key={c.key} className="border-t border-ink-100">
+                      <td className={`${TD} font-semibold text-ink-900`}>
+                        <span className="flex items-center gap-2.5">
+                          <span
+                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                              CHANNEL_COLOR[c.key] ?? "bg-ink-300"
+                            }`}
+                          />
+                          {c.label}
+                        </span>
+                      </td>
+                      <td className={`${TD_NUM} font-display font-extrabold`}>
+                        {num(c.sessions)}
+                      </td>
+                      <td className={`${TD_NUM} text-ink-500`}>{num(c.users)}</td>
+                      <td className={TD_NUM}>
+                        <span className="flex items-center justify-end gap-2">
+                          {/* Нүдэн дээр жиших зурвас — тоо уншихгүйгээр
+                              аль суваг давамгайлж байгаа нь харагдана */}
+                          <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-ink-100 sm:block">
+                            <span
+                              className={`block h-full rounded-full ${
+                                CHANNEL_COLOR[c.key] ?? "bg-ink-300"
+                              }`}
+                              style={{ width: `${Math.max(pct, 2)}%` }}
+                            />
+                          </span>
+                          <span className="w-9 text-right font-semibold">
+                            {Math.round(pct)}%
+                          </span>
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

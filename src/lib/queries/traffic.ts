@@ -6,6 +6,10 @@
  */
 import { isGa4Configured, runGa4Report } from "@/lib/ga4";
 import { periodDayKeys, type ReportPeriod } from "@/lib/report-period";
+import {
+  classifyTraffic,
+  type ClassifiedTraffic,
+} from "@/lib/traffic-source";
 
 export type TrafficTotals = {
   users: number;
@@ -29,7 +33,8 @@ export type TrafficData =
       period: ReportPeriod;
       totals: TrafficTotals;
       byDay: TrafficDay[];
-      channels: TrafficRow[];
+      /** Эх сурвалж — Facebook, Instagram, Google… (traffic-source.ts)  */
+      channels: ClassifiedTraffic[];
       devices: TrafficRow[];
       pages: TrafficPage[];
       countries: TrafficRow[];
@@ -64,9 +69,12 @@ export async function getTraffic(period: ReportPeriod): Promise<TrafficData> {
         }),
         runGa4Report({
           ...range,
-          dimensions: ["sessionDefaultChannelGroup"],
+          // Бүдүүн бүлэг (sessionDefaultChannelGroup) биш, жинхэнэ
+          // эх сурвалж — Facebook, Instagram, Messenger-ийг ялгахын тулд.
+          dimensions: ["sessionSource", "sessionMedium"],
           metrics: ["sessions", "activeUsers"],
           orderByMetric: 0,
+          limit: 100,
         }),
         runGa4Report({
           ...range,
@@ -125,7 +133,14 @@ export async function getTraffic(period: ReportPeriod): Promise<TrafficData> {
         avgDuration,
       },
       byDay,
-      channels: asRows(channelRows),
+      channels: classifyTraffic(
+        channelRows.map((r) => ({
+          source: r.dims[0],
+          medium: r.dims[1],
+          sessions: r.metrics[0],
+          users: r.metrics[1],
+        })),
+      ),
       devices: asRows(deviceRows),
       pages: pageRows.map((r) => ({
         path: r.dims[0] || "/",
