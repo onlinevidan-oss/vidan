@@ -286,6 +286,7 @@ export type Database = {
           ebarimt_lottery: string | null
           ebarimt_qr: string | null
           ebarimt_type: string | null
+          ga_client_id: string | null
           id: string
           internal_notes: string | null
           order_number: string
@@ -319,6 +320,7 @@ export type Database = {
           ebarimt_lottery?: string | null
           ebarimt_qr?: string | null
           ebarimt_type?: string | null
+          ga_client_id?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string
@@ -352,6 +354,7 @@ export type Database = {
           ebarimt_lottery?: string | null
           ebarimt_qr?: string | null
           ebarimt_type?: string | null
+          ga_client_id?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string

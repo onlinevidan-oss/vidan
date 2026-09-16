@@ -20,6 +20,7 @@ import {
 } from "./ebarimt";
 import { createOrderEbarimt } from "@/lib/ebarimt/orders";
 import { sendOrderSms } from "@/lib/sms/notifications";
+import { sendPurchaseEvent } from "@/lib/ga4-mp";
 import type { Database } from "@/lib/supabase/database.types";
 
 export type QpayInvoiceRow =
@@ -199,6 +200,10 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
 
   // Хэрэглэгчид баталгаажилтын SMS — best effort.
   await sendOrderSms(orderId, "paid");
+
+  // GA4-д сервер талаас худалдан авалт бүртгэх — банкны апп-аас буцаж
+  // ирээгүй хүн ч тоологдоно. Хэмжилт борлуулалтыг тасалдуулж болохгүй.
+  await sendPurchaseEvent(orderId);
 
   return "paid";
 }

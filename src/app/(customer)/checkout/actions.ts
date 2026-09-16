@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCommerceSettings } from "@/lib/queries/settings";
 import { formatMnt } from "@/lib/utils";
 import { normalizePhone } from "@/lib/sms/client";
+import { parseGaClientId } from "@/lib/ga4-mp";
 
 export type CheckoutPayload = {
   items: { productId: string; quantity: number }[];
@@ -132,6 +134,11 @@ export async function placeOrder(
   // E-barimt баримтын мэдээлэл хадгалах (place_order-г өөрчлөхгүйн тулд тусад нь).
   // Захиалга дөнгөж энэ хэрэглэгчийнхээр үүссэн тул admin client-ээр шинэчилнэ.
   const ebarimtType = payload.ebarimtType ?? "B2C_RECEIPT";
+
+  // GA-гийн client_id — банкны апп-аас буцаж ирээгүй хүний худалдан
+  // авалтыг сервер талаас GA4-д бүртгэхэд хэрэгтэй (ga4-mp.ts).
+  const gaClientId = parseGaClientId((await cookies()).get("_ga")?.value);
+
   try {
     const admin = createAdminClient();
     await admin
@@ -139,6 +146,7 @@ export async function placeOrder(
       .update({
         contact_phone: contactPhone,
         contact_phone2: contactPhone2,
+        ga_client_id: gaClientId,
         ebarimt_type: ebarimtType,
         ebarimt_consumer_no:
           ebarimtType === "B2C_RECEIPT"
