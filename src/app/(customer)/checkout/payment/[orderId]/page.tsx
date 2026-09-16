@@ -19,7 +19,7 @@ export default async function PaymentPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_number, total, payment_status, payment_method")
+    .select("id, order_number, total, payment_status, payment_method, created_at")
     .eq("id", orderId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -88,6 +88,7 @@ export default async function PaymentPage({
       orderId={order.id}
       orderNumber={order.order_number}
       total={Number(order.total)}
+      createdAt={order.created_at}
       qrImage={qr_image}
       qrText={qr_text}
       shortUrl={shortUrl}
