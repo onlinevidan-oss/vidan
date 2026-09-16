@@ -11,6 +11,12 @@
  *
  * Энэ функц нь `sessionSource` + `sessionMedium`-ээс жинхэнэ сувгийг
  * тогтооно. Шинэ суваг нэмэхдээ доорх жагсаалтад нэмнэ.
+ *
+ * ШУУД ОРСОН гэдгийн дотор юу байгааг GA4 мэддэггүй: QR код, чатын
+ * холбоос, SMS, гараар бичсэн хаяг — бүгд эх сурвалжгүй ирдэг тул
+ * ялгах шинж тэмдэг байхгүй. Ганц зам нь өөрсдийн тараадаг холбоост
+ * `?utm_source=` шошго тавих (админ дахь холбоос үүсгэгч).
+ * Тиймээс доорх UTM_KEYS нь тэр шошгуудыг таньж, тусдаа мөр болгоно.
  */
 
 /** Эрэмбэ — хүснэгтэд тогтмол дараалалтай харагдана */
@@ -20,8 +26,13 @@ export const TRAFFIC_ORDER = [
   "instagram",
   "instagram_ads",
   "messenger",
+  "viber",
   "google",
   "google_ads",
+  "qr",
+  "sms",
+  "email",
+  "print",
   "direct",
   "referral",
   "other",
@@ -35,11 +46,29 @@ export const TRAFFIC_LABEL: Record<TrafficKey, string> = {
   instagram: "Instagram",
   instagram_ads: "Instagram сурталчилгаа",
   messenger: "Messenger (чат)",
+  viber: "Viber",
   google: "Google хайлт",
   google_ads: "Google сурталчилгаа",
-  direct: "Шууд орсон",
+  qr: "QR код",
+  sms: "Мессеж (SMS)",
+  email: "И-мэйл",
+  print: "Хэвлэмэл, сав баглаа",
+  direct: "Шууд орсон (гараар, хавчуурга)",
   referral: "Бусад сайтаас",
   other: "Тодорхойгүй",
+};
+
+/**
+ * Өөрсдийн тавьдаг `utm_source` шошгууд. Холбоос үүсгэгч эдгээрийг
+ * ашиглана — хоёр газар зөрвөл трафик буруу ангилагдана.
+ */
+const UTM_KEYS: Record<string, TrafficKey> = {
+  qr: "qr",
+  sms: "sms",
+  email: "email",
+  print: "print",
+  messenger: "messenger",
+  viber: "viber",
 };
 
 /** Төлбөртэй трафикийн medium-ууд */
@@ -57,9 +86,16 @@ export function classifyTrafficSource(source: string, medium: string): TrafficKe
   const s = source.trim().toLowerCase();
   const m = medium.trim().toLowerCase();
 
+  // Өөрсдийн шошго тэргүүн эрэмбэтэй — гараар тавьсан утга учир
+  // домэйн таамаглахаас найдвартай.
+  const tagged = UTM_KEYS[s];
+  if (tagged) return tagged;
+
   // Messenger-ийг Facebook-оос ӨМНӨ шалгана — `l.messenger.com` нь
   // facebook гэсэн үг агуулдаггүй ч дарааллыг тодорхой байлгая.
   if (s === "m.me" || s.endsWith("messenger.com")) return "messenger";
+
+  if (s === "viber" || s.endsWith("viber.com")) return "viber";
 
   // Facebook: сурталчилгааны source нь домэйн биш, зүгээр "fb" байдаг
   const isFacebook =

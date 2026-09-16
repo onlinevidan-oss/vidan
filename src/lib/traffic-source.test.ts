@@ -53,6 +53,27 @@ describe("classifyTrafficSource", () => {
     assert.equal(classifyTrafficSource("(direct)", "(none)"), "direct");
   });
 
+  test("өөрсдийн тавьсан UTM шошго таарна", () => {
+    // Холбоос үүсгэгчийн гаргадаг утгууд — хоёр газар зөрвөл
+    // трафик "Тодорхойгүй" рүү унана.
+    assert.equal(classifyTrafficSource("qr", "offline"), "qr");
+    assert.equal(classifyTrafficSource("sms", "sms"), "sms");
+    assert.equal(classifyTrafficSource("email", "email"), "email");
+    assert.equal(classifyTrafficSource("print", "offline"), "print");
+    assert.equal(classifyTrafficSource("messenger", "chat"), "messenger");
+    assert.equal(classifyTrafficSource("viber", "chat"), "viber");
+  });
+
+  test("шошго нь домэйн таамаглахаас дээгүүр", () => {
+    // `utm_source=messenger` тавьсан бол medium юу ч байсан
+    // Messenger гэж ангилна.
+    assert.equal(classifyTrafficSource("messenger", "referral"), "messenger");
+  });
+
+  test("Viber домэйнээр ч таарна", () => {
+    assert.equal(classifyTrafficSource("viber.com", "referral"), "viber");
+  });
+
   test("танихгүй эх сурвалж", () => {
     assert.equal(classifyTrafficSource("(not set)", "(not set)"), "other");
   });

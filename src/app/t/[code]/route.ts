@@ -9,6 +9,10 @@
  * Аюулгүй байдал: захиалгын дугаар нууц зүйл биш. Төлбөрийн хуудас
  * өөрөө нэвтрэлт болон эзэмшлийг шалгадаг тул хэн нэгэн бусдын
  * дугаарыг таавал login руу шилжиж, дараа нь 404 харна.
+ *
+ * UTM шошгыг SMS-д БИШ, энд буулгах үед нэмнэ — ингэснээр мессежийн
+ * урт нэмэгдэхгүй (кирилл SMS 70 тэмдэгт тутамд нэг segment) атлаа
+ * GA4-д "Мессеж (SMS)" суваг болж тоологдоно.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -32,7 +36,8 @@ export async function GET(
 
   if (!order) return NextResponse.redirect(new URL("/", request.url));
 
-  return NextResponse.redirect(
-    new URL(`/checkout/payment/${order.id}`, request.url),
-  );
+  const target = new URL(`/checkout/payment/${order.id}`, request.url);
+  target.searchParams.set("utm_source", "sms");
+  target.searchParams.set("utm_medium", "sms");
+  return NextResponse.redirect(target);
 }

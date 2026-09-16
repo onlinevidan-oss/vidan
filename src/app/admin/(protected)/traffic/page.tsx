@@ -1,6 +1,8 @@
+import { headers } from "next/headers";
 import { TopBar } from "@/components/admin/TopBar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { ReportToolbar } from "@/components/admin/ReportToolbar";
+import { LinkBuilder } from "@/components/admin/LinkBuilder";
 import { getTraffic } from "@/lib/queries/traffic";
 import { resolvePeriod } from "@/lib/report-period";
 import { ubDateKey } from "@/lib/datetime";
@@ -24,8 +26,13 @@ const CHANNEL_COLOR: Record<string, string> = {
   instagram: "bg-[#E1306C]",
   instagram_ads: "bg-[#E1306C]/55",
   messenger: "bg-[#8B5CF6]",
+  viber: "bg-[#7360F2]",
   google: "bg-[#EA4335]",
   google_ads: "bg-[#EA4335]/55",
+  qr: "bg-ink-900",
+  sms: "bg-teal-500",
+  email: "bg-amber-500",
+  print: "bg-orange-400",
   direct: "bg-ink-400",
   referral: "bg-lime-500",
   other: "bg-ink-300",
@@ -41,6 +48,20 @@ const TH =
   "px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-ink-500 whitespace-nowrap";
 const TD = "px-3 py-2 text-[13px] text-ink-700";
 const TD_NUM = `${TD} text-right tabular-nums whitespace-nowrap`;
+
+/**
+ * Холбоос үүсгэгчид өгөх суурь хаяг.
+ *
+ * Орчны хувьсагчид найдахгүй: NEXT_PUBLIC_SITE_URL нь локалд
+ * `localhost:3000`, production-д хоосон байна. Хүсэлтийн host-оос
+ * авбал dev-д localhost, production-д www.vidan.mn гарна.
+ */
+async function siteOrigin(): Promise<string> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "www.vidan.mn";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export default async function AdminTraffic({
   searchParams,
@@ -321,6 +342,8 @@ export default async function AdminTraffic({
             )}
           </div>
         </div>
+
+        <LinkBuilder siteUrl={await siteOrigin()} />
 
         {/* ---------- Топ хуудас ---------- */}
         <div className="print-card rounded-2xl border border-ink-200 bg-white">
