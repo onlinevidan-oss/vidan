@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
@@ -84,6 +84,27 @@ export function CheckoutView({
   const [consumerNo, setConsumerNo] = useState("");
   const [customerTin, setCustomerTin] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // Доод талын жинхэнэ товч нүдэнд харагдаж байна уу — наалдсан мөр
+  // зөвхөн харагдахгүй үед л гарна.
+  //
+  // ⚠️ useEffect([]) БОЛОХГҮЙ: сагс нь localStorage-оос сэргэдэг тул
+  // эхний рендэрт `items` хоосон байж, компонент "Сагс хоосон" салаа
+  // руу ордог — тэр үед товч оршдоггүй. Хамаарал хоосон effect дахин
+  // ажиллахгүй тул observer хэзээ ч холбогдохгүй өнгөрнө.
+  // ref callback нь элемент гармагц ажиллана (React 19-д цэвэрлэх
+  // функц буцааж болно).
+  const [ctaVisible, setCtaVisible] = useState(false);
+
+  const ctaRef = useCallback((el: HTMLButtonElement | null) => {
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setCtaVisible(entry.isIntersecting),
+      { rootMargin: "-40px 0px -40px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [redirecting, setRedirecting] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -438,7 +459,11 @@ export function CheckoutView({
 
           {/* Notes — хаягийн шууд доор */}
           {/* ============ ПРОМО КОД ============ */}
-          <Section title="3. Промо код">
+          <Section
+            title="3. Промо код"
+            collapsible
+            badge={promo ? `🎟 ${promo.code}` : null}
+          >
             {promo ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-[1.5px] border-lime-300 bg-lime-50 px-4 py-3.5">
                 <div>
@@ -499,7 +524,11 @@ export function CheckoutView({
             )}
           </Section>
 
-          <Section title="4. Жолоочид заавар (заавал биш)">
+          <Section
+            title="4. Жолоочид заавар"
+            collapsible
+            badge={notes.trim() ? "бичсэн" : null}
+          >
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -510,7 +539,11 @@ export function CheckoutView({
 
           {/* Баримт — хувь хүн / байгууллага (e-barimt холбогдсон үед л) */}
           {ebarimtEnabled && (
-          <Section title="5. Төлбөрийн баримт">
+          <Section
+            title="5. Төлбөрийн баримт"
+            collapsible
+            badge={ebarimtType === "B2B_RECEIPT" ? "Байгууллага" : "Хувь хүн"}
+          >
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -617,6 +650,7 @@ export function CheckoutView({
             )}
 
             <button
+              ref={ctaRef}
               onClick={handleSubmit}
               disabled={pending || belowMinOrder}
               className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none"
@@ -635,11 +669,87 @@ export function CheckoutView({
           </div>
         </aside>
       </div>
+
+      {/* ===== Гар утасны наалдсан мөр =====
+          Хуудас 3.5 дэлгэц өндөр, жинхэнэ товч 2 дэлгэцийн доор байсан.
+          Трафикийн 90% нь гар утас тул нийт дүн, товч хоёр байнга
+          нүдний өмнө байх ёстой. Доод талын товч харагдах үед энэ
+          нуугдана — хоёр товч зэрэг харагдвал андуурна. */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-ink-200 bg-white/95 p-3 backdrop-blur transition-transform lg:hidden ${
+          ctaVisible ? "translate-y-full" : "translate-y-0"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-ink-500">
+              Нийт
+            </div>
+            <div className="font-display truncate text-lg font-black text-brand-700">
+              {formatMnt(total)}
+            </div>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={pending || belowMinOrder}
+            className="flex-1 rounded-[12px] bg-brand-600 py-3.5 text-[15px] font-extrabold text-white transition active:scale-[0.98] disabled:bg-ink-300"
+          >
+            {pending
+              ? "Үүсгэж байна…"
+              : belowMinOrder
+                ? "Дүн хүрэхгүй байна"
+                : "Захиалга баталгаажуулах"}
+          </button>
+        </div>
+      </div>
+      {/* Наалдсан мөр агуулгыг халхлахгүй байх зай */}
+      <div className="h-20 lg:hidden" aria-hidden />
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * `collapsible` — заавал биш хэсгүүдэд. Гар утсанд хуудас 3.5 дэлгэц
+ * өндөр байсан ба "Захиалга баталгаажуулах" товч 2 дэлгэцийн доор
+ * байв. Промо код, жолоочийн заавар зэрэг заавал биш хэсгүүд
+ * худалдан авагчийн замыг хаах ёсгүй — ялангуяа промо код нь
+ * "код хайж олъё" гээд гарч явахад хүргэдэг.
+ *
+ * `badge` — хаалттай байхад ямар утга сонгогдсоныг харуулна
+ * (жнь. хэрэглэсэн промо код), тэгвэл нээлгүйгээр шалгаж болно.
+ */
+function Section({
+  title,
+  children,
+  collapsible,
+  badge,
+}: {
+  title: string;
+  children: React.ReactNode;
+  collapsible?: boolean;
+  badge?: string | null;
+}) {
+  if (collapsible) {
+    return (
+      <details className="group rounded-2xl border border-ink-200 bg-white [&[open]]:pb-5">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+          <span className="font-display text-sm font-extrabold uppercase tracking-wider text-ink-700">
+            {title}
+          </span>
+          <span className="flex items-center gap-2">
+            {badge && (
+              <span className="rounded-full bg-lime-100 px-2.5 py-1 text-[11px] font-bold text-lime-700">
+                {badge}
+              </span>
+            )}
+            <span className="text-ink-400 transition group-open:rotate-180">▾</span>
+          </span>
+        </summary>
+        <div className="px-5">{children}</div>
+      </details>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-ink-200 bg-white p-5">
       <h3 className="font-display mb-3.5 text-sm font-extrabold uppercase tracking-wider text-ink-700">
