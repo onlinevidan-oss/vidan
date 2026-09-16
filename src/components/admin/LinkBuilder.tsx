@@ -14,7 +14,7 @@
  * "Тодорхойгүй" рүү унана.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import QRCode from "qrcode";
 
 /** `traffic-source.ts`-ийн UTM_KEYS-тэй ЯГ таарч байх ёстой */
@@ -37,8 +37,9 @@ const QUICK_PAGES = [
 export function LinkBuilder({ siteUrl }: { siteUrl: string }) {
   const [channel, setChannel] = useState<string>(CHANNELS[0].source);
   const [path, setPath] = useState("/");
-  const [copied, setCopied] = useState(false);
-  const [qr, setQr] = useState<string | null>(null);
+  // Аль холбоосыг хуулсныг хадгална — холбоос солигдвол "хуулагдлаа"
+  // тэмдэг өөрөө алга болно (effect-ээр буцааж тохируулах шаардлагагүй).
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const picked = CHANNELS.find((c) => c.source === channel) ?? CHANNELS[0];
 
@@ -50,24 +51,67 @@ export function LinkBuilder({ siteUrl }: { siteUrl: string }) {
     return url.toString();
   }, [path, picked, siteUrl]);
 
-  useEffect(() => {
-    setCopied(false);
-    let alive = true;
-    QRCode.toDataURL(link, { width: 480, margin: 1 })
-      .then((d) => alive && setQr(d))
-      .catch(() => alive && setQr(null));
-    return () => {
-      alive = false;
-    };
+  /**
+   * QR-ыг зурвасаас нь SVG болгож, шууд рендэрийн явцад үүсгэнэ.
+   *
+   * `QRCode.toDataURL` нь async тул effect + setState шаарддаг байсан —
+   * холбоос солигдох бүрд QR нэг агшин алга болж анивчина. `create`
+   * нь синхрон ажилладаг учир ийм зовлон байхгүй.
+   */
+  const qr = useMemo(() => {
+    try {
+      const q = QRCode.create(link, { errorCorrectionLevel: "M" });
+      const size = q.modules.size;
+      const bits = q.modules.data;
+      let path = "";
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          if (bits[y * size + x]) path += `M${x} ${y}h1v1h-1z`;
+        }
+      }
+      const pad = 2;
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}" shape-rendering="crispEdges">` +
+        `<rect x="${-pad}" y="${-pad}" width="${size + pad * 2}" height="${size + pad * 2}" fill="#fff"/>` +
+        `<path d="${path}" fill="#000"/></svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    } catch {
+      return null;
+    }
   }, [link]);
+
+  /**
+   * Татаж авахдаа PNG болгоно — сав баглаа, брошурын загварт SVG-г
+   * бүх програм уншдаггүй. Дарсан үед хөрвүүлнэ (рендэрийн явцад биш).
+   */
+  function downloadPng() {
+    if (!qr) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 720;
+      canvas.height = 720;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, 720, 720);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `vidan-${picked.source}.png`;
+      a.click();
+    };
+    img.src = qr;
+  }
+
+  const copied = copiedLink === link;
 
   async function copy() {
     try {
       await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedLink(link);
+      setTimeout(() => setCopiedLink(null), 2000);
     } catch {
-      setCopied(false);
+      setCopiedLink(null);
     }
   }
 
@@ -83,8 +127,9 @@ export function LinkBuilder({ siteUrl }: { siteUrl: string }) {
         </p>
       </div>
 
-      <div className="grid gap-5 p-5 md:grid-cols-[1fr_200px]">
-        <div className="space-y-4">
+      <div className="p-5">
+        <div className="grid gap-5 md:grid-cols-[1fr_200px]">
+          <div className="space-y-4">
           {/* Суваг */}
           <div>
             <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-ink-500">
@@ -140,58 +185,62 @@ export function LinkBuilder({ siteUrl }: { siteUrl: string }) {
               Тодорхой бараа руу чиглүүлэх бол хаягийг нь буулгаж тавина
             </p>
           </div>
+          </div>
 
-          {/* Үр дүн */}
-          <div>
+          {/* QR */}
+          <div className="text-center">
             <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-ink-500">
-              Бэлэн холбоос
+              QR код
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                readOnly
-                value={link}
-                onFocus={(e) => e.currentTarget.select()}
-                className="flex-1 rounded-[10px] border-[1.5px] border-ink-200 bg-cream px-3 py-2.5 font-mono text-[12px] text-ink-900 outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => void copy()}
-                className={`whitespace-nowrap rounded-[10px] px-5 py-2.5 text-[13px] font-bold text-white transition ${
-                  copied ? "bg-lime-600" : "bg-brand-600 hover:bg-brand-700"
-                }`}
-              >
-                {copied ? "✓ Хуулагдлаа" : "Хуулах"}
-              </button>
-            </div>
+            {qr ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qr}
+                  alt="Холбоосын QR код"
+                  className="mx-auto h-[180px] w-[180px] rounded-xl border border-ink-200"
+                />
+                <button
+                  type="button"
+                  onClick={downloadPng}
+                  className="mt-2 block w-full rounded-[10px] border-[1.5px] border-ink-200 py-2 text-[12px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+                >
+                  Татаж авах
+                </button>
+              </>
+            ) : (
+              <div className="mx-auto grid h-[180px] w-[180px] place-items-center rounded-xl border border-dashed border-ink-200 text-[12px] text-ink-500">
+                …
+              </div>
+            )}
           </div>
         </div>
 
-        {/* QR */}
-        <div className="text-center">
+        {/* ===== Бэлэн холбоос — хамгийн доор, бүтэн өргөнөөр =====
+            Энэ бол хуудасны эцсийн үр дүн: сонголтуудаа хийгээд
+            эндээс хуулж авна. Дунд нь байрлуулбал QR-ын хажууд
+            шахагдаж, урт хаяг таслагдаж харагдана. */}
+        <div className="mt-5 border-t border-ink-200 pt-5">
           <div className="mb-2 text-[11px] font-bold uppercase tracking-wider text-ink-500">
-            QR код
+            Бэлэн холбоос
           </div>
-          {qr ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qr}
-                alt="Холбоосын QR код"
-                className="mx-auto h-[180px] w-[180px] rounded-xl border border-ink-200"
-              />
-              <a
-                href={qr}
-                download={`vidan-${picked.source}.png`}
-                className="mt-2 block rounded-[10px] border-[1.5px] border-ink-200 py-2 text-[12px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
-              >
-                Татаж авах
-              </a>
-            </>
-          ) : (
-            <div className="mx-auto grid h-[180px] w-[180px] place-items-center rounded-xl border border-dashed border-ink-200 text-[12px] text-ink-500">
-              …
-            </div>
-          )}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              readOnly
+              value={link}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 rounded-[10px] border-[1.5px] border-ink-200 bg-cream px-3.5 py-3 font-mono text-[13px] text-ink-900 outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => void copy()}
+              className={`whitespace-nowrap rounded-[10px] px-7 py-3 text-[13px] font-bold text-white transition ${
+                copied ? "bg-lime-600" : "bg-brand-600 hover:bg-brand-700"
+              }`}
+            >
+              {copied ? "✓ Хуулагдлаа" : "Хуулах"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
