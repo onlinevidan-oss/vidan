@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/lib/queries/staff";
 import { Sidebar } from "@/components/admin/Sidebar";
+import { StaffNoTrack } from "@/components/analytics/StaffNoTrack";
 
 export const metadata = { title: "VIDAN Backoffice" };
 
@@ -31,6 +32,8 @@ export default async function AdminLayout({
         }}
       />
       <main className="min-w-0 flex flex-col">{children}</main>
+      {/* Ажилтны браузерийг хэмжилтээс хасна */}
+      <StaffNoTrack />
     </div>
   );
 }

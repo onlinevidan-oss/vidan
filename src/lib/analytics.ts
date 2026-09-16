@@ -1,6 +1,13 @@
 export const GOOGLE_ANALYTICS_ID =
   process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID || "G-TKW8J2C1LH";
 
+/**
+ * Энэ браузерийг хэмжихгүй гэсэн тэмдэглэгээ (localStorage).
+ * Админд нэг удаа орсон браузерт тавигдана — эзний өөрийн ажил
+ * зочны трафик болж тоологдохоос сэргийлнэ.
+ */
+export const NO_TRACK_KEY = "vidan-no-track";
+
 export type AnalyticsItem = {
   item_id: string;
   item_name: string;
