@@ -24,13 +24,11 @@ export const TRAFFIC_ORDER = [
   "facebook",
   "facebook_ads",
   "instagram",
-  "instagram_ads",
-  "messenger",
-  "viber",
   "google",
   "google_ads",
-  "qr",
+  "chat",
   "sms",
+  "qr",
   "email",
   "print",
   "direct",
@@ -38,22 +36,38 @@ export const TRAFFIC_ORDER = [
   "other",
 ] as const;
 
+/**
+ * Хандалт байхгүй байсан ч ҮРГЭЛЖ харагдах сувгууд.
+ *
+ * Бусад нь (Google сурталчилгаа, QR, и-мэйл, хэвлэмэл, тодорхойгүй)
+ * зөвхөн бодит хандалт ирсэн үед л мөр болно — эдгээр нь тухай бүрд
+ * ашиглагддаг суваг тул байнга 0-ээр харагдвал хүснэгт дэмий уртсана.
+ */
+export const TRAFFIC_ALWAYS_SHOWN: readonly TrafficKey[] = [
+  "facebook",
+  "facebook_ads",
+  "instagram",
+  "google",
+  "chat",
+  "sms",
+  "direct",
+  "referral",
+];
+
 export type TrafficKey = (typeof TRAFFIC_ORDER)[number];
 
 export const TRAFFIC_LABEL: Record<TrafficKey, string> = {
   facebook: "Facebook",
   facebook_ads: "Facebook сурталчилгаа",
   instagram: "Instagram",
-  instagram_ads: "Instagram сурталчилгаа",
-  messenger: "Messenger (чат)",
-  viber: "Viber",
   google: "Google хайлт",
   google_ads: "Google сурталчилгаа",
-  qr: "QR код",
+  chat: "Чат",
   sms: "Мессеж (SMS)",
+  qr: "QR код",
   email: "И-мэйл",
   print: "Хэвлэмэл, сав баглаа",
-  direct: "Шууд орсон (гараар, хавчуурга)",
+  direct: "Гараар бичсэн",
   referral: "Бусад сайтаас",
   other: "Тодорхойгүй",
 };
@@ -67,8 +81,11 @@ const UTM_KEYS: Record<string, TrafficKey> = {
   sms: "sms",
   email: "email",
   print: "print",
-  messenger: "messenger",
-  viber: "viber",
+  // Чат гэдэгт Messenger, Viber, Instagram DM бүгд багтана — аль
+  // апп-аар ирснийг салгах нь эзний шийдвэрт нөлөөлдөггүй.
+  chat: "chat",
+  messenger: "chat",
+  viber: "chat",
 };
 
 /** Төлбөртэй трафикийн medium-ууд */
@@ -91,11 +108,10 @@ export function classifyTrafficSource(source: string, medium: string): TrafficKe
   const tagged = UTM_KEYS[s];
   if (tagged) return tagged;
 
-  // Messenger-ийг Facebook-оос ӨМНӨ шалгана — `l.messenger.com` нь
-  // facebook гэсэн үг агуулдаггүй ч дарааллыг тодорхой байлгая.
-  if (s === "m.me" || s.endsWith("messenger.com")) return "messenger";
-
-  if (s === "viber" || s.endsWith("viber.com")) return "viber";
+  // Чатыг Facebook-оос ӨМНӨ шалгана — `l.messenger.com` нь facebook
+  // гэсэн үг агуулдаггүй ч дарааллыг тодорхой байлгая.
+  if (s === "m.me" || s.endsWith("messenger.com")) return "chat";
+  if (s === "viber" || s.endsWith("viber.com")) return "chat";
 
   // Facebook: сурталчилгааны source нь домэйн биш, зүгээр "fb" байдаг
   const isFacebook =
@@ -105,12 +121,14 @@ export function classifyTrafficSource(source: string, medium: string): TrafficKe
     s.endsWith(".facebook.com");
   if (isFacebook) return isPaid(m) ? "facebook_ads" : "facebook";
 
+  // Instagram-ыг органик/сурталчилгаа гэж салгахгүй — Facebook шиг
+  // хоёр тусдаа мөр болгох хэмжээний урсгал байхгүй.
   const isInstagram =
     s === "ig" ||
     s === "instagram" ||
     s === "instagram.com" ||
     s.endsWith(".instagram.com");
-  if (isInstagram) return isPaid(m) ? "instagram_ads" : "instagram";
+  if (isInstagram) return "instagram";
 
   // Google: хайлт ба сурталчилгаа. accounts.google.com нь нэвтрэлтээс
   // буцсан зочин — хайлт биш тул энд оруулахгүй, referral болно.
@@ -141,10 +159,12 @@ export type ClassifiedTraffic = {
 /**
  * Түүхий мөрүүдийг сувгаар нэгтгэнэ.
  *
- * `includeEmpty` — сешнгүй сувгийг ч буцаана. Хүснэгт хугацаа болгонд
- * ижил бүтэцтэй байж, ямар суваг хэмжигдэж байгаа нь харагдана:
- * "Messenger 0" гэдэг нь "чатаар холбоос тараагаагүй эсвэл шошгогүй"
- * гэсэн мэдээлэл — мөр огт байхгүй байснаас хавьгүй хэрэгтэй.
+ * `includeEmpty` — хандалтгүй үндсэн сувгийг ч буцаана
+ * (`TRAFFIC_ALWAYS_SHOWN`). Хүснэгт хугацаа болгонд ижил бүтэцтэй
+ * байж, "Чат 0" гэдэг нь "чатаар холбоос тараагаагүй эсвэл шошгогүй"
+ * гэсэн мэдээлэл болно. Тухай бүрд ашиглагддаг сувгууд (QR, и-мэйл,
+ * хэвлэмэл, Google сурталчилгаа) зөвхөн бодит хандалттай үед гарна —
+ * эс тэгвэл хүснэгт дэмий уртсана.
  *
  * ⚠️ Хэрэглэгчийн тоог НЭМЖ БОЛОХГҮЙ гэж бодож магадгүй — гэвч GA4 нь
  * мөр бүрт тухайн сувгийн хэрэглэгчийг өгдөг тул нэг хүн хоёр сувгаар
@@ -165,9 +185,10 @@ export function classifyTraffic(
     acc.set(key, cur);
   }
 
-  const keys = opts.includeEmpty
-    ? TRAFFIC_ORDER
-    : TRAFFIC_ORDER.filter((k) => (acc.get(k)?.sessions ?? 0) > 0);
+  const keys = TRAFFIC_ORDER.filter((k) => {
+    if ((acc.get(k)?.sessions ?? 0) > 0) return true;
+    return opts.includeEmpty === true && TRAFFIC_ALWAYS_SHOWN.includes(k);
+  });
 
   return keys.map((k) => ({
     key: k,

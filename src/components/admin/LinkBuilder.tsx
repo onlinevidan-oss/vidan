@@ -19,10 +19,11 @@ import QRCode from "qrcode";
 
 /** `traffic-source.ts`-ийн UTM_KEYS-тэй ЯГ таарч байх ёстой */
 const CHANNELS = [
-  { source: "messenger", medium: "chat", label: "Messenger (чат)", icon: "💬" },
-  { source: "viber", medium: "chat", label: "Viber", icon: "💜" },
-  { source: "qr", medium: "offline", label: "QR код", icon: "▩" },
+  // Чат гэдэгт Messenger, Viber, Instagram DM бүгд багтана — аль
+  // апп-аар ирснийг салгах нь эзний шийдвэрт нөлөөлдөггүй.
+  { source: "chat", medium: "chat", label: "Чат", icon: "💬" },
   { source: "sms", medium: "sms", label: "Мессеж (SMS)", icon: "📱" },
+  { source: "qr", medium: "offline", label: "QR код", icon: "▩" },
   { source: "email", medium: "email", label: "И-мэйл", icon: "✉️" },
   { source: "print", medium: "offline", label: "Хэвлэмэл, сав баглаа", icon: "🏷️" },
 ] as const;

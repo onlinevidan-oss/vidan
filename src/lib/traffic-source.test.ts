@@ -4,6 +4,7 @@ import {
   classifyTrafficSource,
   classifyTraffic,
   TRAFFIC_ORDER,
+  TRAFFIC_ALWAYS_SHOWN,
 } from "./traffic-source.ts";
 
 describe("classifyTrafficSource", () => {
@@ -24,15 +25,17 @@ describe("classifyTrafficSource", () => {
     assert.equal(classifyTrafficSource("facebook", "cpc"), "facebook_ads");
   });
 
-  test("Instagram — органик ба төлбөртэй", () => {
+  test("Instagram — органик ба сурталчилгаа нэг мөр", () => {
+    // Facebook шиг хоёр салгах хэмжээний урсгал байхгүй тул нэгтгэв.
     assert.equal(classifyTrafficSource("instagram.com", "referral"), "instagram");
-    assert.equal(classifyTrafficSource("ig", "paid"), "instagram_ads");
+    assert.equal(classifyTrafficSource("ig", "paid"), "instagram");
   });
 
-  test("Messenger нь Facebook биш", () => {
-    assert.equal(classifyTrafficSource("m.me", "referral"), "messenger");
-    assert.equal(classifyTrafficSource("messenger.com", "referral"), "messenger");
-    assert.equal(classifyTrafficSource("l.messenger.com", "referral"), "messenger");
+  test("чат нь Facebook биш — Messenger, Viber нэг мөрөнд", () => {
+    assert.equal(classifyTrafficSource("m.me", "referral"), "chat");
+    assert.equal(classifyTrafficSource("messenger.com", "referral"), "chat");
+    assert.equal(classifyTrafficSource("l.messenger.com", "referral"), "chat");
+    assert.equal(classifyTrafficSource("viber.com", "referral"), "chat");
   });
 
   test("Google — хайлт ба сурталчилгаа", () => {
@@ -60,18 +63,14 @@ describe("classifyTrafficSource", () => {
     assert.equal(classifyTrafficSource("sms", "sms"), "sms");
     assert.equal(classifyTrafficSource("email", "email"), "email");
     assert.equal(classifyTrafficSource("print", "offline"), "print");
-    assert.equal(classifyTrafficSource("messenger", "chat"), "messenger");
-    assert.equal(classifyTrafficSource("viber", "chat"), "viber");
+    assert.equal(classifyTrafficSource("chat", "chat"), "chat");
+    assert.equal(classifyTrafficSource("messenger", "chat"), "chat");
+    assert.equal(classifyTrafficSource("viber", "chat"), "chat");
   });
 
   test("шошго нь домэйн таамаглахаас дээгүүр", () => {
-    // `utm_source=messenger` тавьсан бол medium юу ч байсан
-    // Messenger гэж ангилна.
-    assert.equal(classifyTrafficSource("messenger", "referral"), "messenger");
-  });
-
-  test("Viber домэйнээр ч таарна", () => {
-    assert.equal(classifyTrafficSource("viber.com", "referral"), "viber");
+    // `utm_source=chat` тавьсан бол medium юу ч байсан чат гэж ангилна.
+    assert.equal(classifyTrafficSource("chat", "referral"), "chat");
   });
 
   test("танихгүй эх сурвалж", () => {
@@ -110,7 +109,8 @@ describe("classifyTraffic", () => {
   test("сурталчилгааны кампанит ажлууд нийлнэ", () => {
     const out = classifyTraffic(real);
     assert.equal(out.find((r) => r.key === "facebook_ads")?.sessions, 47 + 6 + 6 + 5); // 64
-    assert.equal(out.find((r) => r.key === "instagram_ads")?.sessions, 1);
+    // Instagram-ын сурталчилгаа органиктайгаа нэг мөрөнд
+    assert.equal(out.find((r) => r.key === "instagram")?.sessions, 1);
   });
 
   test("нийт сешн хэвээрээ — нэг ч мөр алдагдахгүй", () => {
@@ -121,23 +121,48 @@ describe("classifyTraffic", () => {
 
   test("өгөгдмөлөөр сешнгүй суваг гарахгүй", () => {
     const out = classifyTraffic(real);
-    assert.equal(out.some((r) => r.key === "messenger"), false);
+    assert.equal(out.some((r) => r.key === "chat"), false);
     assert.equal(out.some((r) => r.sessions === 0), false);
   });
 
-  test("includeEmpty — бүх суваг гарна", () => {
+  test("includeEmpty — үндсэн сувгууд 0-ээр ч гарна", () => {
     const out = classifyTraffic(real, { includeEmpty: true });
-    assert.equal(out.length, TRAFFIC_ORDER.length);
-    // Хэмжигдэж байгаа ч ирээгүй суваг 0-ээр харагдана
-    assert.equal(out.find((r) => r.key === "messenger")?.sessions, 0);
-    assert.equal(out.find((r) => r.key === "qr")?.sessions, 0);
+    assert.equal(out.find((r) => r.key === "chat")?.sessions, 0);
+    assert.equal(out.find((r) => r.key === "sms")?.sessions, 0);
     // Тоонууд гуйвахгүй
     assert.equal(out.find((r) => r.key === "facebook")?.sessions, 195);
   });
 
-  test("includeEmpty дээр ч эрэмбэ тогтмол", () => {
+  test("тухай бүрийн суваг хандалтгүй бол огт гарахгүй", () => {
+    // QR, и-мэйл, хэвлэмэл, Google сурталчилгаа — хүснэгт уртасгахгүй
     const out = classifyTraffic(real, { includeEmpty: true });
-    assert.deepEqual(out.map((r) => r.key), [...TRAFFIC_ORDER]);
+    for (const k of ["qr", "email", "print", "google_ads"]) {
+      assert.equal(out.some((r) => r.key === k), false, k);
+    }
+  });
+
+  test("тухай бүрийн суваг хандалттай бол гарна", () => {
+    const out = classifyTraffic(
+      [...real, { source: "qr", medium: "offline", sessions: 4, users: 3 }],
+      { includeEmpty: true },
+    );
+    assert.equal(out.find((r) => r.key === "qr")?.sessions, 4);
+  });
+
+  test("үргэлж харагдах суваг бүр эрэмбэд байна", () => {
+    for (const k of TRAFFIC_ALWAYS_SHOWN) {
+      assert.ok(TRAFFIC_ORDER.includes(k), k);
+    }
+  });
+
+  test("includeEmpty дээр ч эрэмбэ тогтмол", () => {
+    // Бүх суваг гарахаа больсон тул TRAFFIC_ORDER-ийн ДЭД дараалал
+    // мөн эсэхийг шалгана — байрлал нь хугацаа болгонд тогтмол байх
+    // ёстой, эс тэгвэл хоёр тайланг нүдээр жишиж чадахгүй.
+    const out = classifyTraffic(real, { includeEmpty: true }).map((r) => r.key);
+    const idx = out.map((k) => TRAFFIC_ORDER.indexOf(k));
+    assert.ok(idx.every((v) => v >= 0), "танихгүй түлхүүр");
+    assert.deepEqual(idx, [...idx].sort((a, b) => a - b));
   });
 
   test("эрэмбэ тогтмол", () => {
