@@ -4,6 +4,8 @@
  * Эдгээр тоо САНХҮҮД өгөгддөг тул тусад нь тестлэгдэх ёстой. Query давхарга
  * (`queries/reports.ts`) нь зөвхөн өгөгдөл татаж, эндэх функцуудыг дуудна.
  */
+import { shippingVat } from "./pricing.ts";
+
 
 export type ReportOrderItem = {
   product_id: string | null;
@@ -40,8 +42,30 @@ export type FinanceSummary = {
   shipping: number;
   /** Хүргэлтийн төлбөр авсан захиалгын тоо */
   deliveries: number;
-  /** НӨАТ */
+  /** НӨАТ — бодитоор авсан нийт дүн (shippingVat + legacyGoodsVat) */
   tax: number;
+  /**
+   * Хүргэлтийн үнэн дээр ногдох НӨАТ (10%) — одоо мөрдөж буй дүрэм.
+   * Барааны үнэд НӨАТ аль хэдийн багтсан тул зөвхөн хүргэлт дээр нэмнэ.
+   */
+  shippingVat: number;
+  /**
+   * Хуучин дүрмээр бодогдсон захиалгуудын НӨАТ.
+   *
+   * 2026-09-14 хүртэл систем барааны дүн дээр 10% нэмж байсан. Гэтэл
+   * санхүү барааны үнэд НӨАТ аль хэдийн багтсан гэж тодруулсан тул
+   * дүрмийг өөрчилсөн.
+   *
+   * Захиалгыг ХЭСЭГЛЭХГҮЙ — бүтнээр нь аль нэг дүрэмд хамааруулна.
+   * Хэсэгчлэн хуваарилвал "хүргэлтийн НӨАТ" мөрөнд үнэндээ бараан
+   * дээр авсан мөнгө орж, тоо бүрхэг болно.
+   *
+   * Энэ тоо 0 биш бол тухайн хугацаанд ХОЁР өөр дүрэм хольцолдсон
+   * гэсэн үг: нэг мөрөнд нийлүүлж татварын тайланд өгч БОЛОХГҮЙ.
+   */
+  legacyGoodsVat: number;
+  /** Хуучин дүрмээр бодогдсон захиалгын тоо */
+  legacyOrders: number;
   /** Нийт (= netGoods + shipping + tax) */
   total: number;
   orders: number;
@@ -52,15 +76,36 @@ export function summarizeFinance(orders: ReportOrder[]): FinanceSummary {
   const n = (v: unknown) => Number(v ?? 0);
   const acc = orders.reduce(
     (s, o) => {
+      const shipping = n(o.shipping);
+      const tax = n(o.tax);
       s.goods += n(o.subtotal);
       s.discount += n(o.discount);
-      s.shipping += n(o.shipping);
-      s.tax += n(o.tax);
+      s.shipping += shipping;
+      s.tax += tax;
       s.total += n(o.total);
-      if (n(o.shipping) > 0) s.deliveries += 1;
+      if (shipping > 0) s.deliveries += 1;
+
+      // Захиалга бүтнээр нь аль нэг дүрэмд хамаарна. ±1₮ тэвчээр нь
+      // дугуйрлалтын зөрүүд — дүрэм өөрчлөгдсөн гэсэн үг биш.
+      if (Math.abs(tax - shippingVat(shipping)) <= 1) {
+        s.shippingVat += tax;
+      } else {
+        s.legacyGoodsVat += tax;
+        s.legacyOrders += 1;
+      }
       return s;
     },
-    { goods: 0, discount: 0, shipping: 0, tax: 0, total: 0, deliveries: 0 },
+    {
+      goods: 0,
+      discount: 0,
+      shipping: 0,
+      tax: 0,
+      total: 0,
+      deliveries: 0,
+      shippingVat: 0,
+      legacyGoodsVat: 0,
+      legacyOrders: 0,
+    },
   );
 
   return {
@@ -242,93 +287,4 @@ export function soldQuantityByProduct(
     }
   }
   return map;
-}
-
-// ============================================================
-// Агуулах — орлого, зарлага, үлдэгдэл
-// ============================================================
-export type StockMovementRow = {
-  kind: "in" | "out" | "adjust";
-  /** Тэмдэгтэй: орлого +, зарлага − */
-  quantity: number;
-  /** Захиалгатай холбоотой эсэх (борлуулалт/буцаалт) */
-  order_id: string | null;
-  product?: { name_mn: string; sku: string | null } | null;
-};
-
-/** Бараа тус бүрийн орлого */
-export type IntakeRow = {
-  name: string;
-  sku: string | null;
-  /** Хэдэн удаа орлогодсон */
-  times: number;
-  /** Нийт хэдэн ширхэг */
-  qty: number;
-};
-
-export type WarehouseSummary = {
-  /** Нийт хэдэн удаа орлого хийсэн */
-  intakeTimes: number;
-  /** Орлогын нийт тоо ширхэг */
-  intakeQty: number;
-  /** Бараа тус бүрээр — их орлоготойгоос нь */
-  intakeByProduct: IntakeRow[];
-  /** Зарагдсан цэвэр тоо ширхэг (цуцлагдаж буцсаныг хассан) */
-  soldQty: number;
-  /** Тооллогын засвар (тэмдэгтэй) */
-  adjustedQty: number;
-  /** Одоогийн үлдэгдэл */
-  stockQty: number;
-};
-
-/**
- * Агуулахын хөдөлгөөнийг санхүүд ойлгомжтой гурван тоо болгоно:
- * хэдэн удаа юу орлогодсон · хэд зарагдсан · одоо хэд үлдсэн.
- *
- * Орлого гэдэгт зөвхөн агуулахаас хүлээж авсныг тооцно —
- * цуцлагдсан захиалгын нөөц сэргээлт (order_id-тай) орлого биш.
- */
-export function summarizeWarehouse(
-  movements: StockMovementRow[],
-  currentStock: number,
-): WarehouseSummary {
-  const byProduct = new Map<string, IntakeRow>();
-  let intakeTimes = 0;
-  let intakeQty = 0;
-  let soldQty = 0;
-  let adjustedQty = 0;
-
-  for (const m of movements) {
-    const q = Number(m.quantity) || 0;
-    if (m.kind === "in" && !m.order_id) {
-      intakeTimes += 1;
-      intakeQty += q;
-      const name = m.product?.name_mn ?? "—";
-      const row = byProduct.get(name) ?? {
-        name,
-        sku: m.product?.sku ?? null,
-        times: 0,
-        qty: 0,
-      };
-      row.times += 1;
-      row.qty += q;
-      byProduct.set(name, row);
-    } else if (m.kind === "adjust") {
-      adjustedQty += q;
-    } else if (m.order_id) {
-      // Захиалгаар гарсан хасах цуцлагдаж буцаж ирсэн = цэвэр борлуулалт
-      soldQty += -q;
-    }
-  }
-
-  return {
-    intakeTimes,
-    intakeQty,
-    intakeByProduct: [...byProduct.values()].sort(
-      (a, b) => b.qty - a.qty || a.name.localeCompare(b.name, "mn"),
-    ),
-    soldQty,
-    adjustedQty,
-    stockQty: currentStock,
-  };
 }

@@ -42,7 +42,7 @@ export default async function AdminReports({
   });
 
   const data = await getReports(period);
-  const { finance, inventory, warehouse, internal } = data;
+  const { finance, inventory, internal } = data;
   const maxRev = Math.max(1, ...data.byDay.map((d) => d.revenue));
   const maxProduct = Math.max(1, ...data.soldProducts.map((p) => p.revenue));
   const totalSoldUnits = data.soldProducts.reduce((s, p) => s + p.sold, 0);
@@ -99,7 +99,7 @@ export default async function AdminReports({
               Санхүүгийн задаргаа
             </h3>
             <p className="mt-0.5 text-[12px] text-ink-500">
-              Барааны орлого ба хүргэлтийн төлбөр тусад нь
+              {period.label} · төлөгдсөн захиалга
             </p>
           </div>
           <div className="p-5">
@@ -140,12 +140,34 @@ export default async function AdminReports({
                   </td>
                 </tr>
                 <tr className="border-b border-ink-100">
-                  <td className={TD}>НӨАТ</td>
+                  <td className={TD}>
+                    Хүргэлтийн НӨАТ
+                    <span className="ml-1.5 text-[11px] text-ink-500">10%</span>
+                  </td>
                   <td className={TD} />
                   <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                    {formatMnt(finance.tax)}
+                    {formatMnt(finance.shippingVat)}
                   </td>
                 </tr>
+                {/* Хуучин дүрмээр барааны дүн дээр НЭМЖ авсан НӨАТ.
+                    Нийлбэрт нуулгүй тусад нь харуулна — татварын тайланд
+                    хоёр дүрмийг нэг мөрөнд нийлүүлж өгч болохгүй. */}
+                {finance.legacyGoodsVat > 0 && (
+                  <tr className="border-b border-ink-100 bg-warn/5">
+                    <td className={TD}>
+                      Барааны дүн дээр нэмэгдсэн НӨАТ
+                      <span className="ml-1.5 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold text-ink-900">
+                        хуучин дүрэм
+                      </span>
+                    </td>
+                    <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                      {finance.legacyOrders} захиалга
+                    </td>
+                    <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                      {formatMnt(finance.legacyGoodsVat)}
+                    </td>
+                  </tr>
+                )}
                 <tr className="bg-brand-50">
                   <td className={`${TD} font-display text-[15px] font-extrabold text-ink-900`}>
                     НИЙТ ОРЛОГО
@@ -173,78 +195,6 @@ export default async function AdminReports({
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* ---------- Агуулах ---------- */}
-        <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">
-          <div className="border-b border-ink-200 px-5 py-4">
-            <h3 className="font-display text-[15px] font-extrabold">Агуулах</h3>
-          </div>
-          <div
-            className={`grid grid-cols-1 gap-px bg-ink-200 ${
-              warehouse.adjustedQty !== 0 ? "sm:grid-cols-4" : "sm:grid-cols-3"
-            }`}
-          >
-            {[
-              ["Орлого", `${warehouse.intakeTimes} удаа`, `${warehouse.intakeQty.toLocaleString()} ш`],
-              ["Зарлага", "зарагдсан", `${warehouse.soldQty.toLocaleString()} ш`],
-              ...(warehouse.adjustedQty !== 0
-                ? [[
-                    "Тооллогын засвар",
-                    "агуулахтай тэнцүүлсэн",
-                    `${warehouse.adjustedQty > 0 ? "+" : ""}${warehouse.adjustedQty.toLocaleString()} ш`,
-                  ]]
-                : []),
-              ["Үлдэгдэл", "одоогийн байдлаар", `${warehouse.stockQty.toLocaleString()} ш`],
-            ].map(([k, sub, v]) => (
-              <div key={k} className="bg-white px-5 py-4">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-ink-500">
-                  {k}
-                </div>
-                <div className="mt-1 font-display text-[22px] font-black text-ink-900">
-                  {v}
-                </div>
-                <div className="text-[11px] text-ink-500">{sub}</div>
-              </div>
-            ))}
-          </div>
-
-          {warehouse.intakeByProduct.length > 0 && (
-            <div className="overflow-x-auto border-t border-ink-200">
-              <table className="w-full text-[13px]">
-                <thead>
-                  <tr className="bg-[#faf8f3]">
-                    <th className={TH}>Бүтээгдэхүүн</th>
-                    <th className={TH}>SKU</th>
-                    <th className={`${TH} text-right`}>Удаа</th>
-                    <th className={`${TH} text-right`}>Орлого</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {warehouse.intakeByProduct.map((r) => (
-                    <tr key={r.name} className="border-t border-ink-100">
-                      <td className={TD}>{r.name}</td>
-                      <td className={`${TD} text-[11px] text-ink-500`}>{r.sku ?? "—"}</td>
-                      <td className={TD_NUM}>{r.times}</td>
-                      <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                        {r.qty.toLocaleString()} ш
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="border-t-2 border-ink-200 bg-brand-50">
-                    <td className={`${TD} font-display font-extrabold`}>НИЙТ</td>
-                    <td className={TD} />
-                    <td className={`${TD_NUM} font-display font-extrabold`}>
-                      {warehouse.intakeTimes}
-                    </td>
-                    <td className={`${TD_NUM} font-display font-black text-brand-700`}>
-                      {warehouse.intakeQty.toLocaleString()} ш
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         {/* ---------- KPI ---------- */}

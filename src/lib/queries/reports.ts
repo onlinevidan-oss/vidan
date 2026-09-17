@@ -13,7 +13,6 @@ import {
   summarizeFinance,
   summarizeInventory,
   summarizeSoldProducts,
-  summarizeWarehouse,
   type CategoryShare,
   type DailyRevenue,
   type FinanceSummary,
@@ -21,8 +20,6 @@ import {
   type PaymentShare,
   type ReportOrder,
   type SoldProduct,
-  type WarehouseSummary,
-  type StockMovementRow,
   type StockRow,
 } from "@/lib/report-aggregate";
 import {
@@ -43,7 +40,6 @@ export type ReportsData = {
   byPayment: PaymentShare[];
   inventory: InventorySummary;
   /** Агуулах — орлого, зарлага, үлдэгдэл */
-  warehouse: WarehouseSummary;
   /** Ажилтны дотоод/туршилтын захиалгын задаргаа (нийт дүнд ОРСОН) */
   internal: FinanceSummary;
 };
@@ -62,7 +58,6 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
     { count: customers },
     { data: products },
     { data: staff },
-    { data: movements },
   ] = await Promise.all([
       supabase
         .from("orders")
@@ -79,10 +74,6 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
         .eq("is_active", true),
       // Ажилтны захиалгыг хэрэглэгчийнхээс салгахад
       supabase.from("staff").select("id"),
-      // Агуулахын тэнцэл нь ОДООГИЙН байдал — хугацаанаас хамаарахгүй
-      supabase
-        .from("stock_movements")
-        .select("kind, quantity, order_id, product:products(name_mn, sku)"),
     ]);
 
   const staffIds = new Set((staff ?? []).map((s) => s.id));
@@ -93,16 +84,11 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
   }));
   // Санхүүгийн тоонд БҮХ захиалга орно; ажилтных нь тусдаа мөрөөр харагдана
   const internalOrders = list.filter((o) => o.is_internal);
-  const stockTotal = (products ?? []).reduce((s, p) => s + Number(p.stock ?? 0), 0);
 
   return {
     period,
     finance: summarizeFinance(list),
     internal: summarizeFinance(internalOrders),
-    warehouse: summarizeWarehouse(
-      (movements ?? []) as unknown as StockMovementRow[],
-      stockTotal,
-    ),
     customers: customers ?? 0,
     byDay: summarizeByDay(list, periodDayKeys(period), ubDateKey),
     soldProducts: summarizeSoldProducts(list),

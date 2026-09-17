@@ -10,7 +10,6 @@ import {
   summarizeByDay,
   summarizeByPayment,
   summarizeFinance,
-  summarizeWarehouse,
   summarizeInventory,
   summarizeSoldProducts,
   soldQuantityByProduct,
@@ -87,6 +86,61 @@ describe("summarizeFinance — барааны орлого ба хүргэлт �
     assert.equal(f.goods, 50_000);
     assert.equal(f.discount, 5_000);
     assert.equal(f.netGoods, 45_000);
+  });
+
+  test("НӨАТ хоёр төрөлд задарна — хүргэлтийн ба хуучин дүрмийн", () => {
+    // Одоогийн дүрэм: НӨАТ зөвхөн хүргэлтийн үнэн дээр (10%).
+    const f = summarizeFinance([
+      order({ items: [item({ subtotal: 2_250 })], shipping: 7_000, tax: 700 }),
+    ]);
+    assert.equal(f.shippingVat, 700);
+    assert.equal(f.legacyGoodsVat, 0, "зөв захиалгад хуучин үлдэгдэл гарахгүй");
+  });
+
+  test("хуучин захиалгын илүү НӨАТ тусад нь тодорно", () => {
+    // 2026-09-14 хүртэл систем барааны дүн дээр 10% нэмж байсан.
+    // Бодит жишээ — #10287: бараа 345,400 · хүргэлт 14,000 · НӨАТ 34,540
+    const f = summarizeFinance([
+      order({
+        items: [item({ subtotal: 345_400 })],
+        shipping: 14_000,
+        tax: 34_540,
+      }),
+    ]);
+    assert.equal(f.tax, 34_540, "бодитоор авсан дүн хэвээрээ");
+    // Захиалгыг хэсэглэхгүй — бүтнээр нь хуучин дүрэмд хамааруулна
+    assert.equal(f.shippingVat, 0);
+    assert.equal(f.legacyGoodsVat, 34_540);
+    assert.equal(f.legacyOrders, 1);
+    assert.equal(f.shippingVat + f.legacyGoodsVat, f.tax, "задаргаа нийлнэ");
+  });
+
+  test("хоёр дүрэм хольцолдсон хугацаанд ч задаргаа нийлнэ", () => {
+    const f = summarizeFinance([
+      order({ items: [item({ subtotal: 345_400 })], shipping: 14_000, tax: 34_540 }),
+      order({ items: [item({ subtotal: 2_250 })], shipping: 7_000, tax: 700 }),
+      order({ items: [item({ subtotal: 40_050 })], shipping: 14_000, tax: 4_005 }),
+    ]);
+    assert.equal(f.shippingVat + f.legacyGoodsVat, f.tax);
+    assert.equal(f.legacyOrders, 2, "гурваас хоёр нь хуучин дүрмээр");
+    assert.equal(f.shippingVat, 700, "зөвхөн шинэ дүрмийн захиалга");
+  });
+
+  test("хүргэлтгүй захиалгад НӨАТ бүхэлдээ хуучин дүрмийнх", () => {
+    const f = summarizeFinance([
+      order({ items: [item({ subtotal: 50_000 })], shipping: 0, tax: 5_000 }),
+    ]);
+    assert.equal(f.shippingVat, 0);
+    assert.equal(f.legacyGoodsVat, 5_000);
+    assert.equal(f.legacyOrders, 1);
+  });
+
+  test("дугуйрлалтын 1₮ зөрүү дүрэм өөрчлөгдсөн гэсэн үг биш", () => {
+    const f = summarizeFinance([
+      order({ items: [item({ subtotal: 2_250 })], shipping: 7_000, tax: 701 }),
+    ]);
+    assert.equal(f.legacyOrders, 0, "1₮ зөрүүг хуучин дүрэм гэж үзэхгүй");
+    assert.equal(f.shippingVat, 701);
   });
 
   test("нийт дүн нь задаргаатайгаа тэнцэнэ (санхүүгийн гол шалгуур)", () => {
@@ -342,75 +396,5 @@ describe("soldQuantityByProduct — агуулахын зарлага", () => {
 
   test("захиалгагүй бол хоосон", () => {
     assert.equal(soldQuantityByProduct([]).size, 0);
-  });
-});
-
-describe("summarizeWarehouse — орлого, зарлага, үлдэгдэл", () => {
-  const mv = (
-    kind: "in" | "out" | "adjust",
-    quantity: number,
-    order_id: string | null = null,
-    name = "Бараа",
-    sku: string | null = "S1",
-  ) => ({ kind, quantity, order_id, product: { name_mn: name, sku } });
-
-  test("орлогын тоо, удаа, үлдэгдэл", () => {
-    const r = summarizeWarehouse(
-      [mv("in", 60), mv("in", 30), mv("out", -20, "o1")],
-      70,
-    );
-    assert.equal(r.intakeTimes, 2, "хоёр удаа орлогодсон");
-    assert.equal(r.intakeQty, 90);
-    assert.equal(r.soldQty, 20);
-    assert.equal(r.stockQty, 70);
-  });
-
-  test("бараа тус бүрээр бүлэглэж, их орлоготойг нь эхэнд тавина", () => {
-    const r = summarizeWarehouse(
-      [mv("in", 10, null, "Бага"), mv("in", 50, null, "Их"), mv("in", 5, null, "Их")],
-      65,
-    );
-    assert.deepEqual(
-      r.intakeByProduct.map((x) => [x.name, x.times, x.qty]),
-      [["Их", 2, 55], ["Бага", 1, 10]],
-    );
-  });
-
-  test("цуцлагдсан захиалгын сэргээлт ОРЛОГО биш, зарлагаас хасагдана", () => {
-    const r = summarizeWarehouse(
-      [mv("in", 100), mv("out", -20, "o1"), mv("in", 6, "o1")],
-      86,
-    );
-    assert.equal(r.intakeTimes, 1);
-    assert.equal(r.intakeQty, 100, "зөвхөн агуулахаас авсан нь");
-    assert.equal(r.soldQty, 14, "20 гарч 6 буцсан → цэвэр 14");
-  });
-
-  test("гараар хийсэн зарлага борлуулалтад ороогүй", () => {
-    const r = summarizeWarehouse([mv("in", 50), mv("out", -6, "o1"), mv("out", -4)], 40);
-    assert.equal(r.soldQty, 6, "зөвхөн захиалгын зарлага");
-  });
-
-  test("тооллогын засвар орлогод тооцогдохгүй", () => {
-    const r = summarizeWarehouse([mv("in", 50), mv("adjust", 8), mv("adjust", -3)], 55);
-    assert.equal(r.intakeTimes, 1);
-    assert.equal(r.intakeQty, 50);
-  });
-
-  test("хөдөлгөөнгүй бол бүх тоо тэг", () => {
-    const r = summarizeWarehouse([], 0);
-    assert.equal(r.intakeTimes, 0);
-    assert.equal(r.intakeByProduct.length, 0);
-  });
-
-  test("бодит тоо — 43 удаа 1,501ш орлого, 252ш зарагдаж, 1,191ш үлдсэн", () => {
-    const ins = Array.from({ length: 43 }, (_, i) =>
-      mv("in", i === 0 ? 1_501 - 42 : 1, null, `Бараа${i}`),
-    );
-    const r = summarizeWarehouse([...ins, mv("out", -252, "o1")], 1_191);
-    assert.equal(r.intakeTimes, 43);
-    assert.equal(r.intakeQty, 1_501);
-    assert.equal(r.soldQty, 252);
-    assert.equal(r.stockQty, 1_191);
   });
 });
