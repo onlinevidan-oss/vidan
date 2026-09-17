@@ -6,21 +6,19 @@ import { useRouter } from "next/navigation";
 import { formatMnt } from "@/lib/utils";
 import { checkPaymentStatus } from "@/app/(customer)/checkout/payment/[orderId]/actions";
 import type { QpayBankUrl } from "@/lib/qpay/orders";
+import { msUntilExpiry } from "@/lib/order-hold";
 
 /** Эхний 2 минут хурдан шалгана — хүн банкны апп руу орж, шууд эргэж ирдэг */
 const POLL_FAST_MS = 3000;
 const POLL_SLOW_MS = 8000;
 const FAST_WINDOW_MS = 120_000;
 
-/** release_stale_orders(120) — захиалгыг ийм хугацааны дараа цуцалж, нөөцийг сулладаг */
-const HOLD_MINUTES = 120;
-
 function formatLeft(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h > 0) return `${h} цаг ${m} мин`;
+  if (h > 0) return m > 0 ? `${h} цаг ${m} мин` : `${h} цаг`;
   if (m > 0) return `${m}:${String(s).padStart(2, "0")}`;
   return `${s} сек`;
 }
@@ -50,7 +48,7 @@ export function QpayPayment({
   const [error, setError] = useState<string | null>(null);
   const [leftMs, setLeftMs] = useState<number | null>(null);
   const paidRef = useRef(false);
-  const startedAt = useRef(Date.now());
+  const startedAt = useRef<number | null>(null);
 
   const runCheck = useCallback(async () => {
     if (paidRef.current) return;
@@ -71,11 +69,14 @@ export function QpayPayment({
 
   // Автомат шалгалт — хуудас нээгдмэгц шууд эхэлнэ
   useEffect(() => {
+    // Date.now()-г render дотор дуудвал цэвэр байдлын дүрэм зөрчигдөнө
+    // (дахин рендэр бүрд өөр утга гарна) — эхлэлийг энд тавина.
+    startedAt.current ??= Date.now();
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
       if (paidRef.current) return;
       void runCheck();
-      const elapsed = Date.now() - startedAt.current;
+      const elapsed = Date.now() - (startedAt.current ?? Date.now());
       timer = setTimeout(tick, elapsed < FAST_WINDOW_MS ? POLL_FAST_MS : POLL_SLOW_MS);
     };
     timer = setTimeout(tick, POLL_FAST_MS);
@@ -97,9 +98,13 @@ export function QpayPayment({
   }, [runCheck]);
 
   // Нөөц барих хугацаа. Hydration зөрөхгүйн тулд зөвхөн mount хийсний дараа.
+  //
+  // Хугацааг `order-hold.ts` бодно — шөнийн цагт захиалга цуцлагддаггүй
+  // тул 23:00-д өгсөн захиалгад "2 цаг" гэж худал хэлэхгүй, өглөөний
+  // 09:00 хүртэлх бодит хугацааг харуулна (release_stale_orders-той ижил).
   useEffect(() => {
-    const deadline = new Date(createdAt).getTime() + HOLD_MINUTES * 60_000;
-    const update = () => setLeftMs(deadline - Date.now());
+    const created = new Date(createdAt);
+    const update = () => setLeftMs(msUntilExpiry(created));
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
