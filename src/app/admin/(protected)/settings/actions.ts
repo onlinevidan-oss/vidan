@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseRecipients } from "@/lib/sms/recipients";
 import type {
   BrochurePage,
   CommerceSettings,
@@ -306,6 +307,8 @@ export async function updateSmsSettings(
   const paid = payload.paid_template.trim();
   const cancelled = payload.cancelled_template.trim();
   const unpaid = payload.unpaid_template.trim();
+  const adminTpl = payload.admin_template.trim();
+  const adminPhones = parseRecipients(payload.admin_phones);
 
   if (payload.paid_enabled && !paid) {
     return { ok: false, error: "Баталгаажсан SMS-ийн текст хоосон байна" };
@@ -316,8 +319,25 @@ export async function updateSmsSettings(
   if (payload.unpaid_enabled && !unpaid) {
     return { ok: false, error: "Сануулга SMS-ийн текст хоосон байна" };
   }
+  if (adminPhones.invalid.length > 0) {
+    return {
+      ok: false,
+      error: `Админы дугаар буруу байна: ${adminPhones.invalid.join(", ")}`,
+    };
+  }
+  if (payload.admin_enabled && adminPhones.valid.length === 0) {
+    return { ok: false, error: "Мэдэгдэл авах админы дугаар оруулна уу" };
+  }
+  if (payload.admin_enabled && !adminTpl) {
+    return { ok: false, error: "Админы мэдэгдлийн текст хоосон байна" };
+  }
   // Хэт урт SMS = олон segment = илүү төлбөр. 3 segment-ээр хязгаарлав.
-  if (paid.length > 210 || cancelled.length > 210 || unpaid.length > 210) {
+  if (
+    paid.length > 210 ||
+    cancelled.length > 210 ||
+    unpaid.length > 210 ||
+    adminTpl.length > 210
+  ) {
     return { ok: false, error: "SMS хэт урт байна (дээд тал нь 210 тэмдэгт)" };
   }
 
@@ -339,6 +359,9 @@ export async function updateSmsSettings(
     unpaid_enabled: !!payload.unpaid_enabled,
     unpaid_template: unpaid,
     unpaid_after_minutes: afterMinutes,
+    admin_enabled: !!payload.admin_enabled,
+    admin_phones: adminPhones.valid.join(", "),
+    admin_template: adminTpl,
   };
 
   const supabase = await createClient();

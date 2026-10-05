@@ -182,6 +182,11 @@ export type SmsSettings = {
   unpaid_template: string;
   /** Захиалга үүссэнээс хойш хэдэн минутын дараа сануулах вэ */
   unpaid_after_minutes: number;
+  /** Шинэ захиалгын мэдэгдэл — админы утас руу, төлбөр баталгаажмагц */
+  admin_enabled: boolean;
+  /** Таслалаар тусгаарласан дугаарууд (parseRecipients задална) */
+  admin_phones: string;
+  admin_template: string;
 };
 
 export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
@@ -196,6 +201,10 @@ export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
   unpaid_template:
     "VIDAN: {order} захиалгын {total} төлбөр хүлээгдэж байна. Барааг тань {left} нөөцөлсөн. Төлөх: {link}",
   unpaid_after_minutes: 25,
+  // Дугаарууд кодод биш тохиргоонд байна (0041) — энд хоосон.
+  admin_enabled: false,
+  admin_phones: "",
+  admin_template: "Шинэ захиалга {order}, {total}. Утас {phone}",
 };
 
 export async function getSmsSettings(): Promise<SmsSettings> {

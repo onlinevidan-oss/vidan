@@ -19,7 +19,7 @@ import {
   getDistrictCode,
 } from "./ebarimt";
 import { createOrderEbarimt } from "@/lib/ebarimt/orders";
-import { sendOrderSms } from "@/lib/sms/notifications";
+import { sendAdminOrderSms, sendOrderSms } from "@/lib/sms/notifications";
 import { sendPurchaseEvent } from "@/lib/ga4-mp";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -189,6 +189,10 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
   if (error) {
     throw new Error(`Төлбөр баталгаажуулахад алдаа: ${error.message}`);
   }
+
+  // Админд шинэ захиалгын мэдэгдэл — best effort. И-баримтаас ӨМНӨ:
+  // и-баримт удвал ч захиалга орж ирснийг админ шууд мэднэ.
+  await sendAdminOrderSms(orderId);
 
   // E-barimt — best effort, idempotent (гол урсгалыг тасалдуулахгүй).
   // QPay-ийн и-баримт идэвхтэй бол түүгээр, эс бөгөөс PosAPI-аар.

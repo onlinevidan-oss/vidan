@@ -8,10 +8,12 @@
  *    хуудсан дээрх "Захиалгын явц" хэсэг real-time харуулна — SMS явуулахгүй.
  *  · SMS амжилтгүй болох нь гол урсгалыг ХЭЗЭЭ Ч тасалдуулахгүй — алдааг log хийгээд өнгөрнө.
  *  · Илгээсэн SMS бүрийг order_events-д тэмдэглэнэ.
+ *  · Үүнээс тусдаа АДМИНД шинэ захиалгын мэдэгдэл явна (sendAdminOrderSms).
  */
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, normalizePhone } from "./client";
+import { parseRecipients } from "./recipients";
 import {
   SMS_SETTINGS_DEFAULTS,
   type SmsSettings,
@@ -24,17 +26,19 @@ export type SmsKind = "paid" | "cancelled" | "unpaid";
  *   {order} — захиалгын дугаар, {total} — нийт дүн
  *   {left}  — нөөц барих үлдсэн хугацаа (зөвхөн unpaid)
  *   {link}  — төлбөрийн хуудасны холбоос (зөвхөн unpaid)
+ *   {phone} — захиалагчийн утас (зөвхөн админы мэдэгдэл)
  */
 export function renderSmsTemplate(
   template: string,
   order: { order_number: string; total: number },
-  extra: { left?: string; link?: string } = {},
+  extra: { left?: string; link?: string; phone?: string } = {},
 ): string {
   return template
     .replaceAll("{order}", order.order_number)
     .replaceAll("{total}", `${Number(order.total).toLocaleString("en-US")}₮`)
     .replaceAll("{left}", extra.left ?? "")
-    .replaceAll("{link}", extra.link ?? "");
+    .replaceAll("{link}", extra.link ?? "")
+    .replaceAll("{phone}", extra.phone ?? "");
 }
 
 /**
@@ -127,5 +131,85 @@ export async function sendOrderSms(
       .eq("event_type", eventType);
   } catch (e) {
     console.error(`[sms send failed] order=${orderId} kind=${kind}`, e);
+  }
+}
+
+/**
+ * Шинэ захиалга орж ирснийг АДМИНЫ утаснууд руу мэдэгдэнэ (best-effort).
+ * Төлбөр баталгаажсан даруйд дуудагдана — төлөгдөөгүй захиалга 120 минутад
+ * өөрөө цуцлагддаг тул тэдгээрт мэдэгдэл явуулахгүй.
+ *
+ * Нэг захиалгад нэг л удаа: sendOrderSms-тэй адил илгээхийн ӨМНӨ
+ * order_events-д тэмдэглэнэ (0041-ийн unique index).
+ */
+export async function sendAdminOrderSms(orderId: string): Promise<void> {
+  try {
+    if (!process.env.SMS_API_KEY || !process.env.SMS_FROM_NUMBER) return;
+
+    const admin = createAdminClient();
+    const { data: cfgRow } = await admin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "sms_settings")
+      .maybeSingle();
+    const cfg = {
+      ...SMS_SETTINGS_DEFAULTS,
+      ...((cfgRow?.value ?? {}) as Partial<SmsSettings>),
+    };
+    if (!cfg.admin_enabled || !cfg.admin_template.trim()) return;
+
+    const phones = parseRecipients(cfg.admin_phones).valid;
+    if (phones.length === 0) return;
+
+    const { data: order } = await admin
+      .from("orders")
+      .select("order_number, total, contact_phone, profiles:user_id(phone)")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const eventType = "sms_admin";
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: eventType,
+      description: `Админд SMS → ${phones.join(", ")}`,
+    });
+    if (claimErr) {
+      if (claimErr.code !== "23505") {
+        console.error("[admin sms claim insert failed]", claimErr);
+      }
+      return;
+    }
+
+    const profile = Array.isArray(order.profiles)
+      ? order.profiles[0]
+      : order.profiles;
+    const text = renderSmsTemplate(cfg.admin_template, order, {
+      phone:
+        normalizePhone(order.contact_phone) ||
+        normalizePhone(profile?.phone) ||
+        "",
+    });
+
+    // Нэг дугаар унасан ч нөгөөд нь очно
+    const results = await Promise.allSettled(
+      phones.map((to) => sendSms({ to, text })),
+    );
+    const summary = results
+      .map((r, i) =>
+        r.status === "fulfilled"
+          ? `${phones[i]} ✓`
+          : `${phones[i]} ✗ ${String(r.reason?.message ?? r.reason).slice(0, 80)}`,
+      )
+      .join(", ");
+
+    // Production дээр оношлох боломжтой байлгахын тулд үр дүнг үлдээнэ
+    await admin
+      .from("order_events")
+      .update({ description: `Админд SMS → ${summary}` })
+      .eq("order_id", orderId)
+      .eq("event_type", eventType);
+  } catch (e) {
+    console.error(`[admin sms failed] order=${orderId}`, e);
   }
 }

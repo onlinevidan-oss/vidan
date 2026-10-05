@@ -24,7 +24,8 @@ function preview(template: string): string {
     .replaceAll("{order}", "#10281")
     .replaceAll("{total}", "26,690₮")
     .replaceAll("{left}", "1 цаг 35 минут")
-    .replaceAll("{link}", "vidan.mn/t/10281");
+    .replaceAll("{link}", "vidan.mn/t/10281")
+    .replaceAll("{phone}", "99112233");
 }
 
 function segments(text: string): number {
@@ -56,6 +57,28 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <SmsBlock
+        title="Шинэ захиалга — админд мэдэгдэх"
+        desc="Төлбөр төлөгдсөн даруйд доорх дугаарууд руу явна"
+        previewLabel="Админ харах"
+        enabled={form.admin_enabled}
+        onToggle={(v) => set("admin_enabled", v)}
+        template={form.admin_template}
+        onTemplate={(v) => set("admin_template", v)}
+      >
+        <label className="mt-3 block text-xs text-ink-700">
+          Хүлээн авах дугаарууд (таслалаар тусгаарлана)
+          <input
+            type="text"
+            inputMode="numeric"
+            value={form.admin_phones}
+            onChange={(e) => set("admin_phones", e.target.value)}
+            placeholder="94070800, 80012476"
+            className="mt-1 w-full rounded-[8px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-sm font-bold outline-none transition focus:border-brand-500"
+          />
+        </label>
+      </SmsBlock>
+
       <SmsBlock
         title="Захиалга баталгаажсан"
         desc="Төлбөр төлөгдсөн даруйд захиалагч рүү явна"
@@ -118,7 +141,11 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
         <code className="rounded bg-white px-1.5 py-0.5 font-bold">
           {"{link}"}
         </code>{" "}
-        төлбөрийн холбоос (сүүлийн хоёр нь зөвхөн сануулгад)
+        төлбөрийн холбоос (сүүлийн хоёр нь зөвхөн сануулгад) ·{" "}
+        <code className="rounded bg-white px-1.5 py-0.5 font-bold">
+          {"{phone}"}
+        </code>{" "}
+        захиалагчийн утас (зөвхөн админы мэдэгдэлд)
         <div className="mt-2 text-ink-500">
           Хүргэлтийн явцын SMS (бэлтгэж байна / хүргэлтэд / хүргэгдсэн)
           илгээгддэггүй — захиалагч сайт дээрээсээ шууд хардаг. Нэг захиалгад
@@ -150,6 +177,7 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
 
 function SmsBlock({
   title, desc, enabled, onToggle, template, onTemplate, children,
+  previewLabel = "Захиалагч харах",
 }: {
   title: string;
   desc: string;
@@ -159,6 +187,7 @@ function SmsBlock({
   onTemplate: (v: string) => void;
   /** Нэмэлт тохиргоо — зөвхөн идэвхтэй үед харагдана */
   children?: React.ReactNode;
+  previewLabel?: string;
 }) {
   const text = preview(template);
   const seg = segments(text);
@@ -193,7 +222,7 @@ function SmsBlock({
 
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <span className="text-ink-500">
-              Захиалагч харах:{" "}
+              {previewLabel}:{" "}
               <span className="font-semibold text-ink-900">{text}</span>
             </span>
             <span
