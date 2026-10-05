@@ -147,6 +147,28 @@ export async function createOrderEbarimtViaQpay(
     if (order.payment_status !== "paid") return;
     if (order.ebarimt_id) return;
 
+    // ДАВХАР ҮҮСГЭХЭЭС СЭРГИЙЛЭХ: дээрх `ebarimt_id` шалгалт нь хоёр
+    // процесс ЗЭРЭГ уншихад ажиллахгүй. 2026-10-05-нд #10314 дээр яг
+    // ийм зүйл болж, и-баримт хоёр удаа үүсгэгдэж, сугалааны SMS
+    // захиалагч руу хоёр удаа явсан (QPay-ийн callback болон браузерын
+    // polling 239мс зөрүүтэй зэрэг ажилласан).
+    //
+    // Ажил эхлэхийн ӨМНӨ тэмдэглэгээ бичнэ — 0040-ийн unique index
+    // хоёр дахь бичилтийг таслана.
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: "ebarimt_claim",
+      description: "И-баримт үүсгэж эхэллээ",
+    });
+    if (claimErr) {
+      if (claimErr.code === "23505") {
+        console.info(`[ebarimt skipped: already running] order=${orderId}`);
+      } else {
+        console.error("[ebarimt claim insert failed]", claimErr);
+      }
+      return;
+    }
+
     const isCompany = order.ebarimt_type === "B2B_RECEIPT";
     const res = await createEbarimtReceipt(qpayPaymentId, {
       receiverType: isCompany ? "COMPANY" : "CITIZEN",
@@ -174,14 +196,27 @@ export async function createOrderEbarimtViaQpay(
         (res.ebarimt_lottery ? ` · сугалаа ${res.ebarimt_lottery}` : ""),
     });
 
-    await sendLotterySms(order.contact_phone, order.order_number, res.ebarimt_lottery);
+    await sendLotterySms(
+      orderId,
+      order.contact_phone,
+      order.order_number,
+      res.ebarimt_lottery,
+    );
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     console.error(`[ebarimt qpay failed] order=${orderId}`, e);
-    // Алдааг захиалгын түүхэнд үлдээнэ — console лог руу хандах боломжгүй тул
-    // энэгүйгээр яагаад баримт гараагүйг хожим олох аргагүй болдог.
     try {
-      await createAdminClient().from("order_events").insert({
+      const admin = createAdminClient();
+      // Тэмдэглэгээг чөлөөлнө — эс тэгвэл QPay түр унасан тохиолдолд
+      // захиалга үүрд баримтгүй үлдэж, дахин оролдох боломжгүй болно.
+      await admin
+        .from("order_events")
+        .delete()
+        .eq("order_id", orderId)
+        .eq("event_type", "ebarimt_claim");
+      // Алдааг захиалгын түүхэнд үлдээнэ — console лог руу хандах боломжгүй тул
+      // энэгүйгээр яагаад баримт гараагүйг хожим олох аргагүй болдог.
+      await admin.from("order_events").insert({
         order_id: orderId,
         event_type: "ebarimt_failed",
         description: `E-barimt үүсгэж чадсангүй: ${message.slice(0, 400)}`,
@@ -192,8 +227,15 @@ export async function createOrderEbarimtViaQpay(
   }
 }
 
-/** Сугалааны дугаарыг хэрэглэгчид SMS-ээр илгээнэ (best effort) */
+/**
+ * Сугалааны дугаарыг хэрэглэгчид SMS-ээр илгээнэ (best effort).
+ *
+ * Илгээсэн эсэхийг `order_events`-д бүртгэнэ — эс тэгвэл "сугалааны
+ * мессеж хүн рүү очсон уу?" гэсэн асуултад хариулах аргагүй болдог.
+ * Бүртгэл нь давхар илгээхээс хамгаалах түгжээ ч болно (0040).
+ */
 async function sendLotterySms(
+  orderId: string,
   phone: string | null,
   orderNumber: string,
   lottery: string | null | undefined,
@@ -203,10 +245,35 @@ async function sendLotterySms(
     if (!process.env.SMS_API_KEY || !process.env.SMS_FROM_NUMBER) return;
     const to = normalizePhone(phone);
     if (!to) return;
-    await sendSms({
+
+    const admin = createAdminClient();
+    // Илгээхийн ӨМНӨ тэмдэглэнэ — давхар мессежээс сэргийлнэ.
+    // Алдаа гарвал устгахгүй: давхар мессеж илгээснээс нэг мессеж
+    // алдсан нь дээр.
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: "sms_lottery",
+      description: `SMS (сугалаа ${lottery}) → ${to}`,
+    });
+    if (claimErr) {
+      if (claimErr.code !== "23505") {
+        console.error("[lottery sms claim failed]", claimErr);
+      }
+      return;
+    }
+
+    const result = await sendSms({
       to,
       text: `VIDAN ${orderNumber} захиалгын и-баримт бэлэн. Сугалааны дугаар: ${lottery}`,
     });
+
+    await admin
+      .from("order_events")
+      .update({
+        description: `SMS (сугалаа ${lottery}) → ${to} [${result.message_id}]`,
+      })
+      .eq("order_id", orderId)
+      .eq("event_type", "sms_lottery");
   } catch (e) {
     console.error("[ebarimt lottery sms failed]", e);
   }
