@@ -17,7 +17,11 @@ export function ProductGallery({
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-square overflow-hidden rounded-[20px] bg-cream-100">
+      {/* Сагс руу нисэх хөдөлгөөн энэ зургийг эх цэг болгоно */}
+      <div
+        data-product-image
+        className="relative aspect-square overflow-hidden rounded-[20px] bg-cream-100"
+      >
         <Image
           src={current.url}
           alt={current.alt}

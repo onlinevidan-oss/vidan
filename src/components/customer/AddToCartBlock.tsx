@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCart } from "@/stores/cart";
 import { trackEvent } from "@/lib/analytics";
+import { flyToCart } from "@/lib/fly-to-cart";
 
 export function AddToCartBlock({
   product,
@@ -22,6 +23,9 @@ export function AddToCartBlock({
   const addItem = useCart((s) => s.addItem);
 
   function handleAdd() {
+    // Дэлгэрэнгүй хуудасны галерейн зургийг сагс руу нисгэнэ —
+    // жагсаалттай ижил мэдрэмж өгнө.
+    flyToCart(document.querySelector("[data-product-image]"));
     addItem(
       {
         productId: product.id,

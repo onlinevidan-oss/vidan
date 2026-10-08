@@ -8,6 +8,8 @@ import { useCart } from "@/stores/cart";
 import { HeartProgramNote } from "@/components/customer/HeartProgramNote";
 import type { Database } from "@/lib/supabase/database.types";
 import { trackEvent } from "@/lib/analytics";
+import { flyToCart } from "@/lib/fly-to-cart";
+import { useRef } from "react";
 
 export type ProductRow = Database["public"]["Tables"]["products"]["Row"] & {
   category?: { name_mn: string | null; slug: string } | null;
@@ -36,6 +38,8 @@ function sizeScale(weightG: number | null): number {
 
 export function ProductCard({ product }: { product: ProductRow }) {
   const meta = getProductMeta(product.sku);
+  // Сагс руу нисгэх зургийн байрлалыг эндээс авна
+  const imageRef = useRef<HTMLDivElement | null>(null);
   const { tag, tagText } = getProductTag(product);
   const addItem = useCart((s) => s.addItem);
   const setQuantity = useCart((s) => s.setQuantity);
@@ -53,6 +57,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
   function handleAdd(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    flyToCart(imageRef.current);
     addItem({
       productId: product.id,
       sku: product.sku,
@@ -85,6 +90,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
       className="group flex flex-col overflow-hidden rounded-[14px] border-[1.5px] border-transparent bg-white transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-[var(--shadow-brand-lg)]"
     >
       <div
+        ref={imageRef}
         className={`relative grid aspect-square place-items-center overflow-hidden ${
           firstImage ? "bg-white" : meta.bg
         }`}
@@ -157,12 +163,15 @@ export function ProductCard({ product }: { product: ProductRow }) {
           </div>
 
           {qty === 0 ? (
+            /* "+" гэсэн тэмдэг нь юу болохыг хэлдэггүй — үйлдлийг
+               нэрлэснээр хэрэглэгч эргэлзэхгүй. `active:scale` нь
+               хуруугаар дарсан мэдрэмжийг өгнө. */
             <button
               onClick={handleAdd}
-              className="grid h-[38px] w-full place-items-center rounded-[10px] bg-brand-600 text-xl font-bold text-white transition hover:bg-brand-700"
-              title="Сагсанд нэмэх"
+              className="flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-brand-600 text-[13px] font-extrabold text-white transition active:scale-[0.97] hover:bg-brand-700"
             >
-              +
+              <span aria-hidden>🛒</span>
+              Сагслах
             </button>
           ) : (
             <div
