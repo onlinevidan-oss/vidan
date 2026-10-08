@@ -224,20 +224,6 @@ export async function getOrderStatusCounts(): Promise<{
   return { counts, total: data?.length ?? 0, unpaid: unpaid ?? 0 };
 }
 
-/**
- * Ажил хүлээж буй захиалгын тоо — төлөгдсөн, хараахан бэлтгэж эхлээгүй.
- * Цэсний тэмдэг ба хонхонд харагдана.
- */
-export async function getNewOrderCount(): Promise<number> {
-  const supabase = await createClient();
-  const { count } = await supabase
-    .from("orders")
-    .select("id", { count: "exact", head: true })
-    .eq("payment_status", "paid")
-    .eq("status", "new");
-  return count ?? 0;
-}
-
 /** Нэг хэрэглэгчийн бүх захиалга — төлөгдсөн, төлөгдөөгүй аль аль нь */
 export async function getCustomerOrders(userId: string): Promise<AdminOrder[]> {
   const supabase = await createClient();

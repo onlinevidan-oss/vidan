@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/lib/queries/staff";
-import { getNewOrderCount } from "@/lib/queries/orders";
+import { getAdminAlerts } from "@/lib/queries/admin-alerts";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { OrdersLive } from "@/components/admin/OrdersLive";
 import { StaffNoTrack } from "@/components/analytics/StaffNoTrack";
@@ -17,7 +17,7 @@ export default async function AdminLayout({
   const staff = await getCurrentStaff();
   if (!staff) redirect("/admin/forbidden");
 
-  const newOrders = await getNewOrderCount();
+  const { newOrders } = await getAdminAlerts();
 
   const initials =
     staff.full_name
