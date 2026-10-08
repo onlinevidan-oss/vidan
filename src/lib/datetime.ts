@@ -76,3 +76,34 @@ export function ubDaysInMonth(year: number, month: number): number {
 export function ubAddDays(key: string, delta: number): string {
   return ubDateKey(new Date(ubDayStart(key).getTime() + delta * 86_400_000));
 }
+
+const UB_TIME_ZONE = "Asia/Ulaanbaatar";
+
+/**
+ * Огноо, цагийг Улаанбаатарын цагаар бичнэ.
+ *
+ * `toLocaleString`-д timeZone өгөхгүй бол сервер өөрийн цагаар (Vercel дээр
+ * UTC) бичдэг тул захиалгын цаг админд 8 цагаар хоцорч харагдана —
+ * 15:46-д орсон захиалга 07:46 гэж гарна. Сервер талд огноо харуулах бүрд
+ * үүнийг хэрэглэнэ.
+ */
+export function formatUbDateTime(
+  value: string | Date,
+  opts: Intl.DateTimeFormatOptions = {},
+): string {
+  return new Date(value).toLocaleString("mn-MN", {
+    timeZone: UB_TIME_ZONE,
+    ...opts,
+  });
+}
+
+/** Зөвхөн огноо (цаггүй), Улаанбаатарын цагаар */
+export function formatUbDate(
+  value: string | Date,
+  opts: Intl.DateTimeFormatOptions = {},
+): string {
+  return new Date(value).toLocaleDateString("mn-MN", {
+    timeZone: UB_TIME_ZONE,
+    ...opts,
+  });
+}

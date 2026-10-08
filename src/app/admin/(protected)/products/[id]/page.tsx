@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { TopBar } from "@/components/admin/TopBar";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createClient } from "@/lib/supabase/server";
-import { ubDateKey } from "@/lib/datetime";
+import { formatUbDateTime, ubDateKey } from "@/lib/datetime";
 
 export const metadata = { title: "Бүтээгдэхүүн засах | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export default async function EditProductPage({
           </h1>
           <p className="mt-0.5 text-[13px] text-ink-500">
             SKU: <strong className="font-display text-ink-900">{product.sku}</strong> ·
-            Шинэчилсэн: {new Date(product.updated_at).toLocaleString("mn-MN", {
+            Шинэчилсэн: {formatUbDateTime(product.updated_at, {
               month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
             })}
           </p>

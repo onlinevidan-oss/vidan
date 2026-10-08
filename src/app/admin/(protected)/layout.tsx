@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/lib/queries/staff";
+import { getNewOrderCount } from "@/lib/queries/orders";
 import { Sidebar } from "@/components/admin/Sidebar";
+import { OrdersLive } from "@/components/admin/OrdersLive";
 import { StaffNoTrack } from "@/components/analytics/StaffNoTrack";
 
 export const metadata = { title: "VIDAN Backoffice" };
@@ -14,6 +16,8 @@ export default async function AdminLayout({
   // Энд role шалгана.
   const staff = await getCurrentStaff();
   if (!staff) redirect("/admin/forbidden");
+
+  const newOrders = await getNewOrderCount();
 
   const initials =
     staff.full_name
@@ -30,8 +34,11 @@ export default async function AdminLayout({
           role: staff.role,
           initials,
         }}
+        newOrders={newOrders}
       />
       <main className="min-w-0 flex flex-col">{children}</main>
+      {/* Шинэ захиалгыг хуудас дахин ачаалалгүй тусгана */}
+      <OrdersLive />
       {/* Ажилтны браузерийг хэмжилтээс хасна */}
       <StaffNoTrack />
     </div>

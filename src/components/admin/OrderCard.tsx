@@ -2,6 +2,17 @@ import Link from "next/link";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 import type { AdminOrder } from "@/lib/queries/orders";
+import { formatUbDateTime } from "@/lib/datetime";
+import { msUntilExpiry } from "@/lib/order-hold";
+
+/** Төлбөр хүлээгдэж буй захиалга цуцлагдтал үлдсэн хугацаа — "1ц 35м" */
+function timeLeft(createdAt: string): string | null {
+  const ms = msUntilExpiry(new Date(createdAt));
+  if (ms <= 0) return null;
+  const min = Math.ceil(ms / 60_000);
+  const h = Math.floor(min / 60);
+  return h > 0 ? `${h}ц ${min % 60}м` : `${min}м`;
+}
 
 /**
  * Захиалгын бүтэн карт — дарж орохгүйгээр хэрэглэгч, утас, хаяг болон
@@ -11,6 +22,9 @@ import type { AdminOrder } from "@/lib/queries/orders";
  */
 export function OrderCard({ order: o }: { order: AdminOrder }) {
   const pieces = o.items.reduce((s, i) => s + i.quantity, 0);
+  const unpaid = o.payment_status !== "paid";
+  const waiting = o.payment_status === "pending" && o.status !== "cancelled";
+  const left = waiting ? timeLeft(o.created_at) : null;
 
   return (
     <Link
@@ -22,12 +36,24 @@ export function OrderCard({ order: o }: { order: AdminOrder }) {
         <span className="font-display text-[15px] font-extrabold text-ink-900">
           {o.order_number}
         </span>
-        <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100 text-ink-500"}`}
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-current" />
-          {STATUS_LABEL[o.status as OrderStatus] ?? o.status}
-        </span>
+        {unpaid ? (
+          // Төлөгдөөгүй захиалгад "Шинэ" гэсэн төлөв төөрөгдүүлнэ — төлбөрийн
+          // байдлыг нь харуулна
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${waiting ? "bg-[#fff3d6] text-[#9a6200]" : "bg-ink-100 text-ink-500"}`}
+          >
+            {waiting
+              ? `⏳ Төлбөр хүлээгдэж байна${left ? ` · ${left} үлдсэн` : ""}`
+              : "Төлөөгүй цуцлагдсан"}
+          </span>
+        ) : (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100 text-ink-500"}`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {STATUS_LABEL[o.status as OrderStatus] ?? o.status}
+          </span>
+        )}
         {o.payment_method && (
           <span className="rounded-full border border-ink-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-500">
             {o.payment_method}
@@ -37,7 +63,7 @@ export function OrderCard({ order: o }: { order: AdminOrder }) {
           {formatMnt(o.total)}
         </span>
         <span className="w-full text-[11px] text-ink-500 sm:w-auto">
-          {new Date(o.created_at).toLocaleString("mn-MN", {
+          {formatUbDateTime(o.created_at, {
             month: "short",
             day: "numeric",
             hour: "2-digit",

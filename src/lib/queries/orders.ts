@@ -6,6 +6,13 @@
  * хоёр хуудсанд хоёуланд нь тусна.
  */
 import { createClient } from "@/lib/supabase/server";
+import { ubAddDays, ubDayStart } from "@/lib/datetime";
+import {
+  ORDERS_PAGE_SIZE,
+  safeSearchTerm,
+  searchDigits,
+  type OrderListParams,
+} from "@/lib/order-list";
 
 export type AdminOrderItem = {
   name: string;
@@ -18,6 +25,7 @@ export type AdminOrder = {
   order_number: string;
   total: number;
   status: string;
+  payment_status: string;
   payment_method: string | null;
   created_at: string;
   customer_name: string | null;
@@ -56,7 +64,7 @@ function firstImage(product: unknown): string | null {
   return imgs[0]?.url ?? null;
 }
 
-const ORDER_SELECT = `id, order_number, total, status, payment_method, created_at,
+const ORDER_SELECT = `id, order_number, total, status, payment_status, payment_method, created_at,
    contact_phone, contact_phone2,
    user:profiles(full_name, phone),
    address:addresses(label, district, khoroo, detail),
@@ -70,6 +78,7 @@ function mapOrder(o: any): AdminOrder {
     order_number: o.order_number,
     total: Number(o.total ?? 0),
     status: o.status,
+    payment_status: o.payment_status,
     payment_method: o.payment_method ?? null,
     created_at: o.created_at,
     customer_name: one<{ full_name: string | null }>(o.user)?.full_name ?? null,
@@ -90,8 +99,8 @@ function mapOrder(o: any): AdminOrder {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
- * Админд харагдах захиалгууд — зөвхөн төлбөр баталгаажсан нь.
- * Төлөгдөөгүй (pending) захиалга админд гарахгүй.
+ * Сүүлийн төлөгдсөн захиалгууд — хяналтын самбарт.
+ * Төлөгдөөгүй (pending) захиалга энд гарахгүй.
  */
 export async function getAdminOrders(opts?: {
   status?: string;
@@ -109,19 +118,122 @@ export async function getAdminOrders(opts?: {
   return (data ?? []).map(mapOrder);
 }
 
-/** Төлөв тус бүрийн тоо (шүүлтүүрийн чипэнд) */
+export type AdminOrdersPage = {
+  orders: AdminOrder[];
+  /** Шүүлтүүрт таарсан нийт тоо (бүх хуудас) */
+  total: number;
+  page: number;
+  pages: number;
+};
+
+/** Хоосон үр дүн гаргах шүүлтүүр — байхгүй id */
+const NO_MATCH_ID = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * /admin/orders-ийн жагсаалт — шүүлтүүр, хайлт, хуудаслалттай.
+ *
+ *  · view=paid   — төлөгдсөн захиалга (бэлтгэх, хүргэх ажил)
+ *  · view=unpaid — төлбөр хүлээгдэж буй болон төлөөгүй цуцлагдсан
+ *                  (залгаж сануулах жагсаалт)
+ *
+ * Хайлт: захиалгын дугаар, захиалга дээрх утас, хэрэглэгчийн нэр/утас.
+ */
+export async function getAdminOrdersPage(
+  f: OrderListParams,
+): Promise<AdminOrdersPage> {
+  const supabase = await createClient();
+  let q = supabase
+    .from("orders")
+    .select(ORDER_SELECT, { count: "exact" })
+    .order("created_at", { ascending: false });
+
+  q =
+    f.view === "unpaid"
+      ? q.in("payment_status", ["pending", "failed"])
+      : q.eq("payment_status", "paid");
+  if (f.status) q = q.eq("status", f.status);
+
+  // Огнооны зааг УБ өдрөөр — сервер UTC тул шууд огноо харьцуулахгүй
+  if (f.from) q = q.gte("created_at", ubDayStart(f.from).toISOString());
+  if (f.to) q = q.lt("created_at", ubDayStart(ubAddDays(f.to, 1)).toISOString());
+
+  if (f.search) {
+    const digits = searchDigits(f.search);
+    const text = safeSearchTerm(f.search);
+    const ors: string[] = [];
+
+    if (digits) {
+      ors.push(
+        `order_number.ilike.%${digits}%`,
+        `contact_phone.ilike.%${digits}%`,
+        `contact_phone2.ilike.%${digits}%`,
+      );
+    }
+
+    // Нэр эсвэл профайлын утсаар хэрэглэгчийг олж, тэдний захиалгыг нэмнэ
+    const peopleFilters: string[] = [];
+    if (text && text !== digits) peopleFilters.push(`full_name.ilike.%${text}%`);
+    if (digits.length >= 4) peopleFilters.push(`phone.ilike.%${digits}%`);
+    if (peopleFilters.length > 0) {
+      const { data: people } = await supabase
+        .from("profiles")
+        .select("id")
+        .or(peopleFilters.join(","))
+        .limit(100);
+      const ids = (people ?? []).map((p) => p.id);
+      if (ids.length > 0) ors.push(`user_id.in.(${ids.join(",")})`);
+    }
+
+    q = ors.length > 0 ? q.or(ors.join(",")) : q.eq("id", NO_MATCH_ID);
+  }
+
+  const offset = (f.page - 1) * ORDERS_PAGE_SIZE;
+  const { data, count } = await q.range(offset, offset + ORDERS_PAGE_SIZE - 1);
+
+  const total = count ?? 0;
+  return {
+    orders: (data ?? []).map(mapOrder),
+    total,
+    page: f.page,
+    pages: Math.max(1, Math.ceil(total / ORDERS_PAGE_SIZE)),
+  };
+}
+
+/**
+ * Төлөв тус бүрийн тоо (шүүлтүүрийн чипэнд).
+ * `unpaid` — одоо төлбөр хүлээгдэж буй (хараахан цуцлагдаагүй) захиалга.
+ */
 export async function getOrderStatusCounts(): Promise<{
   counts: Record<string, number>;
   total: number;
+  unpaid: number;
 }> {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("orders")
-    .select("status")
-    .eq("payment_status", "paid");
+  const [{ data }, { count: unpaid }] = await Promise.all([
+    supabase.from("orders").select("status").eq("payment_status", "paid"),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("payment_status", "pending")
+      .neq("status", "cancelled"),
+  ]);
   const counts: Record<string, number> = {};
   (data ?? []).forEach((o) => {
     counts[o.status] = (counts[o.status] ?? 0) + 1;
   });
-  return { counts, total: data?.length ?? 0 };
+  return { counts, total: data?.length ?? 0, unpaid: unpaid ?? 0 };
+}
+
+/**
+ * Ажил хүлээж буй захиалгын тоо — төлөгдсөн, хараахан бэлтгэж эхлээгүй.
+ * Цэсний тэмдэг ба хонхонд харагдана.
+ */
+export async function getNewOrderCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("payment_status", "paid")
+    .eq("status", "new");
+  return count ?? 0;
 }

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt, formatPhone } from "@/lib/utils";
+import { formatUbDateTime } from "@/lib/datetime";
 import { OrderActions } from "@/components/admin/OrderActions";
 import {
   STATUS_FLOW,
@@ -60,7 +61,7 @@ export default async function AdminOrderDetail({
               Захиалга <span className="text-brand-700">{order.order_number}</span>
             </h1>
             <div className="mt-0.5 text-[13px] text-ink-500">
-              {new Date(order.created_at).toLocaleString("mn-MN")} ·{" "}
+              {formatUbDateTime(order.created_at)} ·{" "}
               {(order.payment_method ?? "—").toUpperCase()} ·{" "}
               <span className="font-bold">
                 {order.payment_status === "paid" ? "✓ Төлөгдсөн" : "⏳ Төлөгдөөгүй"}
@@ -138,7 +139,7 @@ export default async function AdminOrderDetail({
                         {e.description ?? e.event_type}
                       </div>
                       <div className="text-xs text-ink-500">
-                        {new Date(e.created_at).toLocaleString("mn-MN")}
+                        {formatUbDateTime(e.created_at)}
                       </div>
                     </div>
                   </div>

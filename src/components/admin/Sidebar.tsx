@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 const MAIN_NAV = [
   { href: "/admin",            label: "Хяналтын самбар", icon: "📊" },
-  { href: "/admin/orders",     label: "Захиалга",        icon: "📦", badge: 0 },
+  { href: "/admin/orders",     label: "Захиалга",        icon: "📦" },
   { href: "/admin/products",   label: "Бүтээгдэхүүн",    icon: "🛒" },
   { href: "/admin/inventory",  label: "Агуулах",         icon: "🏬" },
   { href: "/admin/customers",  label: "Хэрэглэгч",       icon: "👥" },
@@ -22,10 +22,16 @@ const OTHER_NAV = [
 
 export function Sidebar({
   user,
+  newOrders = 0,
 }: {
   user: { fullName: string; role: string; initials: string };
+  /** Төлөгдсөн, хараахан бэлтгэж эхлээгүй захиалгын тоо */
+  newOrders?: number;
 }) {
   const pathname = usePathname();
+  const mainNav = MAIN_NAV.map((item) =>
+    item.href === "/admin/orders" ? { ...item, badge: newOrders } : item,
+  );
 
   function isActive(href: string) {
     if (href === "/admin") return pathname === "/admin";
@@ -42,7 +48,7 @@ export function Sidebar({
         <Image src="/vidan-logo.png" alt="VIDAN" width={85} height={38} />
       </Link>
 
-      <NavSection title="Үндсэн" items={MAIN_NAV} isActive={isActive} />
+      <NavSection title="Үндсэн" items={mainNav} isActive={isActive} />
       <NavSection title="Бусад" items={OTHER_NAV} isActive={isActive} />
 
       {/* User card at bottom */}

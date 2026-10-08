@@ -5,6 +5,7 @@ import { getDashboardStats } from "@/lib/queries/dashboard";
 import { OrderCard } from "@/components/admin/OrderCard";
 import { getCurrentStaff } from "@/lib/queries/staff";
 import { formatMnt } from "@/lib/utils";
+import { formatUbDate, ubDateKey } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +15,10 @@ export default async function AdminDashboard() {
     getDashboardStats(),
   ]);
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("mn-MN", {
+  // Сервер UTC-аар ажилладаг тул УБ өдрөөр бичнэ — эс тэгвээс өглөөний
+  // 08:00 хүртэл өчигдрийн огноо харагдана
+  const today = ubDateKey();
+  const dateStr = formatUbDate(new Date(), {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -36,12 +39,22 @@ export default async function AdminDashboard() {
             <div className="mt-0.5 text-[13px] text-ink-500">{dateStr}</div>
           </div>
           <div className="flex gap-2">
-            <button className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-4 py-2.5 text-[13px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700">
-              📅 Өнөөдөр
-            </button>
-            <button className="rounded-[10px] bg-brand-600 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_10px_rgba(215,35,39,0.25)] transition hover:-translate-y-0.5 hover:bg-brand-700">
-              ＋ Шинэ захиалга
-            </button>
+            <Link
+              href={`/admin/orders?from=${today}&to=${today}`}
+              className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-4 py-2.5 text-[13px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+            >
+              📅 Өнөөдрийн захиалга
+            </Link>
+            {/* Гараар захиалга үүсгэх тусдаа дэлгэц байхгүй — ажилтан дэлгүүрээр
+                дамжуулж үүсгэдэг (доод дүн ажилтанд хамаарахгүй, 0030) */}
+            <Link
+              href="/products"
+              target="_blank"
+              title="Дэлгүүрээр дамжуулж гараар захиалга үүсгэнэ"
+              className="rounded-[10px] bg-brand-600 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_4px_10px_rgba(215,35,39,0.25)] transition hover:-translate-y-0.5 hover:bg-brand-700"
+            >
+              ＋ Шинэ захиалга ↗
+            </Link>
           </div>
         </div>
 
