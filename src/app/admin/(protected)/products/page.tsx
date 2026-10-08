@@ -3,6 +3,7 @@ import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
+import { safeSearchTerm } from "@/lib/order-list";
 
 export const metadata = { title: "Бүтээгдэхүүн | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
@@ -40,7 +41,9 @@ export default async function AdminProducts({
     const cat = categories?.find((c) => c.slug === categorySlug);
     if (cat) q = q.eq("category_id", cat.id);
   }
-  if (search && search.trim()) q = q.ilike("name_mn", `%${search.trim()}%`);
+  // Нэр эсвэл SKU-гаар — талбар дээр "Нэр, SKU хайх" гэж бичсэн
+  const term = safeSearchTerm(search ?? "");
+  if (term) q = q.or(`name_mn.ilike.%${term}%,sku.ilike.%${term}%`);
 
   const { data: products } = await q;
 
@@ -61,7 +64,7 @@ export default async function AdminProducts({
   return (
     <>
       <TopBar title="Бүтээгдэхүүн" crumb={status ?? "Бүгд"} />
-      <div className="flex-1 p-7">
+      <div className="flex-1 p-4 sm:p-7">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">

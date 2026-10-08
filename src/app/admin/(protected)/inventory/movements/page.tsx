@@ -23,7 +23,7 @@ export default async function StockMovementsPage() {
   return (
     <>
       <TopBar title="Агуулах" crumb="Орлого, зарлага" />
-      <div className="flex-1 space-y-5 p-7 print:space-y-4 print:p-0">
+      <div className="flex-1 space-y-5 p-4 sm:p-7 print:space-y-4 print:p-0">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">

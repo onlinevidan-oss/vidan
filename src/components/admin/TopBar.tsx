@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAdminAlerts } from "@/lib/queries/admin-alerts";
 import { TopBarTools } from "@/components/admin/TopBarTools";
+import { NavToggle } from "@/components/admin/NavToggle";
 
 export async function TopBar({
   title,
@@ -13,7 +14,8 @@ export async function TopBar({
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-ink-200 bg-white px-4 sm:gap-6 sm:px-7 print:hidden">
-      <div className="min-w-0 truncate font-display text-lg font-extrabold text-ink-900">
+      <NavToggle />
+      <div className="min-w-0 shrink truncate font-display text-lg font-extrabold text-ink-900">
         {title}
         {crumb && (
           <span className="ml-1.5 text-sm font-medium text-ink-500">

@@ -97,9 +97,9 @@ export function TopBarTools({ alerts }: { alerts: AdminAlerts }) {
   ].filter((i) => i.n > 0);
 
   return (
-    <div ref={rootRef} className="ml-auto flex min-w-0 items-center gap-1.5">
+    <div ref={rootRef} className="flex flex-1 items-center justify-end gap-1.5">
       {/* Хайлт */}
-      <div className="relative hidden w-[320px] md:block">
+      <div className="relative hidden min-w-[150px] max-w-[320px] flex-1 md:block">
         <input
           type="search"
           value={term}
@@ -120,7 +120,7 @@ export function TopBarTools({ alerts }: { alerts: AdminAlerts }) {
         </span>
 
         {panel === "search" && q.length >= 2 && (
-          <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-30 max-h-[70vh] overflow-y-auto rounded-2xl border border-ink-200 bg-white p-2 shadow-[0_12px_32px_rgba(0,0,0,0.14)]">
+          <div className="absolute right-0 top-[calc(100%+6px)] z-30 max-h-[70vh] w-[320px] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-2xl border border-ink-200 bg-white p-2 shadow-[0_12px_32px_rgba(0,0,0,0.14)]">
             {shown === null ? (
               <div className="px-3 py-4 text-center text-xs text-ink-500">Хайж байна…</div>
             ) : nothing ? (
@@ -182,7 +182,7 @@ export function TopBarTools({ alerts }: { alerts: AdminAlerts }) {
           type="button"
           onClick={() => setPanel(panel === "bell" ? null : "bell")}
           aria-label={`Анхаарах зүйлс${items.length > 0 ? ` (${items.length})` : ""}`}
-          className="relative grid h-9 w-9 place-items-center rounded-[10px] text-base transition hover:bg-ink-100"
+          className="relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-base transition hover:bg-ink-100"
         >
           🔔
           {items.length > 0 && (
@@ -224,7 +224,7 @@ export function TopBarTools({ alerts }: { alerts: AdminAlerts }) {
           type="button"
           onClick={() => setPanel(panel === "help" ? null : "help")}
           aria-label="Тусламж"
-          className="grid h-9 w-9 place-items-center rounded-[10px] text-base transition hover:bg-ink-100"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-base transition hover:bg-ink-100"
         >
           ?
         </button>

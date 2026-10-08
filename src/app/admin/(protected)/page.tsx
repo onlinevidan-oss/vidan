@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
     <>
       <TopBar title="Хяналтын самбар" crumb="Өнөөдөр" />
 
-      <div className="flex-1 p-7">
+      <div className="flex-1 p-4 sm:p-7">
         {/* Welcome */}
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>

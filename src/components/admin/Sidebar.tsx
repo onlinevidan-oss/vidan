@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+
+/** Дээд мөрний ☰ товч энэ үйл явдлаар цэсийг нээж хаана (NavToggle) */
+export const NAV_TOGGLE_EVENT = "admin:toggle-nav";
 
 const MAIN_NAV = [
   { href: "/admin",            label: "Хяналтын самбар", icon: "📊" },
@@ -35,6 +39,14 @@ export function Sidebar({
   newOrders?: number;
 }) {
   const pathname = usePathname();
+  // Жижиг дэлгэцэд цэс далд байж, ☰ товчоор гулсаж гарна
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const toggle = () => setOpen((v) => !v);
+    window.addEventListener(NAV_TOGGLE_EVENT, toggle);
+    return () => window.removeEventListener(NAV_TOGGLE_EVENT, toggle);
+  }, []);
+  const close = () => setOpen(false);
   const mainNav = MAIN_NAV.map((item) =>
     item.href === "/admin/orders" ? { ...item, badge: newOrders } : item,
   );
@@ -45,20 +57,33 @@ export function Sidebar({
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen flex-col gap-4 bg-ink-900 p-3.5 text-white/85 print:hidden">
+    <>
+      {open && (
+        <button
+          type="button"
+          aria-label="Цэсийг хаах"
+          onClick={close}
+          className="fixed inset-0 z-30 bg-black/50 md:hidden print:hidden"
+        />
+      )}
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col gap-4 overflow-y-auto bg-ink-900 p-3.5 text-white/85 transition-transform duration-200 md:sticky md:top-0 md:z-auto md:h-screen md:w-auto md:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+    >
       {/* Logo */}
       <Link
         href="/admin"
+        onClick={close}
         className="mb-1 inline-block w-max rounded-[10px] bg-white p-2"
       >
         <Image src="/vidan-logo.png" alt="VIDAN" width={85} height={38} />
       </Link>
 
-      <NavSection title="Үндсэн" items={mainNav} isActive={isActive} />
+      <NavSection title="Үндсэн" items={mainNav} isActive={isActive} onNavigate={close} />
       <NavSection
         title="Бусад"
         items={user.role === "admin" ? [...OTHER_NAV, ...OWNER_NAV] : OTHER_NAV}
         isActive={isActive}
+        onNavigate={close}
       />
 
       {/* User card at bottom */}
@@ -83,6 +108,7 @@ export function Sidebar({
         </form>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -90,10 +116,13 @@ function NavSection({
   title,
   items,
   isActive,
+  onNavigate,
 }: {
   title: string;
   items: { href: string; label: string; icon: string; badge?: number }[];
   isActive: (href: string) => boolean;
+  /** Холбоос дарагдахад — жижиг дэлгэцэд цэсийг хаана */
+  onNavigate: () => void;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -106,6 +135,7 @@ function NavSection({
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             className={
               active
                 ? "flex items-center gap-3 rounded-[10px] bg-brand-600 px-3 py-2.5 text-sm font-bold text-white shadow-[0_4px_12px_rgba(215,35,39,0.35)]"

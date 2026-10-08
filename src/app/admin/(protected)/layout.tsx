@@ -27,7 +27,7 @@ export default async function AdminLayout({
       .join("") || "S";
 
   return (
-    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-[#f6f3ec] text-ink-900 print:block print:min-h-0 print:bg-white">
+    <div className="min-h-screen bg-[#f6f3ec] text-ink-900 md:grid md:grid-cols-[240px_1fr] print:block print:min-h-0 print:bg-white">
       <Sidebar
         user={{
           fullName: staff.full_name,
@@ -36,7 +36,7 @@ export default async function AdminLayout({
         }}
         newOrders={newOrders}
       />
-      <main className="min-w-0 flex flex-col">{children}</main>
+      <main className="flex min-h-screen min-w-0 flex-col print:min-h-0">{children}</main>
       {/* Шинэ захиалгыг хуудас дахин ачаалалгүй тусгана */}
       <OrdersLive />
       {/* Ажилтны браузерийг хэмжилтээс хасна */}

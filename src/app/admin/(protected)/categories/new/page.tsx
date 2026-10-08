@@ -8,7 +8,7 @@ export default function NewCategoryPage() {
   return (
     <>
       <TopBar title="Ангилал" crumb="Шинэ" />
-      <div className="flex-1 p-7">
+      <div className="flex-1 p-4 sm:p-7">
         <div className="mb-6">
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">
             Шинэ ангилал

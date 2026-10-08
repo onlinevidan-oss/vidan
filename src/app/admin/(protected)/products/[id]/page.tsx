@@ -26,7 +26,7 @@ export default async function EditProductPage({
   return (
     <>
       <TopBar title="Бүтээгдэхүүн" crumb={product.name_mn} />
-      <div className="flex-1 p-7">
+      <div className="flex-1 p-4 sm:p-7">
         <div className="mb-5">
           <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">
             {product.name_mn}

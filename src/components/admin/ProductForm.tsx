@@ -606,7 +606,7 @@ export function ProductForm({
           </div>
         )}
 
-        <div className="sticky bottom-4 space-y-2">
+        <div className="space-y-2 lg:sticky lg:bottom-4">
           <button
             onClick={submit}
             disabled={pending}

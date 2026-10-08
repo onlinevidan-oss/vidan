@@ -28,7 +28,7 @@ export default async function AdminSettings() {
     ]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8 p-8">
+    <div className="mx-auto max-w-2xl space-y-8 p-4 sm:p-8">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-ink-900">
           ⚙️ Тохиргоо
