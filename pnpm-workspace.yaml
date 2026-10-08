@@ -16,3 +16,7 @@ overrides:
   baseline-browser-mapping: 2.11.20
   nanoid@3: ^3.3.18
   postcss@8: ^8.5.28
+  # next-ийн доторх шууд бус хамаарлууд — 2026-10-08-ны мэдэгдлүүд.
+  # sharp: librsvg-ийн CVE-2026-96889 · source-map-js: event-loop DoS
+  sharp: ^0.35.5
+  source-map-js: ^1.2.2
