@@ -1,17 +1,23 @@
 import { TopBar } from "@/components/admin/TopBar";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createClient } from "@/lib/supabase/server";
+import { nextSku } from "@/lib/sku";
 
 export const metadata = { title: "Шинэ бүтээгдэхүүн | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
   const supabase = await createClient();
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("id, name_mn")
-    .eq("is_active", true)
-    .order("sort_order");
+  const [{ data: categories }, { data: brands }, { data: skus }] =
+    await Promise.all([
+      supabase
+        .from("categories")
+        .select("id, name_mn")
+        .eq("is_active", true)
+        .order("sort_order"),
+      supabase.from("brands").select("id, name").order("sort_order"),
+      supabase.from("products").select("sku"),
+    ]);
 
   return (
     <>
@@ -22,10 +28,15 @@ export default async function NewProductPage() {
             Шинэ бүтээгдэхүүн
           </h1>
           <p className="mt-0.5 text-[13px] text-ink-500">
-            VIDAN брэндийн шинэ бүтээгдэхүүн нэмэх
+            Дэлгүүрт шинэ бүтээгдэхүүн нэмэх
           </p>
         </div>
-        <ProductForm mode="create" categories={categories ?? []} />
+        <ProductForm
+          mode="create"
+          categories={categories ?? []}
+          brands={brands ?? []}
+          suggestedSku={nextSku((skus ?? []).map((p) => p.sku))}
+        />
       </div>
     </>
   );

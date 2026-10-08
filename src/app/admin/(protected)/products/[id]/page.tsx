@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { TopBar } from "@/components/admin/TopBar";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createClient } from "@/lib/supabase/server";
+import { ubDateKey } from "@/lib/datetime";
 
 export const metadata = { title: "Бүтээгдэхүүн засах | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
@@ -12,11 +13,13 @@ export default async function EditProductPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: product }, { data: categories }, { data: images }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", id).maybeSingle(),
-    supabase.from("categories").select("id, name_mn").eq("is_active", true).order("sort_order"),
-    supabase.from("product_images").select("id, url").eq("product_id", id).order("sort_order"),
-  ]);
+  const [{ data: product }, { data: categories }, { data: brands }, { data: images }] =
+    await Promise.all([
+      supabase.from("products").select("*").eq("id", id).maybeSingle(),
+      supabase.from("categories").select("id, name_mn").eq("is_active", true).order("sort_order"),
+      supabase.from("brands").select("id, name").order("sort_order"),
+      supabase.from("product_images").select("id, url").eq("product_id", id).order("sort_order"),
+    ]);
 
   if (!product) notFound();
 
@@ -44,12 +47,13 @@ export default async function EditProductPage({
             name_en: product.name_en ?? "",
             slug: product.slug,
             category_id: product.category_id ?? "",
+            brand_id: product.brand_id ?? "",
+            classification_code: product.classification_code ?? "",
             short_description: product.short_description ?? "",
             description: product.description ?? "",
             price: Number(product.price),
             old_price: product.old_price ? Number(product.old_price) : null,
             cost_price: product.cost_price ? Number(product.cost_price) : null,
-            stock: product.stock,
             stock_threshold: product.stock_threshold ?? 20,
             weight_net_g: product.weight_net_g,
             weight_gross_g: product.weight_gross_g,
@@ -62,6 +66,9 @@ export default async function EditProductPage({
             meta_description: product.meta_description ?? "",
           }}
           categories={categories ?? []}
+          brands={brands ?? []}
+          currentStock={product.stock}
+          today={ubDateKey()}
           initialImages={images ?? []}
         />
       </div>

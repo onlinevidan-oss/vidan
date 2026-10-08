@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { slugify } from "@/lib/utils";
+import { isValidSku, normalizeSku, SKU_HINT } from "@/lib/sku";
+import { isValidClassificationCode } from "@/lib/ebarimt/classification";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProductInsert = Database["public"]["Tables"]["products"]["Insert"];
@@ -16,12 +18,19 @@ export type ProductFormPayload = {
   name_en?: string;
   slug: string;
   category_id: string;
+  brand_id: string;
+  /** И-баримтын GS1 ангиллын код (7 орон) */
+  classification_code: string;
   short_description?: string;
   description?: string;
   price: number;
   old_price?: number | null;
   cost_price?: number | null;
-  stock: number;
+  /**
+   * Зөвхөн ҮҮСГЭХ үед: эхний үлдэгдэл — орлогын хөдөлгөөн болж бичигдэнэ.
+   * Засах үед үл тооно: үлдэгдэл зөвхөн агуулахын хөдөлгөөнөөр өөрчлөгдөнө.
+   */
+  initial_stock?: number;
   stock_threshold?: number;
   weight_net_g?: number | null;
   weight_gross_g?: number | null;
@@ -60,19 +69,47 @@ function revalidateProductPaths(slug?: string) {
   }
 }
 
+/** Серверийн шалгалт — клиентийн шалгалтыг тойрсон хүсэлтээс хамгаална */
+function validatePayload(payload: ProductFormPayload): string | null {
+  if (!payload.name_mn?.trim()) return "Нэр оруулна уу";
+  if (!isValidSku(payload.sku ?? "")) return `SKU буруу — ${SKU_HINT}`;
+  if (!payload.category_id) return "Ангилал сонгоно уу";
+  if (!payload.brand_id) return "Брэнд сонгоно уу";
+  if (!isValidClassificationCode(payload.classification_code ?? "")) {
+    return "И-баримтын ангиллын код 7 оронтой тоо байх ёстой";
+  }
+  if (!(Number(payload.price) > 0)) return "Үнэ 0-ээс их байх ёстой";
+  return null;
+}
+
+/** Давхардсан SKU / slug-ийн DB алдааг хүнд ойлгомжтой болгоно */
+function humanDbError(error: { code?: string; message: string }): string {
+  if (error.code === "23505") {
+    if (error.message.includes("sku")) return "Энэ SKU аль хэдийн бүртгэлтэй байна";
+    if (error.message.includes("slug")) return "Энэ URL slug аль хэдийн бүртгэлтэй байна";
+  }
+  return error.message;
+}
+
+/**
+ * `stock` энд БАЙХГҮЙ: үлдэгдлийг барааны формоор шууд бичвэл хөдөлгөөний
+ * түүхээс салж, мөн засах хуудас нээлттэй байх хооронд орсон захиалгын
+ * хасалтыг хуучин тоогоор дарж бичнэ.
+ */
 function payloadToRow(payload: ProductFormPayload) {
   return {
-    sku: payload.sku.trim().toUpperCase(),
+    sku: normalizeSku(payload.sku),
     name_mn: payload.name_mn.trim(),
     name_en: payload.name_en?.trim() || null,
     slug: normalizeSlug(payload.slug, payload.name_mn),
     category_id: payload.category_id,
+    brand_id: payload.brand_id,
+    classification_code: payload.classification_code.trim(),
     short_description: payload.short_description?.trim() || null,
     description: payload.description?.trim() || null,
     price: payload.price,
     old_price: payload.old_price ?? null,
     cost_price: payload.cost_price ?? null,
-    stock: Math.max(0, payload.stock),
     stock_threshold: payload.stock_threshold ?? 20,
     weight_net_g: payload.weight_net_g ?? null,
     weight_gross_g: payload.weight_gross_g ?? null,
@@ -93,16 +130,46 @@ export async function createProduct(
   const guard = await requireAdmin();
   if (!guard.ok) return { ok: false, error: guard.error };
 
+  const invalid = validatePayload(payload);
+  if (invalid) return { ok: false, error: invalid };
+
+  const initialStock = Math.trunc(Number(payload.initial_stock ?? 0));
+  if (!Number.isFinite(initialStock) || initialStock < 0) {
+    return { ok: false, error: "Эхний үлдэгдэл 0 ба түүнээс их бүхэл тоо байх ёстой" };
+  }
+
   const supabase = await createClient();
-  const insert: ProductInsert = payloadToRow(payload);
+  const insert: ProductInsert = { ...payloadToRow(payload), stock: 0 };
   const { data, error } = await supabase
     .from("products")
     .insert(insert)
     .select("id, slug")
     .single();
-  if (error || !data) return { ok: false, error: error?.message || "Failed" };
+  if (error || !data) {
+    return { ok: false, error: error ? humanDbError(error) : "Failed" };
+  }
+
+  // Эхний үлдэгдлийг ОРЛОГО гэж бүртгэнэ — products.stock ба хөдөлгөөний
+  // түүх эхнээсээ тэнцүү байна. Бүртгэж чадахгүй бол барааг буцааж
+  // устгана: үлдэгдэлгүй хагас бараа үлдээхээс алдааг харуулсан нь дээр.
+  if (initialStock > 0) {
+    const { error: mvErr } = await supabase.rpc("record_stock_movement", {
+      p_product_id: data.id,
+      p_kind: "in",
+      p_qty: initialStock,
+      p_note: "Эхний үлдэгдэл",
+    });
+    if (mvErr) {
+      await supabase.from("products").delete().eq("id", data.id);
+      return {
+        ok: false,
+        error: `Эхний үлдэгдэл бүртгэж чадсангүй: ${mvErr.message}`,
+      };
+    }
+  }
 
   revalidateProductPaths(data.slug);
+  revalidatePath("/admin/inventory");
   return { ok: true, id: data.id };
 }
 
@@ -113,6 +180,9 @@ export async function updateProduct(
   const guard = await requireAdmin();
   if (!guard.ok) return { ok: false, error: guard.error };
 
+  const invalid = validatePayload(payload);
+  if (invalid) return { ok: false, error: invalid };
+
   const supabase = await createClient();
   const update: ProductUpdate = payloadToRow(payload);
   const { data, error } = await supabase
@@ -121,7 +191,7 @@ export async function updateProduct(
     .eq("id", id)
     .select("slug")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: humanDbError(error) };
 
   revalidateProductPaths(data?.slug);
   return { ok: true };

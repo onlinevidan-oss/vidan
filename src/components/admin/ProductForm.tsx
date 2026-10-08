@@ -12,9 +12,17 @@ import {
   type ProductFormPayload,
 } from "@/app/admin/(protected)/products/actions";
 import { uploadProductImage } from "@/lib/storage";
+import { normalizeProductImage } from "@/lib/image-normalize";
 import { slugify } from "@/lib/utils";
+import { isValidSku, SKU_HINT } from "@/lib/sku";
+import {
+  CLASSIFICATION_CODES,
+  isValidClassificationCode,
+} from "@/lib/ebarimt/classification";
+import { StockMovementForm } from "@/components/admin/StockMovementForm";
 
 type Category = { id: string; name_mn: string };
+type Brand = { id: string; name: string };
 type Image = { id: string; url: string };
 
 type Mode = "create" | "edit";
@@ -24,33 +32,47 @@ export function ProductForm({
   initialId,
   initialValues,
   categories,
+  brands,
+  suggestedSku,
+  currentStock = 0,
+  today,
   initialImages = [],
 }: {
   mode: Mode;
   initialId?: string;
   initialValues?: Partial<ProductFormPayload>;
   categories: Category[];
+  brands: Brand[];
+  /** Үүсгэх үед: дараагийн SKU (серверээс) */
+  suggestedSku?: string;
+  /** Засах үед: одоогийн үлдэгдэл — зөвхөн харуулна, хөдөлгөөнөөр өөрчилнө */
+  currentStock?: number;
+  /** УБ өдөр "YYYY-MM-DD" — хөдөлгөөний маягтад */
+  today?: string;
   initialImages?: Image[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [imageWarning, setImageWarning] = useState(false);
   const [images, setImages] = useState<Image[]>(initialImages);
 
   // Form state
   const [v, setV] = useState<ProductFormPayload>({
-    sku: initialValues?.sku ?? "",
+    sku: initialValues?.sku ?? suggestedSku ?? "",
     name_mn: initialValues?.name_mn ?? "",
     name_en: initialValues?.name_en ?? "",
     slug: initialValues?.slug ?? "",
     category_id: initialValues?.category_id ?? categories[0]?.id ?? "",
+    brand_id: initialValues?.brand_id ?? "",
+    classification_code: initialValues?.classification_code ?? "",
     short_description: initialValues?.short_description ?? "",
     description: initialValues?.description ?? "",
     price: initialValues?.price ?? 0,
     old_price: initialValues?.old_price ?? null,
     cost_price: initialValues?.cost_price ?? null,
-    stock: initialValues?.stock ?? 0,
+    initial_stock: 0,
     stock_threshold: initialValues?.stock_threshold ?? 20,
     weight_net_g: initialValues?.weight_net_g ?? null,
     weight_gross_g: initialValues?.weight_gross_g ?? null,
@@ -65,6 +87,13 @@ export function ProductForm({
   });
 
   const [tagInput, setTagInput] = useState("");
+
+  // И-баримтын код: жагсаалтад байхгүй кодыг "Бусад код"-оор гараар оруулна
+  const [customCode, setCustomCode] = useState(
+    () =>
+      !!initialValues?.classification_code &&
+      !CLASSIFICATION_CODES.some((c) => c.code === initialValues.classification_code),
+  );
 
   function update<K extends keyof ProductFormPayload>(key: K, value: ProductFormPayload[K]) {
     setV((prev) => ({ ...prev, [key]: value }));
@@ -120,7 +149,20 @@ export function ProductForm({
 
     setUploading(true);
     setError(null);
-    const result = await uploadProductImage(file, initialId);
+    setImageWarning(false);
+
+    // Дэлгүүрийн жишигт оруулна: дөрвөлжин, цагаан дэвсгэр, бараа төвд
+    let normalized;
+    try {
+      normalized = await normalizeProductImage(file);
+    } catch {
+      setError("Зургийг уншиж чадсангүй — өөр файл оруулна уу");
+      setUploading(false);
+      return;
+    }
+    const fitted = new File([normalized.blob], "image.jpg", { type: "image/jpeg" });
+
+    const result = await uploadProductImage(fitted, initialId);
     if (!result.ok) {
       setError(result.error);
       setUploading(false);
@@ -134,6 +176,7 @@ export function ProductForm({
       return;
     }
     setImages([...images, { id: add.id, url: result.url }]);
+    setImageWarning(!normalized.whiteBackground);
     setUploading(false);
     router.refresh();
   }
@@ -156,11 +199,14 @@ export function ProductForm({
 
     // Validation
     if (!v.name_mn.trim()) return setError("Нэр оруулна уу");
-    if (!v.sku.trim()) return setError("SKU оруулна уу");
+    if (!isValidSku(v.sku)) return setError(`SKU буруу — ${SKU_HINT}`);
     if (!v.slug.trim()) return setError("URL slug оруулна уу");
+    if (!v.brand_id) return setError("Брэнд сонгоно уу");
     if (!v.category_id) return setError("Ангилал сонгоно уу");
+    if (!isValidClassificationCode(v.classification_code)) {
+      return setError("И-баримтын ангиллын кодыг сонгоно уу (7 оронтой тоо)");
+    }
     if (v.price <= 0) return setError("Үнэ 0-ээс их байх ёстой");
-    if (v.stock < 0) return setError("Нөөц 0-ээс бага байж болохгүй");
 
     startTransition(async () => {
       const result = mode === "create"
@@ -193,7 +239,7 @@ export function ProductForm({
       {/* LEFT */}
       <div className="space-y-5">
         <Section title="Үндсэн мэдээлэл">
-          <Field label="Нэр (Монгол) *" required>
+          <Field label="Нэр (Монгол)" required>
             <input
               type="text"
               value={v.name_mn}
@@ -203,16 +249,21 @@ export function ProductForm({
             />
           </Field>
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="SKU *" required>
+            <Field label="SKU" required>
               <input
                 type="text"
                 value={v.sku}
                 onChange={(e) => update("sku", e.target.value.toUpperCase())}
-                placeholder="VDN-000"
+                placeholder="VIDAN048"
                 className={inputCls}
               />
+              {mode === "create" && suggestedSku && (
+                <div className="mt-1 text-[11px] text-ink-500">
+                  Дараагийн дугаарыг автоматаар санал болгосон
+                </div>
+              )}
             </Field>
-            <Field label="URL slug *" required>
+            <Field label="URL slug" required>
               <input
                 type="text"
                 value={v.slug}
@@ -247,7 +298,7 @@ export function ProductForm({
               {images.map((img) => (
                 <div key={img.id} className="group relative aspect-square overflow-hidden rounded-xl bg-cream-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                  <img src={img.url} alt="" className="h-full w-full object-contain" />
                   <button
                     onClick={() => handleRemoveImage(img.id)}
                     className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-xs text-white opacity-0 transition group-hover:opacity-100"
@@ -275,8 +326,16 @@ export function ProductForm({
               </label>
             </div>
             <p className="mt-2 text-xs text-ink-500">
-              JPG, PNG, WEBP · Дээд тал нь 5MB
+              JPG, PNG, WEBP · Дээд тал нь 5MB · Зураг автоматаар дөрвөлжин,
+              бараа төвд байхаар тааруулагдана
             </p>
+            {imageWarning && (
+              <div className="mt-2 rounded-xl border border-[#f0c36d] bg-[#fff7e6] px-3 py-2 text-xs font-semibold text-[#8a5a00]">
+                ⚠️ Сүүлд нэмсэн зургийн дэвсгэр цагаан биш байна. Дэлгүүрийн
+                бусад бараатай ижил харагдуулахын тулд цагаан дэвсгэр дээр
+                авсан зургаар солино уу.
+              </div>
+            )}
           </Section>
         )}
 
@@ -288,7 +347,7 @@ export function ProductForm({
 
         <Section title="Үнэ ба нөөц">
           <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Худалдааны үнэ (₮) *" required>
+            <Field label="Худалдааны үнэ (₮)" required>
               <input
                 type="number"
                 min={0}
@@ -321,15 +380,31 @@ export function ProductForm({
                 className={inputCls}
               />
             </Field>
-            <Field label="Одоогийн нөөц *" required>
-              <input
-                type="number"
-                min={0}
-                value={v.stock}
-                onChange={(e) => update("stock", Math.max(0, Number(e.target.value) || 0))}
-                className={inputCls}
-              />
-            </Field>
+            {mode === "create" ? (
+              <Field label="Эхний үлдэгдэл">
+                <input
+                  type="number"
+                  min={0}
+                  value={v.initial_stock ?? 0}
+                  onChange={(e) =>
+                    update("initial_stock", Math.max(0, Math.trunc(Number(e.target.value)) || 0))
+                  }
+                  className={inputCls}
+                />
+                <div className="mt-1 text-[11px] text-ink-500">
+                  Агуулахад орлого гэж бүртгэгдэнэ
+                </div>
+              </Field>
+            ) : (
+              <div>
+                <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-ink-500">
+                  Одоогийн үлдэгдэл
+                </div>
+                <div className="font-display text-xl font-extrabold text-ink-900">
+                  {currentStock} ш
+                </div>
+              </div>
+            )}
             <Field label="Доод хязгаар">
               <input
                 type="number"
@@ -340,10 +415,40 @@ export function ProductForm({
               />
             </Field>
           </div>
+          {mode === "edit" && initialId && today && (
+            <div className="flex flex-wrap items-start gap-3 rounded-xl bg-cream px-3 py-2.5">
+              <p className="min-w-[180px] flex-1 text-xs text-ink-700">
+                Үлдэгдлийг энд шууд засахгүй — орлого, зарлага, тооллогын
+                засварыг <strong>хөдөлгөөн</strong>өөр бүртгэнэ. Ингэснээр
+                агуулахын түүх ба тайлан зөрөхгүй.
+              </p>
+              <StockMovementForm
+                productId={initialId}
+                productName={v.name_mn}
+                currentStock={currentStock}
+                today={today}
+              />
+            </div>
+          )}
         </Section>
 
         <Section title="Хэмжээ">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label="Савлагааны хэмжээ (г / мл)">
+              <input
+                type="number"
+                min={0}
+                value={v.weight_gross_g ?? ""}
+                placeholder="720"
+                onChange={(e) =>
+                  update("weight_gross_g", e.target.value ? Number(e.target.value) : null)
+                }
+                className={inputCls}
+              />
+              <div className="mt-1 text-[11px] text-ink-500">
+                Картан дээрх зургийн томыг тодорхойлно
+              </div>
+            </Field>
             <Field label="Цэвэр жин (г)">
               <input
                 type="number"
@@ -381,6 +486,21 @@ export function ProductForm({
             checked={v.is_bio} onChange={(b) => update("is_bio", b)} />
           <Toggle label="❤️ Хүрэн зүрх хөтөлбөр" desc="Ширхэг тутмаас 30₮ хандив — бүтээгдэхүүний хуудсанд мэдэгдэл гарна"
             checked={v.heart_program} onChange={(b) => update("heart_program", b)} />
+        </Section>
+
+        <Section title="Брэнд *">
+          <select
+            value={v.brand_id}
+            onChange={(e) => update("brand_id", e.target.value)}
+            className={inputCls}
+          >
+            <option value="">— Брэнд сонгох —</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
         </Section>
 
         <Section title="Ангилал *">
@@ -427,6 +547,45 @@ export function ProductForm({
               />
             </div>
           </div>
+        </Section>
+
+        <Section title="И-баримт *">
+          <Field label="Ангиллын код (GS1)">
+            <select
+              value={customCode ? "other" : v.classification_code}
+              onChange={(e) => {
+                const other = e.target.value === "other";
+                setCustomCode(other);
+                update("classification_code", other ? "" : e.target.value);
+              }}
+              className={inputCls}
+            >
+              <option value="">— Код сонгох —</option>
+              {CLASSIFICATION_CODES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label} · {c.code}
+                </option>
+              ))}
+              <option value="other">Бусад код…</option>
+            </select>
+          </Field>
+          {customCode && (
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={7}
+              value={v.classification_code}
+              onChange={(e) =>
+                update("classification_code", e.target.value.replace(/\D/g, ""))
+              }
+              placeholder="7 оронтой код"
+              className={inputCls}
+            />
+          )}
+          <p className="text-[11px] text-ink-500">
+            Бараа зарагдахад и-баримтад энэ кодоор бүртгэгдэнэ. Буруу бол
+            татварын ангилал буруу гарна.
+          </p>
         </Section>
 
         <Section title="SEO / Meta">
