@@ -237,3 +237,15 @@ export async function getNewOrderCount(): Promise<number> {
     .eq("status", "new");
   return count ?? 0;
 }
+
+/** Нэг хэрэглэгчийн бүх захиалга — төлөгдсөн, төлөгдөөгүй аль аль нь */
+export async function getCustomerOrders(userId: string): Promise<AdminOrder[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("orders")
+    .select(ORDER_SELECT)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  return (data ?? []).map(mapOrder);
+}

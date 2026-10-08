@@ -15,9 +15,15 @@ const MAIN_NAV = [
 const OTHER_NAV = [
   { href: "/admin/categories", label: "Ангилал",         icon: "🏷️" },
   { href: "/admin/promotions", label: "Урамшуулал",      icon: "🎁" },
+  { href: "/admin/feedback",   label: "Санал хүсэлт",    icon: "💬" },
   { href: "/admin/reports",    label: "Тайлан",          icon: "📈" },
   { href: "/admin/traffic",    label: "Traffic",         icon: "🌐" },
   { href: "/admin/settings",   label: "Тохиргоо",        icon: "⚙️" },
+];
+
+/** Зөвхөн role = admin-д харагдана */
+const OWNER_NAV = [
+  { href: "/admin/staff",      label: "Ажилтан",         icon: "🧑‍💼" },
 ];
 
 export function Sidebar({
@@ -49,7 +55,11 @@ export function Sidebar({
       </Link>
 
       <NavSection title="Үндсэн" items={mainNav} isActive={isActive} />
-      <NavSection title="Бусад" items={OTHER_NAV} isActive={isActive} />
+      <NavSection
+        title="Бусад"
+        items={user.role === "admin" ? [...OTHER_NAV, ...OWNER_NAV] : OTHER_NAV}
+        isActive={isActive}
+      />
 
       {/* User card at bottom */}
       <div className="mt-auto flex items-center gap-2.5 rounded-xl bg-white/5 p-3">
