@@ -88,9 +88,11 @@
    ороход хуудсыг ӨӨРӨӨ ТОМРУУЛЖ, буцааж жижигрүүлдэггүй. Үр дүнд нь хайлт
    дээр дарсны дараа хуудас хажуу тийш гулсдаг болдог.
    Layer-ийн ГАДНА бичсэн — ингэснээр `text-[13px]` мэт utility-г дарна.
+   Аль хэдийн том үсэгтэй талбар (нэвтрэх кодын нүд) `data-keep-font`-оор
+   чөлөөлөгдөнө — эс тэгвээс 24px-ийг 16px болгож жижигрүүлнэ.
    ============================================================ */
 @media (max-width: 767px) {
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([data-keep-font]),
   select,
   textarea {
     font-size: 16px;

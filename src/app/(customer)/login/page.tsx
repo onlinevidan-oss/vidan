@@ -64,7 +64,7 @@ export default async function LoginPage({
         />
       </aside>
 
-      <section className="flex items-center justify-center p-8 md:p-12">
+      <section className="flex items-center justify-center p-4 sm:p-8 md:p-12">
         <LoginForm next={next} />
       </section>
     </div>

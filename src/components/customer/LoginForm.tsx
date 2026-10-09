@@ -89,7 +89,7 @@ export function LoginForm({ next = "/" }: { next?: string }) {
   }
 
   return (
-    <div className="w-full max-w-[420px] rounded-2xl border border-ink-200 bg-white p-10 shadow-[var(--shadow-brand-md)]">
+    <div className="w-full max-w-[420px] rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-brand-md)] sm:p-10">
       {step === "phone" && (
         <PhoneStep
           phone={phone}
@@ -327,7 +327,10 @@ function OtpStep({
         дугаарт илгээсэн 6 оронтой кодыг оруулна уу.
       </p>
 
-      <div className="mb-5 flex justify-center gap-2.5">
+      {/* Зургаан нүд картын өргөнийг тэнцүү хуваана (тус бүр дээд тал нь 52px).
+          Өмнө нь тогтмол 52px × 6 = 362px байсан нь гар утасны картаас
+          (≈220px) хэтэрч, нүднүүд дэлгэцийн гадна гарч том харагддаг байв. */}
+      <div className="mb-5 flex justify-center gap-1.5 sm:gap-2.5">
         {[0, 1, 2, 3, 4, 5].map((i) => {
           const ch = padOtp(otp)[i];
           const filled = ch && ch !== " ";
@@ -340,11 +343,14 @@ function OtpStep({
               type="tel"
               inputMode="numeric"
               maxLength={1}
+              // globals.css-ийн "гар утсанд талбар 16px" дүрмээс чөлөөлнө —
+              // кодын орон том үсгээрээ үлдэнэ
+              data-keep-font
               value={filled ? ch : ""}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={handlePaste}
-              className={`font-display h-[64px] w-[52px] rounded-[12px] border-[1.5px] text-center text-2xl font-extrabold outline-none transition focus:border-brand-500 focus:-translate-y-0.5 focus:shadow-[0_0_0_4px_var(--color-brand-100)] ${
+              className={`font-display h-[52px] w-0 min-w-0 max-w-[52px] flex-1 rounded-[10px] border-[1.5px] px-0 text-center text-2xl font-extrabold outline-none transition focus:border-brand-500 focus:-translate-y-0.5 focus:shadow-[0_0_0_4px_var(--color-brand-100)] sm:h-[64px] sm:rounded-[12px] ${
                 filled
                   ? "border-lime-500 bg-lime-50"
                   : "border-ink-200 bg-white"
