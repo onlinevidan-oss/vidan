@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
 import { type OrderStatus } from "@/lib/order-status";
 import { OrderStatusTracker } from "@/components/customer/OrderStatusTracker";
+import { formatUbDateTime } from "@/lib/datetime";
 
 export const metadata = { title: "Захиалгын дэлгэрэнгүй", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ export default async function CustomerOrderDetail({
         Захиалга <span className="text-brand-700">{order.order_number}</span>
       </h1>
       <div className="mb-6 text-sm text-ink-500">
-        {new Date(order.created_at).toLocaleString("mn-MN")}
+        {formatUbDateTime(order.created_at)}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
 import { CUSTOMER_STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
+import { formatUbDateTime } from "@/lib/datetime";
 
 export const metadata = { title: "Миний захиалга", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -65,7 +66,7 @@ export default async function MyOrdersPage() {
                     {o.order_number}
                   </div>
                   <div className="mt-0.5 text-xs text-ink-500">
-                    {new Date(o.created_at).toLocaleString("mn-MN", {
+                    {formatUbDateTime(o.created_at, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
