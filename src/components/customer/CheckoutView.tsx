@@ -113,7 +113,7 @@ export function CheckoutView({
   // "Сагс хоосон" гэж анивчихын оронд ачааллын дэлгэц харуулна.
   if (redirecting) {
     return (
-      <div className="my-16 grid place-items-center">
+      <div className="my-16 grid grid-cols-1 place-items-center">
         <div className="rounded-2xl border-[1.5px] border-ink-200 bg-white p-12 text-center">
           <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-[3px] border-ink-200 border-t-brand-600" />
           <h2 className="font-display mb-1 text-lg font-extrabold text-ink-900">
@@ -129,7 +129,7 @@ export function CheckoutView({
 
   if (items.length === 0) {
     return (
-      <div className="my-12 grid place-items-center">
+      <div className="my-12 grid grid-cols-1 place-items-center">
         <div className="rounded-2xl border-[1.5px] border-dashed border-ink-200 bg-white p-10 text-center">
           <div className="mb-3 text-5xl">🛒</div>
           <h2 className="font-display mb-2 text-xl font-extrabold">Сагс хоосон байна</h2>
@@ -268,14 +268,14 @@ export function CheckoutView({
         Захиалга өгөх
       </h1>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Left */}
         <div className="space-y-5">
           {/* Customer info */}
           <Section title="1. Хэрэглэгч">
             <Info label="Нэр" value={profile?.full_name || "—"} />
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <PhoneField
                 label="Холбоо барих утас"
                 required
@@ -402,7 +402,7 @@ export function CheckoutView({
                   </div>
 
                   {/* Дүүрэг + Хороо — сонголт */}
-                  <div className="grid gap-2.5 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
                     <div>
                       <div className="mb-1.5 text-[13px] font-bold text-ink-700">
                         Дүүрэг

@@ -45,7 +45,7 @@ export default async function OrderSuccessPage({
   const ebarimtQrImage = ebarimt ? await qrDataUrl(ebarimt.qrData) : null;
 
   return (
-    <div className="my-10 grid place-items-center">
+    <div className="my-10 grid grid-cols-1 place-items-center">
       <PurchaseEvent
         transactionId={order.order_number}
         value={Number(order.total)}
@@ -64,7 +64,7 @@ export default async function OrderSuccessPage({
           quantity: item.quantity,
         }))}
       />
-      <div className="w-full max-w-[640px] rounded-2xl border border-ink-200 bg-white p-10 shadow-[var(--shadow-brand-md)]">
+      <div className="w-full max-w-[640px] rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-brand-md)] sm:p-10">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full border-[3px] border-lime-500 bg-lime-100 text-5xl text-lime-700">
             ✓

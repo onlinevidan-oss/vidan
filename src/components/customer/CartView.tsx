@@ -37,7 +37,7 @@ export function CartView({
 
   if (items.length === 0) {
     return (
-      <div className="my-12 grid place-items-center">
+      <div className="my-12 grid grid-cols-1 place-items-center">
         <div className="max-w-[400px] rounded-2xl border-[1.5px] border-dashed border-ink-200 bg-white p-12 text-center">
           <div className="mb-4 text-6xl">🛒</div>
           <h2 className="font-display mb-3 text-xl font-extrabold tracking-tight text-ink-900">
@@ -83,7 +83,9 @@ export function CartView({
         </button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {/* grid-cols-1 — /products-ийнхтэй ижил шалтгаан: эс тэгвээс нарийн
+          утсан дээр мөр шахагдахгүй, хуудас хажуу тийш гулсана */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
         {/* Items */}
         <div className="space-y-3">
           {items.map((item) => {
@@ -91,12 +93,12 @@ export function CartView({
             return (
               <div
                 key={item.productId}
-                className="flex gap-4 rounded-2xl border border-ink-200 bg-white p-4"
+                className="flex gap-3 rounded-2xl border border-ink-200 bg-white p-3 sm:gap-4 sm:p-4"
               >
                 {item.imageUrl ? (
                   <Link
                     href={item.slug ? `/products/${item.slug}` : "/products"}
-                    className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-cream-100"
+                    className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-cream-100 sm:h-24 sm:w-24"
                   >
                     <Image
                       src={item.imageUrl}
@@ -109,22 +111,27 @@ export function CartView({
                 ) : (
                   <Link
                     href={item.slug ? `/products/${item.slug}` : "/products"}
-                    className={`grid h-24 w-24 shrink-0 place-items-center rounded-xl text-4xl ${meta.bg}`}
+                    className={`grid h-20 w-20 shrink-0 place-items-center rounded-xl text-4xl sm:h-24 sm:w-24 ${meta.bg}`}
                   >
                     {meta.emoji}
                   </Link>
                 )}
-                <div className="flex flex-1 flex-col">
+                <div className="flex min-w-0 flex-1 flex-col">
                   <Link
                     href={item.slug ? `/products/${item.slug}` : "/products"}
                     className="font-semibold text-ink-900 hover:text-brand-700"
                   >
                     {item.name}
                   </Link>
-                  <div className="mt-0.5 font-display text-[15px] font-bold text-ink-900">
+                  <div className="mt-0.5 flex items-baseline justify-between gap-2 font-display text-[15px] font-bold text-ink-900">
                     {formatMnt(item.price)}
+                    {/* Нарийн дэлгэцэд мөрийн дүн баруун талын тусдаа баганад
+                        багтахгүй тул энд харуулна */}
+                    <span className="font-extrabold sm:hidden">
+                      {formatMnt(item.price * item.quantity)}
+                    </span>
                   </div>
-                  <div className="mt-auto flex items-center justify-between">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-2">
                     <div className="inline-flex items-center overflow-hidden rounded-lg border-[1.5px] border-ink-200">
                       <button
                         onClick={() => setQuantity(item.productId, item.quantity - 1)}
@@ -163,7 +170,7 @@ export function CartView({
                     </button>
                   </div>
                 </div>
-                <div className="font-display self-center text-right text-base font-extrabold text-ink-900">
+                <div className="font-display hidden self-center text-right text-base font-extrabold text-ink-900 sm:block">
                   {formatMnt(item.price * item.quantity)}
                 </div>
               </div>

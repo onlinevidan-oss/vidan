@@ -83,7 +83,7 @@ export function FeedbackForm() {
       </div>
 
       {/* Name + phone (optional) */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-[13px] font-bold text-ink-700">
             Нэр <span className="font-normal text-ink-500">(заавал биш)</span>

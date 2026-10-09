@@ -26,7 +26,7 @@ export default async function LoginPage({
   const title = hero?.title || "Эх орны хөрснөөс таны гарт";
 
   return (
-    <div className="-mx-5 grid min-h-[calc(100vh-200px)] md:grid-cols-2">
+    <div className="-mx-5 grid grid-cols-1 min-h-[calc(100vh-200px)] md:grid-cols-2">
       <aside className="relative hidden overflow-hidden bg-gradient-to-br from-brand-900 via-brand-700 to-brand-500 p-12 text-white md:flex md:flex-col md:justify-between">
         <Image src="/vidan-logo.png" alt="VIDAN" width={134} height={60} />
         <div className="relative z-10">

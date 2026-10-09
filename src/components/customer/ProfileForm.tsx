@@ -154,7 +154,7 @@ export function ProfileForm({ initial }: { initial: ProfileInitial }) {
 
       <div className="my-6 h-px bg-ink-100" />
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Нэр" required value={firstName} onChange={setFirstName} />
         <Field label="Овог" value={lastName} onChange={setLastName} />
 

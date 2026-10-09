@@ -82,6 +82,21 @@
   .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
 }
 
+/* ============================================================
+   ГАР УТАС — талбарын үсэг 16px.
+   iOS Safari нь 16px-ээс жижиг үсэгтэй input/select/textarea-д фокус
+   ороход хуудсыг ӨӨРӨӨ ТОМРУУЛЖ, буцааж жижигрүүлдэггүй. Үр дүнд нь хайлт
+   дээр дарсны дараа хуудас хажуу тийш гулсдаг болдог.
+   Layer-ийн ГАДНА бичсэн — ингэснээр `text-[13px]` мэт utility-г дарна.
+   ============================================================ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Сагсны тоо шинэчлэгдэх үеийн жижиг pop анимаци */
 @keyframes pop {
   0%   { transform: scale(0.6); opacity: 0.4; }

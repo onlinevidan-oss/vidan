@@ -146,7 +146,7 @@ export default async function ProductDetailPage({
         <span className="text-ink-700">{product.name_mn}</span>
       </nav>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
         {/* Image side */}
         <div>
           {images.length > 0 ? (

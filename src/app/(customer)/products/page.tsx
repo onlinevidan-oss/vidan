@@ -102,7 +102,10 @@ export default async function ProductsPage({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+      {/* grid-cols-1: баганын тоо заагаагүй grid нь агуулгынхаа хамгийн бага
+          өргөнөөр тэлдэг тул нарийн утсан дээр (≤375px) хуудас дэлгэцээс
+          өргөн болж хажуу тийш гулсдаг байв */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
         {/* Sidebar filters — утсанд эвхээстэй */}
         <FilterPanel
           activeCount={
@@ -287,7 +290,7 @@ function SortForm({
   currentSearch?: string;
 }) {
   return (
-    <form method="get" className="flex items-center gap-2">
+    <form method="get" className="flex flex-wrap items-center gap-2">
       {/* Persist other filters as hidden inputs */}
       {currentCategory && <input type="hidden" name="category" value={currentCategory} />}
       {currentNew && <input type="hidden" name="new" value="true" />}
@@ -299,7 +302,7 @@ function SortForm({
       <select
         name="sort"
         defaultValue={currentSort}
-        className="rounded-lg border-[1.5px] border-ink-200 bg-white px-3 py-1.5 text-[13px] font-semibold outline-none transition focus:border-brand-500"
+        className="min-w-0 rounded-lg border-[1.5px] border-ink-200 bg-white px-3 py-1.5 text-[13px] font-semibold outline-none transition focus:border-brand-500"
       >
         <option value="newest">Шинээр</option>
         <option value="price-asc">Үнэ: бага → их</option>

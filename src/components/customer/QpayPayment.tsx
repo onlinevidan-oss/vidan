@@ -117,7 +117,7 @@ export function QpayPayment({
 
   if (status === "paid") {
     return (
-      <div className="my-20 grid place-items-center">
+      <div className="my-20 grid grid-cols-1 place-items-center">
         <div className="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full border-[3px] border-lime-500 bg-lime-100 text-6xl text-lime-700">
           ✓
         </div>
@@ -168,7 +168,7 @@ export function QpayPayment({
           ) : null}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
           {/* ===== Банкны апп — гар утсанд гол зам (90% нь утаснаас ордог) ===== */}
           <div className="rounded-2xl border-[1.5px] border-brand-200 bg-white p-5 lg:order-2">
             <h3 className="font-display mb-1 text-base font-extrabold text-ink-900">

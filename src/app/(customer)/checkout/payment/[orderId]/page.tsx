@@ -65,7 +65,7 @@ export default async function PaymentPage({
 
   if (invoiceError) {
     return (
-      <div className="my-12 grid place-items-center">
+      <div className="my-12 grid grid-cols-1 place-items-center">
         <div className="w-full max-w-[520px] rounded-2xl border border-brand-200 bg-brand-50 p-8 text-center">
           <div className="mb-2 text-4xl">⚠️</div>
           <h1 className="font-display mb-2 text-xl font-extrabold text-brand-700">

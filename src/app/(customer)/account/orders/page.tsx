@@ -59,9 +59,11 @@ export default async function MyOrdersPage() {
               <Link
                 key={o.id}
                 href={`/account/orders/${o.id}`}
-                className="flex items-center gap-5 rounded-2xl border border-ink-200 bg-white p-5 transition hover:border-brand-200 hover:shadow-[var(--shadow-brand-sm)]"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-ink-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-[var(--shadow-brand-sm)] sm:gap-x-5 sm:p-5"
               >
-                <div>
+                {/* flex-wrap: нарийн утсан дээр дүн, төлөв хоёр дараагийн мөрөнд
+                    шилжинэ — өмнө нь мөр шахагдахгүй хуудас хажуу тийш гулсдаг байв */}
+                <div className="min-w-0">
                   <div className="font-display text-base font-extrabold text-ink-900">
                     {o.order_number}
                   </div>
@@ -80,7 +82,7 @@ export default async function MyOrdersPage() {
                   {formatMnt(Number(o.total))}
                 </div>
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold ${
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold ${
                     STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100"
                   }`}
                 >
