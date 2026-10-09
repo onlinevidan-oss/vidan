@@ -3,7 +3,11 @@
 import { Suspense, useEffect, useSyncExternalStore } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { GOOGLE_ANALYTICS_ID, NO_TRACK_KEY } from "@/lib/analytics";
+import {
+  ANALYTICS_CONSENT_KEY,
+  GOOGLE_ANALYTICS_ID,
+  NO_TRACK_KEY,
+} from "@/lib/analytics";
 import { AnalyticsConsent } from "@/components/analytics/AnalyticsConsent";
 
 function PageViewTracker() {
@@ -96,12 +100,16 @@ export function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
+          // Хэмжилт анхдагчаар идэвхтэй; хэрэглэгч "Татгалзах" дарсан
+          // бол унтраалттай. Зар сурталчилгааны хадгалалт ҮРГЭЛЖ хаалттай —
+          // бид түүнийг ашигладаггүй.
+          var __denied = false;
+          try { __denied = localStorage.getItem('${ANALYTICS_CONSENT_KEY}') === 'denied'; } catch (e) {}
           gtag('consent', 'default', {
-            analytics_storage: 'denied',
+            analytics_storage: __denied ? 'denied' : 'granted',
             ad_storage: 'denied',
             ad_user_data: 'denied',
-            ad_personalization: 'denied',
-            wait_for_update: 500
+            ad_personalization: 'denied'
           });
         `}
       </Script>
