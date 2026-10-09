@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt } from "@/lib/utils";
+import { canMeasurePurchase } from "@/lib/analytics";
 import { checkPromoCode, placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
@@ -239,6 +240,8 @@ export function CheckoutView({
         ebarimtType,
         ebarimtConsumerNo: consumerNo,
         ebarimtCustomerTin: customerTin,
+        // Сервер талаас GA4-д худалдан авалт илгээж болох эсэх
+        analyticsConsent: canMeasurePurchase(),
       });
       if (!result.ok) {
         setError(result.error);

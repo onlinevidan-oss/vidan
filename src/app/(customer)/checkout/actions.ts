@@ -30,6 +30,12 @@ export type CheckoutPayload = {
   ebarimtType?: "B2C_RECEIPT" | "B2B_RECEIPT";
   ebarimtConsumerNo?: string; // B2C: иргэний ebarimt дугаар (заавал биш)
   ebarimtCustomerTin?: string; // B2B: байгууллагын ТТД (заавал)
+  /**
+   * Хэрэглэгч Analytics-ийг зөвшөөрсөн эсэх (браузераас).
+   * Үгүй/тодорхойгүй бол GA-гийн client_id-г ХАДГАЛАХГҮЙ — улмаар
+   * сервер талаас purchase эвент илгээгдэхгүй.
+   */
+  analyticsConsent?: boolean;
 };
 
 export type CheckoutResult =
@@ -137,7 +143,15 @@ export async function placeOrder(
 
   // GA-гийн client_id — банкны апп-аас буцаж ирээгүй хүний худалдан
   // авалтыг сервер талаас GA4-д бүртгэхэд хэрэгтэй (ga4-mp.ts).
-  const gaClientId = parseGaClientId((await cookies()).get("_ga")?.value);
+  //
+  // Зөвхөн хэрэглэгч Analytics-ийг зөвшөөрсөн үед. `_ga` күүки байгаа
+  // эсэх нь зөвшөөрлийн баталгаа БИШ: эхлээд зөвшөөрөөд дараа нь
+  // татгалзсан хүний күүки үлддэг. Нууцлалын хуудсанд "татгалзах
+  // боломжтой" гэж амласан тул түүнийгээ сервер талд ч мөрдөнө.
+  const gaClientId =
+    payload.analyticsConsent === true
+      ? parseGaClientId((await cookies()).get("_ga")?.value)
+      : null;
 
   try {
     const admin = createAdminClient();

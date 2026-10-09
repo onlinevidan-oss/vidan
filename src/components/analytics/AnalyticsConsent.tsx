@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-
-const STORAGE_KEY = "vidan-analytics-consent";
+import { ANALYTICS_CONSENT_KEY as STORAGE_KEY } from "@/lib/analytics";
 
 function updateConsent(granted: boolean) {
   window.gtag?.("consent", "update", {
