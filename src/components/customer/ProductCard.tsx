@@ -168,9 +168,8 @@ export function ProductCard({ product }: { product: ProductRow }) {
                хуруугаар дарсан мэдрэмжийг өгнө. */
             <button
               onClick={handleAdd}
-              className="flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[10px] bg-brand-600 text-[13px] font-extrabold text-white transition active:scale-[0.97] hover:bg-brand-700"
+              className="flex h-[38px] w-full items-center justify-center rounded-[10px] bg-brand-600 text-[13px] font-extrabold text-white transition active:scale-[0.97] hover:bg-brand-700"
             >
-              <span aria-hidden>🛒</span>
               Сагслах
             </button>
           ) : (
