@@ -22,7 +22,7 @@ export default async function ForbiddenPage() {
   } = await supabase.auth.getUser();
 
   return (
-    <div className="grid min-h-screen place-items-center bg-cream p-6">
+    <div className="grid grid-cols-1 min-h-screen place-items-center bg-cream p-6">
       <div className="w-full max-w-[480px] rounded-2xl border border-ink-200 bg-white p-10 text-center shadow-[var(--shadow-brand-md)]">
         <div className="mb-4 text-6xl">🔒</div>
         <h1 className="font-display mb-3 text-2xl font-black tracking-tight text-ink-900">

@@ -70,7 +70,7 @@ export function StaffManager({ staff, meId }: { staff: StaffListRow[]; meId: str
           <h3 className="font-display text-sm font-extrabold uppercase tracking-wider text-ink-700">
             Ажилтан нэмэх
           </h3>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <label className="block">
               <div className="mb-1 text-[11px] font-bold uppercase tracking-wider text-ink-500">
                 Утасны дугаар

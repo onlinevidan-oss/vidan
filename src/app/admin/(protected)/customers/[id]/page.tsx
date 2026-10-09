@@ -53,7 +53,7 @@ export default async function AdminCustomerDetail({
           </Link>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_2fr]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_2fr]">
           <div className="space-y-5">
             <div className="rounded-2xl border border-ink-200 bg-white p-5">
               <h3 className="font-display mb-3 text-sm font-extrabold uppercase tracking-wider text-ink-700">

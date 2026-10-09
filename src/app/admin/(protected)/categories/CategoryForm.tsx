@@ -14,12 +14,12 @@ export function CategoryForm({
 }) {
   return (
     <form action={action} className="space-y-5">
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Монгол нэр *" name="name_mn" defaultValue={category?.name_mn ?? ""} required placeholder="жж. Цай" />
         <Field label="Англи нэр" name="name_en" defaultValue={category?.name_en ?? ""} placeholder="e.g. Tea" />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field
           label="Slug *"
           name="slug"
@@ -38,7 +38,7 @@ export function CategoryForm({
         />
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <Field label="Emoji" name="emoji" defaultValue={category?.emoji ?? ""} placeholder="🍵" />
         <Field
           label="Өнгөний gradient"

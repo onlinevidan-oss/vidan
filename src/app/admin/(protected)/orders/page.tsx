@@ -61,14 +61,17 @@ export default async function AdminOrders({
           </div>
         </div>
 
-        {/* Хайлт ба огноо — GET форм тул шүүлтүүр URL-д хадгалагдана */}
+        {/* Хайлт ба огноо — GET форм тул шүүлтүүр URL-д хадгалагдана.
+            Гар утсанд хоёр мөр: [хайлт + товч] / [эхлэх + дуусах] — захиалгын
+            жагсаалт дэлгэцийн дээд хэсэгт багтаж харагдахын тулд. Өргөн
+            дэлгэцэд товч нь `sm:order-last`-аар огнооны ард гарна. */}
         <form
           action="/admin/orders"
           className="mb-3 flex flex-wrap items-end gap-2 rounded-2xl border border-ink-200 bg-white p-3"
         >
           {isUnpaid && <input type="hidden" name="view" value="unpaid" />}
           {filter.status && <input type="hidden" name="status" value={filter.status} />}
-          <label className="min-w-[200px] flex-1">
+          <label className="min-w-[150px] flex-1">
             <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-500">
               Хайх
             </span>
@@ -76,32 +79,32 @@ export default async function AdminOrders({
               type="search"
               name="q"
               defaultValue={filter.search ?? ""}
-              placeholder="Захиалгын дугаар, утас, нэр"
+              placeholder="Дугаар, утас, нэр"
               className={INPUT}
             />
           </label>
-          <label>
+          <button
+            type="submit"
+            className="rounded-[10px] bg-ink-900 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-ink-700 sm:order-last"
+          >
+            Хайх
+          </button>
+          <label className="min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto">
             <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-500">
               Эхлэх
             </span>
             <input type="date" name="from" defaultValue={filter.from ?? ""} className={INPUT} />
           </label>
-          <label>
+          <label className="min-w-0 flex-1 basis-[calc(50%-0.25rem)] sm:flex-none sm:basis-auto">
             <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-ink-500">
               Дуусах
             </span>
             <input type="date" name="to" defaultValue={filter.to ?? ""} className={INPUT} />
           </label>
-          <button
-            type="submit"
-            className="rounded-[10px] bg-ink-900 px-4 py-2 text-[13px] font-bold text-white transition hover:bg-ink-700"
-          >
-            Хайх
-          </button>
           {filtered && (
             <Link
               href={orderListHref(filter, { search: undefined, from: undefined, to: undefined })}
-              className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-[13px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+              className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-[13px] font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700 sm:order-last"
             >
               Цэвэрлэх
             </Link>
@@ -187,7 +190,7 @@ export default async function AdminOrders({
 }
 
 const INPUT =
-  "w-full rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-brand-500";
+  "w-full min-w-0 rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-[13px] outline-none transition focus:border-brand-500";
 
 function Chip({
   href,

@@ -222,7 +222,7 @@ function SlideEditor({
       </div>
 
       {/* Текст талбарууд (заавал биш) */}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input
           value={slide.badge}
           onChange={(e) => onChange("badge", e.target.value)}

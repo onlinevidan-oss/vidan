@@ -220,7 +220,7 @@ export default async function AdminTraffic({
         </div>
 
         {/* ---------- Эх сурвалж + төхөөрөмж ---------- */}
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">
             <div className="border-b border-ink-200 px-5 py-4">
               <h3 className="font-display text-[15px] font-extrabold">
@@ -231,78 +231,80 @@ export default async function AdminTraffic({
                 байгаа ч энэ хугацаанд хандалт ирээгүй суваг.
               </p>
             </div>
-            <table className="w-full">
-              <thead className="bg-ink-100/60">
-                <tr>
-                  <th className={TH}>Суваг</th>
-                  <th className={`${TH} text-right`}>Сешн</th>
-                  <th className={`${TH} text-right`}>Хүн</th>
-                  <th className={`${TH} text-right`}>Хувь</th>
-                </tr>
-              </thead>
-              <tbody>
-                {channels.map((c) => {
-                  const pct = totalChannelSessions
-                    ? (c.sessions / totalChannelSessions) * 100
-                    : 0;
-                  // Тэгтэй мөрийг бүдгээр — хүснэгт хугацаа болгонд
-                  // ижил бүтэцтэй байж, ямар суваг хэмжигдэж байгаа нь
-                  // харагдана. Мөр байхгүй бол "хэмжигдэж байгаа ч
-                  // ирээгүй" ба "огт хэмжигддэггүй" хоёр ялгарахгүй.
-                  const empty = c.sessions === 0;
-                  return (
-                    <tr
-                      key={c.key}
-                      className={`border-t border-ink-100 ${empty ? "opacity-45" : ""}`}
-                    >
-                      <td
-                        className={`${TD} font-semibold ${
-                          empty ? "text-ink-500" : "text-ink-900"
-                        }`}
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full">
+                <thead className="bg-ink-100/60">
+                  <tr>
+                    <th className={TH}>Суваг</th>
+                    <th className={`${TH} text-right`}>Сешн</th>
+                    <th className={`${TH} text-right`}>Хүн</th>
+                    <th className={`${TH} text-right`}>Хувь</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {channels.map((c) => {
+                    const pct = totalChannelSessions
+                      ? (c.sessions / totalChannelSessions) * 100
+                      : 0;
+                    // Тэгтэй мөрийг бүдгээр — хүснэгт хугацаа болгонд
+                    // ижил бүтэцтэй байж, ямар суваг хэмжигдэж байгаа нь
+                    // харагдана. Мөр байхгүй бол "хэмжигдэж байгаа ч
+                    // ирээгүй" ба "огт хэмжигддэггүй" хоёр ялгарахгүй.
+                    const empty = c.sessions === 0;
+                    return (
+                      <tr
+                        key={c.key}
+                        className={`border-t border-ink-100 ${empty ? "opacity-45" : ""}`}
                       >
-                        <span className="flex items-center gap-2.5">
-                          <span
-                            className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                              CHANNEL_COLOR[c.key] ?? "bg-ink-300"
-                            }`}
-                          />
-                          {c.label}
-                        </span>
-                      </td>
-                      <td
-                        className={`${TD_NUM} font-display ${
-                          empty ? "" : "font-extrabold"
-                        }`}
-                      >
-                        {empty ? "—" : num(c.sessions)}
-                      </td>
-                      <td className={`${TD_NUM} text-ink-500`}>
-                        {empty ? "—" : num(c.users)}
-                      </td>
-                      <td className={TD_NUM}>
-                        <span className="flex items-center justify-end gap-2">
-                          {/* Нүдэн дээр жиших зурвас — тоо уншихгүйгээр
-                              аль суваг давамгайлж байгаа нь харагдана */}
-                          <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-ink-100 sm:block">
-                            {!empty && (
-                              <span
-                                className={`block h-full rounded-full ${
-                                  CHANNEL_COLOR[c.key] ?? "bg-ink-300"
-                                }`}
-                                style={{ width: `${Math.max(pct, 2)}%` }}
-                              />
-                            )}
+                        <td
+                          className={`${TD} font-semibold ${
+                            empty ? "text-ink-500" : "text-ink-900"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2.5">
+                            <span
+                              className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                                CHANNEL_COLOR[c.key] ?? "bg-ink-300"
+                              }`}
+                            />
+                            {c.label}
                           </span>
-                          <span className="w-9 text-right font-semibold">
-                            {empty ? "" : `${Math.round(pct)}%`}
+                        </td>
+                        <td
+                          className={`${TD_NUM} font-display ${
+                            empty ? "" : "font-extrabold"
+                          }`}
+                        >
+                          {empty ? "—" : num(c.sessions)}
+                        </td>
+                        <td className={`${TD_NUM} text-ink-500`}>
+                          {empty ? "—" : num(c.users)}
+                        </td>
+                        <td className={TD_NUM}>
+                          <span className="flex items-center justify-end gap-2">
+                            {/* Нүдэн дээр жиших зурвас — тоо уншихгүйгээр
+                                аль суваг давамгайлж байгаа нь харагдана */}
+                            <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-ink-100 sm:block">
+                              {!empty && (
+                                <span
+                                  className={`block h-full rounded-full ${
+                                    CHANNEL_COLOR[c.key] ?? "bg-ink-300"
+                                  }`}
+                                  style={{ width: `${Math.max(pct, 2)}%` }}
+                                />
+                              )}
+                            </span>
+                            <span className="w-9 text-right font-semibold">
+                              {empty ? "" : `${Math.round(pct)}%`}
+                            </span>
                           </span>
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">
@@ -314,30 +316,32 @@ export default async function AdminTraffic({
                 Ямар төхөөрөмжөөс үздэг вэ
               </p>
             </div>
-            <table className="w-full">
-              <thead className="bg-ink-100/60">
-                <tr>
-                  <th className={TH}>Төхөөрөмж</th>
-                  <th className={`${TH} text-right`}>Сешн</th>
-                  <th className={`${TH} text-right`}>Хувь</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devices.map((d) => (
-                  <tr key={d.label} className="border-t border-ink-100">
-                    <td className={`${TD} font-semibold text-ink-900`}>
-                      {DEVICE_LABEL[d.label] ?? d.label}
-                    </td>
-                    <td className={`${TD_NUM} font-display font-extrabold`}>
-                      {num(d.sessions)}
-                    </td>
-                    <td className={TD_NUM}>
-                      {Math.round((d.sessions / totalDeviceSessions) * 100)}%
-                    </td>
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full">
+                <thead className="bg-ink-100/60">
+                  <tr>
+                    <th className={TH}>Төхөөрөмж</th>
+                    <th className={`${TH} text-right`}>Сешн</th>
+                    <th className={`${TH} text-right`}>Хувь</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {devices.map((d) => (
+                    <tr key={d.label} className="border-t border-ink-100">
+                      <td className={`${TD} font-semibold text-ink-900`}>
+                        {DEVICE_LABEL[d.label] ?? d.label}
+                      </td>
+                      <td className={`${TD_NUM} font-display font-extrabold`}>
+                        {num(d.sessions)}
+                      </td>
+                      <td className={TD_NUM}>
+                        {Math.round((d.sessions / totalDeviceSessions) * 100)}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {countries.length > 0 && (
               <>
                 <div className="border-t border-ink-200 px-5 py-3">
@@ -345,18 +349,20 @@ export default async function AdminTraffic({
                     Улс
                   </h4>
                 </div>
-                <table className="w-full">
-                  <tbody>
-                    {countries.slice(0, 5).map((c) => (
-                      <tr key={c.label} className="border-t border-ink-100">
-                        <td className={TD}>{c.label}</td>
-                        <td className={`${TD_NUM} font-display font-extrabold`}>
-                          {num(c.sessions)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto print:overflow-visible">
+                  <table className="w-full">
+                    <tbody>
+                      {countries.slice(0, 5).map((c) => (
+                        <tr key={c.label} className="border-t border-ink-100">
+                          <td className={TD}>{c.label}</td>
+                          <td className={`${TD_NUM} font-display font-extrabold`}>
+                            {num(c.sessions)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
           </div>

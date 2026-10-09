@@ -67,7 +67,10 @@ export function Sidebar({
         />
       )}
     <aside
-      className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col gap-4 overflow-y-auto bg-ink-900 p-3.5 text-white/85 transition-transform duration-200 md:sticky md:top-0 md:z-auto md:h-screen md:w-auto md:translate-x-0 print:hidden ${open ? "translate-x-0" : "-translate-x-full"}`}
+      // Жижиг дэлгэцэд хаалттай үедээ `hidden` — transform-д найдахгүй:
+      // хуучин гар утасны хөтөч `translate`-ийг танихгүй бол цэс дэлгэцийн
+      // зүүн талыг үргэлж хааж, агуулга харагдахгүй болно.
+      className={`fixed bottom-0 left-0 top-0 z-40 w-[260px] flex-col gap-4 overflow-y-auto bg-ink-900 p-3.5 text-white/85 md:sticky md:z-auto md:flex md:h-screen md:w-auto print:hidden ${open ? "flex" : "hidden"}`}
     >
       {/* Logo */}
       <Link

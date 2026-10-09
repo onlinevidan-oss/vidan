@@ -103,97 +103,99 @@ export default async function AdminReports({
             </p>
           </div>
           <div className="p-5">
-            <table className="w-full">
-              <tbody>
-                <tr className="border-b border-ink-100">
-                  <td className={TD}>Барааны борлуулалт</td>
-                  <td className={`${TD} text-right text-[12px] text-ink-500`}>
-                    {qty(totalSoldUnits)} ширхэг
-                  </td>
-                  <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                    {formatMnt(finance.goods)}
-                  </td>
-                </tr>
-                <tr className="border-b border-ink-100">
-                  <td className={TD}>Промо хөнгөлөлт</td>
-                  <td className={`${TD} text-right text-[12px] text-ink-500`} />
-                  <td className={`${TD_NUM} font-display font-extrabold text-brand-600`}>
-                    {finance.discount > 0 ? `− ${formatMnt(finance.discount)}` : formatMnt(0)}
-                  </td>
-                </tr>
-                <tr className="border-b-2 border-ink-200 bg-ink-100/50">
-                  <td className={`${TD} font-bold text-ink-900`}>
-                    Барааны цэвэр орлого
-                  </td>
-                  <td className={TD} />
-                  <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                    {formatMnt(finance.netGoods)}
-                  </td>
-                </tr>
-                <tr className="border-b border-ink-100">
-                  <td className={TD}>Хүргэлтийн орлого</td>
-                  <td className={`${TD} text-right text-[12px] text-ink-500`}>
-                    {finance.deliveries} удаа хүргэлт
-                  </td>
-                  <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                    {formatMnt(finance.shipping)}
-                  </td>
-                </tr>
-                <tr className="border-b border-ink-100">
-                  <td className={TD}>
-                    Хүргэлтийн НӨАТ
-                    <span className="ml-1.5 text-[11px] text-ink-500">10%</span>
-                  </td>
-                  <td className={TD} />
-                  <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                    {formatMnt(finance.shippingVat)}
-                  </td>
-                </tr>
-                {/* Хуучин дүрмээр барааны дүн дээр НЭМЖ авсан НӨАТ.
-                    Нийлбэрт нуулгүй тусад нь харуулна — татварын тайланд
-                    хоёр дүрмийг нэг мөрөнд нийлүүлж өгч болохгүй. */}
-                {finance.legacyGoodsVat > 0 && (
-                  <tr className="border-b border-ink-100 bg-warn/5">
-                    <td className={TD}>
-                      Барааны дүн дээр нэмэгдсэн НӨАТ
-                      <span className="ml-1.5 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold text-ink-900">
-                        хуучин дүрэм
-                      </span>
-                    </td>
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full">
+                <tbody>
+                  <tr className="border-b border-ink-100">
+                    <td className={TD}>Барааны борлуулалт</td>
                     <td className={`${TD} text-right text-[12px] text-ink-500`}>
-                      {finance.legacyOrders} захиалга
+                      {qty(totalSoldUnits)} ширхэг
                     </td>
                     <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                      {formatMnt(finance.legacyGoodsVat)}
+                      {formatMnt(finance.goods)}
                     </td>
                   </tr>
-                )}
-                <tr className="bg-brand-50">
-                  <td className={`${TD} font-display text-[15px] font-extrabold text-ink-900`}>
-                    НИЙТ ОРЛОГО
-                  </td>
-                  <td className={`${TD} text-right text-[12px] text-ink-500`}>
-                    {finance.orders} захиалга
-                  </td>
-                  <td className={`${TD_NUM} font-display text-[17px] font-black text-brand-700`}>
-                    {formatMnt(finance.total)}
-                  </td>
-                </tr>
-                {internal.orders > 0 && (
-                  <tr>
-                    <td className={`${TD} pl-8 text-ink-500`}>
-                      үүнээс ажилтны захиалга
+                  <tr className="border-b border-ink-100">
+                    <td className={TD}>Промо хөнгөлөлт</td>
+                    <td className={`${TD} text-right text-[12px] text-ink-500`} />
+                    <td className={`${TD_NUM} font-display font-extrabold text-brand-600`}>
+                      {finance.discount > 0 ? `− ${formatMnt(finance.discount)}` : formatMnt(0)}
+                    </td>
+                  </tr>
+                  <tr className="border-b-2 border-ink-200 bg-ink-100/50">
+                    <td className={`${TD} font-bold text-ink-900`}>
+                      Барааны цэвэр орлого
+                    </td>
+                    <td className={TD} />
+                    <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                      {formatMnt(finance.netGoods)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-ink-100">
+                    <td className={TD}>Хүргэлтийн орлого</td>
+                    <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                      {finance.deliveries} удаа хүргэлт
+                    </td>
+                    <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                      {formatMnt(finance.shipping)}
+                    </td>
+                  </tr>
+                  <tr className="border-b border-ink-100">
+                    <td className={TD}>
+                      Хүргэлтийн НӨАТ
+                      <span className="ml-1.5 text-[11px] text-ink-500">10%</span>
+                    </td>
+                    <td className={TD} />
+                    <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                      {formatMnt(finance.shippingVat)}
+                    </td>
+                  </tr>
+                  {/* Хуучин дүрмээр барааны дүн дээр НЭМЖ авсан НӨАТ.
+                      Нийлбэрт нуулгүй тусад нь харуулна — татварын тайланд
+                      хоёр дүрмийг нэг мөрөнд нийлүүлж өгч болохгүй. */}
+                  {finance.legacyGoodsVat > 0 && (
+                    <tr className="border-b border-ink-100 bg-warn/5">
+                      <td className={TD}>
+                        Барааны дүн дээр нэмэгдсэн НӨАТ
+                        <span className="ml-1.5 rounded bg-warn/20 px-1.5 py-0.5 text-[10px] font-bold text-ink-900">
+                          хуучин дүрэм
+                        </span>
+                      </td>
+                      <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                        {finance.legacyOrders} захиалга
+                      </td>
+                      <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                        {formatMnt(finance.legacyGoodsVat)}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="bg-brand-50">
+                    <td className={`${TD} font-display text-[15px] font-extrabold text-ink-900`}>
+                      НИЙТ ОРЛОГО
                     </td>
                     <td className={`${TD} text-right text-[12px] text-ink-500`}>
-                      {internal.orders} захиалга
+                      {finance.orders} захиалга
                     </td>
-                    <td className={`${TD_NUM} text-ink-500`}>
-                      {formatMnt(internal.total)}
+                    <td className={`${TD_NUM} font-display text-[17px] font-black text-brand-700`}>
+                      {formatMnt(finance.total)}
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                  {internal.orders > 0 && (
+                    <tr>
+                      <td className={`${TD} pl-8 text-ink-500`}>
+                        үүнээс ажилтны захиалга
+                      </td>
+                      <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                        {internal.orders} захиалга
+                      </td>
+                      <td className={`${TD_NUM} text-ink-500`}>
+                        {formatMnt(internal.total)}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -206,7 +208,7 @@ export default async function AdminReports({
         </div>
 
         {/* ---------- Динамик + ангилал ---------- */}
-        <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
           <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">
             <div className="border-b border-ink-200 px-5 py-4">
               <h3 className="font-display text-[15px] font-extrabold">Орлогын динамик</h3>
@@ -450,30 +452,32 @@ export default async function AdminReports({
           {data.byPayment.length === 0 ? (
             <div className="py-8 text-center text-sm text-ink-500">Өгөгдөл алга</div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-ink-100/60">
-                <tr>
-                  <th className={TH}>Арга</th>
-                  <th className={`${TH} text-right`}>Захиалга</th>
-                  <th className={`${TH} text-right`}>Эзлэх хувь</th>
-                  <th className={`${TH} text-right`}>Дүн</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.byPayment.map((p) => (
-                  <tr key={p.method} className="border-t border-ink-100">
-                    <td className={`${TD} font-semibold text-ink-900`}>
-                      {PAYMENT_LABEL[p.method] ?? p.method}
-                    </td>
-                    <td className={`${TD_NUM} font-display font-extrabold`}>{p.count}</td>
-                    <td className={TD_NUM}>{Math.round(p.share * 100)}%</td>
-                    <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                      {formatMnt(p.revenue)}
-                    </td>
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full">
+                <thead className="bg-ink-100/60">
+                  <tr>
+                    <th className={TH}>Арга</th>
+                    <th className={`${TH} text-right`}>Захиалга</th>
+                    <th className={`${TH} text-right`}>Эзлэх хувь</th>
+                    <th className={`${TH} text-right`}>Дүн</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.byPayment.map((p) => (
+                    <tr key={p.method} className="border-t border-ink-100">
+                      <td className={`${TD} font-semibold text-ink-900`}>
+                        {PAYMENT_LABEL[p.method] ?? p.method}
+                      </td>
+                      <td className={`${TD_NUM} font-display font-extrabold`}>{p.count}</td>
+                      <td className={TD_NUM}>{Math.round(p.share * 100)}%</td>
+                      <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
+                        {formatMnt(p.revenue)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 

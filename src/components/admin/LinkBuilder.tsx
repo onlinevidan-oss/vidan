@@ -129,7 +129,7 @@ export function LinkBuilder({ siteUrl }: { siteUrl: string }) {
       </div>
 
       <div className="p-5">
-        <div className="grid gap-5 md:grid-cols-[1fr_200px]">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_200px]">
           <div className="space-y-4">
           {/* Суваг */}
           <div>

@@ -76,7 +76,7 @@ export default async function AdminOrderDetail({
           </Link>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
           {/* Left */}
           <div className="space-y-5">
             {/* Items */}
@@ -88,14 +88,14 @@ export default async function AdminOrderDetail({
               </div>
               <div className="divide-y divide-ink-100">
                 {order.items.map((i) => (
-                  <div key={i.id} className="flex items-center justify-between px-5 py-3.5">
-                    <div>
+                  <div key={i.id} className="flex items-center justify-between gap-3 px-5 py-3.5">
+                    <div className="min-w-0">
                       <div className="font-semibold text-ink-900">{i.product_name}</div>
                       <div className="text-xs text-ink-500">
                         SKU: {i.product_sku} · {formatMnt(Number(i.unit_price))} × {i.quantity}
                       </div>
                     </div>
-                    <div className="font-display font-extrabold text-ink-900">
+                    <div className="font-display shrink-0 font-extrabold text-ink-900">
                       {formatMnt(Number(i.subtotal))}
                     </div>
                   </div>

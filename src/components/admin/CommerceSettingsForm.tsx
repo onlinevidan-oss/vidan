@@ -48,7 +48,7 @@ export function CommerceSettingsForm({
         <div className="mb-3 text-sm font-bold text-ink-900">
           Хүргэлтийн төлбөр (ширхгээр)
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field
             label="Босго (ширхэг)"
             hint="Хэдэн ширхэг хүртэл суурь төлбөр"
@@ -73,7 +73,7 @@ export function CommerceSettingsForm({
           <div className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-500">
             Дээд шат — {form.shipping_tier2_max} ширхэгээс дээш
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field
               label="2-р шатны дээд (ширхэг)"
               hint="Үүнээс дээш бол шатлана"

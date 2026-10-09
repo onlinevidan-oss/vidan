@@ -330,7 +330,7 @@ function PromoForm({
         {title}
       </h3>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_2fr]">
         <Field label="Код" hint="Латин үсэг, тоо — хэрэглэгч захиалга дээрээ бичнэ">
           <input
             type="text"
@@ -353,7 +353,7 @@ function PromoForm({
         </Field>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Field label="Төрөл">
           <select
             value={v.type}
@@ -395,7 +395,7 @@ function PromoForm({
         )}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Field label="Эхлэх өдөр">
           <input
             type="date"
@@ -432,7 +432,7 @@ function PromoForm({
         </Field>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_2fr]">
         <Field label="Хэнд үйлчлэх">
           <select
             value={v.segment}

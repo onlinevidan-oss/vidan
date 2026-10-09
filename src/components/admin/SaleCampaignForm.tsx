@@ -127,7 +127,7 @@ export function SaleCampaignForm({
         </span>
       </label>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <label className="block">
           <div className="mb-1.5 text-xs font-bold text-ink-700">Брэнд</div>
           <select

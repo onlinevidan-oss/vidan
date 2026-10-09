@@ -14,7 +14,7 @@ export default async function AdminStaff() {
     return (
       <>
         <TopBar title="Ажилтан" />
-        <div className="grid flex-1 place-items-center p-4 sm:p-7">
+        <div className="grid grid-cols-1 flex-1 place-items-center p-4 sm:p-7">
           <div className="max-w-[420px] rounded-2xl border border-ink-200 bg-white p-10 text-center">
             <div className="mb-4 text-5xl">🔒</div>
             <h2 className="font-display mb-2 text-xl font-extrabold text-ink-900">

@@ -235,7 +235,7 @@ export function ProductForm({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr]">
       {/* LEFT */}
       <div className="space-y-5">
         <Section title="Үндсэн мэдээлэл">
@@ -248,7 +248,7 @@ export function ProductForm({
               className={inputCls}
             />
           </Field>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Field label="SKU" required>
               <input
                 type="text"
@@ -346,7 +346,7 @@ export function ProductForm({
         )}
 
         <Section title="Үнэ ба нөөц">
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Field label="Худалдааны үнэ (₮)" required>
               <input
                 type="number"
@@ -368,7 +368,7 @@ export function ProductForm({
               />
             </Field>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <Field label="Өртөг үнэ">
               <input
                 type="number"
@@ -433,7 +433,7 @@ export function ProductForm({
         </Section>
 
         <Section title="Хэмжээ">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <Field label="Савлагааны хэмжээ (г / мл)">
               <input
                 type="number"
