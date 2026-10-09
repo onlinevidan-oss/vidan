@@ -18,7 +18,7 @@ export default async function AdminOrders({
 }: PageProps<"/admin/orders">) {
   const filter = parseOrderListParams(await searchParams);
 
-  const [{ counts, total, unpaid }, list] = await Promise.all([
+  const [{ counts, total, unpaid, unpaidAll }, list] = await Promise.all([
     getOrderStatusCounts(),
     getAdminOrdersPage(filter),
   ]);
@@ -126,16 +126,17 @@ export default async function AdminOrders({
           <Chip
             href={orderListHref(filter, { view: "unpaid" })}
             active={isUnpaid}
-            label={`⏳ Төлөгдөөгүй (${unpaid})`}
+            label={`⏳ Төлөгдөөгүй (${unpaidAll})`}
             tone="warn"
           />
         </div>
 
         {isUnpaid && (
           <div className="mb-3 rounded-xl bg-[#fff7e6] px-4 py-2.5 text-xs leading-relaxed text-[#8a5a00]">
-            Захиалга үүсгээд төлбөрөө хийгээгүй хүмүүс. Төлбөр хүлээгдэж буй
-            захиалга хугацаа нь дуусахад өөрөө цуцлагдана — утсаар нь холбогдож
-            сануулбал амжина.
+            Захиалга үүсгээд төлбөрөө хийгээгүй хүмүүс —{" "}
+            <strong>{unpaid}</strong> нь одоо төлбөр хүлээж байна, үлдсэн нь
+            хугацаа дуусаад цуцлагдсан. Хүлээгдэж буй захиалгын эзэнтэй утсаар
+            холбогдож сануулбал амжина.
           </div>
         )}
 

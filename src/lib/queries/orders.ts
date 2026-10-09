@@ -202,26 +202,38 @@ export async function getAdminOrdersPage(
 /**
  * Төлөв тус бүрийн тоо (шүүлтүүрийн чипэнд).
  * `unpaid` — одоо төлбөр хүлээгдэж буй (хараахан цуцлагдаагүй) захиалга.
+ * `unpaidAll` — "Төлөгдөөгүй" харагдацад гарах бүх захиалга: хүлээгдэж буй
+ *   ба төлөөгүй цуцлагдсан. Чип дээрх тоо жагсаалтын тоотой таарах ёстой.
  */
 export async function getOrderStatusCounts(): Promise<{
   counts: Record<string, number>;
   total: number;
   unpaid: number;
+  unpaidAll: number;
 }> {
   const supabase = await createClient();
-  const [{ data }, { count: unpaid }] = await Promise.all([
+  const [{ data }, { count: unpaid }, { count: unpaidAll }] = await Promise.all([
     supabase.from("orders").select("status").eq("payment_status", "paid"),
     supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
       .eq("payment_status", "pending")
       .neq("status", "cancelled"),
+    supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .in("payment_status", ["pending", "failed"]),
   ]);
   const counts: Record<string, number> = {};
   (data ?? []).forEach((o) => {
     counts[o.status] = (counts[o.status] ?? 0) + 1;
   });
-  return { counts, total: data?.length ?? 0, unpaid: unpaid ?? 0 };
+  return {
+    counts,
+    total: data?.length ?? 0,
+    unpaid: unpaid ?? 0,
+    unpaidAll: unpaidAll ?? 0,
+  };
 }
 
 /** Нэг хэрэглэгчийн бүх захиалга — төлөгдсөн, төлөгдөөгүй аль аль нь */
