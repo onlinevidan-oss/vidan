@@ -47,4 +47,16 @@ for (const route of ["/brands/vidan", "/categories/nuhash", "/privacy"]) {
   assert(sitemap.includes(`<loc>https://www.vidan.mn${route}</loc>`), `${route} must be in sitemap`);
 }
 
+const manifest = await (await fetch(`${base}/manifest.webmanifest`)).json();
+assert.equal(manifest.start_url, "/", "manifest must start at root");
+assert(manifest.icons.length > 0, "manifest must declare icons");
+assert.match(await html("/"), /<meta name="theme-color" content="#b81e22"/);
+
+// Постер хэлбэрийн слайд (гарчиггүй) хоосон alt-тай үлдэж болохгүй
+const home = await html("/");
+const heroAlts = [...home.matchAll(/<img[^>]*class="[^"]*object-center[^"]*"[^>]*>/g)]
+  .map((match) => /alt="([^"]*)"/.exec(match[0])?.[1] ?? "");
+assert(heroAlts.length > 0, "hero slides must render");
+assert(heroAlts.every((alt) => alt.trim() !== ""), "every hero slide needs alt text");
+
 console.log("SEO smoke checks passed");
