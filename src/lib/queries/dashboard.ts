@@ -4,12 +4,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { startOfDayMongolia, startOfMonthMongolia } from "@/lib/datetime";
 import { getAdminOrders, type AdminOrder } from "@/lib/queries/orders";
+import { getStockCounts } from "@/lib/queries/stock-counts";
 
 export type DashboardStats = {
   todayRevenue: number;
   todayOrders: number;
   newCustomersThisMonth: number;
+  /** Идэвхтэй, үлдэгдэл 1–20 — бусад цонхтой ижил дүрэм (stockLevel) */
   lowStockCount: number;
+  /** Идэвхтэй атлаа дууссан (0) */
+  outStockCount: number;
   recentOrders: AdminOrder[];
 };
 
@@ -22,7 +26,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const [
     { data: todayOrders },
     { count: newCustomersCount },
-    { count: lowStockCount },
+    stock,
     recentOrders,
   ] = await Promise.all([
     supabase
@@ -35,11 +39,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .gte("created_at", monthStart.toISOString()),
-    supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true)
-      .lte("stock", 20),
+    getStockCounts(),
     // Захиалгын карт нь /admin/orders-той ижил бүтэцтэй
     getAdminOrders({ limit: 5 }),
   ]);
@@ -53,7 +53,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     todayRevenue,
     todayOrders: todayOrders?.length ?? 0,
     newCustomersThisMonth: newCustomersCount ?? 0,
-    lowStockCount: lowStockCount ?? 0,
+    lowStockCount: stock.low,
+    outStockCount: stock.out,
     recentOrders,
   };
 }

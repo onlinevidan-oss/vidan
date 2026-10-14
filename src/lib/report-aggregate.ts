@@ -5,6 +5,7 @@
  * (`queries/reports.ts`) нь зөвхөн өгөгдөл татаж, эндэх функцуудыг дуудна.
  */
 import { shippingVat } from "./pricing.ts";
+import { stockLevel } from "./stock-level.ts";
 
 
 export type ReportOrderItem = {
@@ -211,7 +212,6 @@ export type StockRow = {
   sku: string;
   stock: number;
   price: number;
-  stock_threshold: number;
   category?: { name_mn: string } | null;
 };
 
@@ -235,7 +235,7 @@ export type InventorySummary = {
   totalValue: number;
   /** Нэр төрлийн тоо */
   skuCount: number;
-  /** Босго хүрсэн (дуусах дөхсөн) нэр төрөл */
+  /** Дуусч буй (1–20, stockLevel) нэр төрөл */
   lowCount: number;
   /** Бүрэн дууссан нэр төрөл */
   outCount: number;
@@ -256,8 +256,8 @@ export function summarizeInventory(rows: StockRow[]): InventorySummary {
       stock,
       price,
       value: stock * price,
-      low: stock > 0 && stock <= Number(r.stock_threshold ?? 0),
-      out: stock <= 0,
+      low: stockLevel(stock) === "low",
+      out: stockLevel(stock) === "out",
     };
   });
 

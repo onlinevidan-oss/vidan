@@ -7,21 +7,24 @@
  */
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { getStockCounts } from "@/lib/queries/stock-counts";
 
 export type AdminAlerts = {
   /** Төлөгдсөн, хараахан бэлтгэж эхлээгүй захиалга */
   newOrders: number;
   /** Төлбөр хүлээж буй (хараахан цуцлагдаагүй) захиалга */
   unpaidOrders: number;
-  /** Идэвхтэй бараанаас үлдэгдэл 20 ба түүнээс доош */
+  /** Идэвхтэй, үлдэгдэл 1–20 (дахин захиалах) — `stockLevel`-тэй ижил */
   lowStock: number;
+  /** Идэвхтэй атлаа дууссан (0) */
+  outStock: number;
   /** Шийдээгүй санал хүсэлт */
   openFeedback: number;
 };
 
 export const getAdminAlerts = cache(async (): Promise<AdminAlerts> => {
   const supabase = await createClient();
-  const [newOrders, unpaidOrders, lowStock, openFeedback] = await Promise.all([
+  const [newOrders, unpaidOrders, stock, openFeedback] = await Promise.all([
     supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
@@ -32,12 +35,7 @@ export const getAdminAlerts = cache(async (): Promise<AdminAlerts> => {
       .select("id", { count: "exact", head: true })
       .eq("payment_status", "pending")
       .neq("status", "cancelled"),
-    // Хяналтын самбарын "Дуусч буй нөөц"-тэй ижил дүрэм
-    supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true)
-      .lte("stock", 20),
+    getStockCounts(),
     supabase
       .from("feedback")
       .select("id", { count: "exact", head: true })
@@ -46,7 +44,8 @@ export const getAdminAlerts = cache(async (): Promise<AdminAlerts> => {
   return {
     newOrders: newOrders.count ?? 0,
     unpaidOrders: unpaidOrders.count ?? 0,
-    lowStock: lowStock.count ?? 0,
+    lowStock: stock.low,
+    outStock: stock.out,
     openFeedback: openFeedback.count ?? 0,
   };
 });

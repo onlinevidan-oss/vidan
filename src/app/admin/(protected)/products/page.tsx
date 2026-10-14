@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
 import { safeSearchTerm } from "@/lib/order-list";
+import { LOW_STOCK_LIMIT, stockLevel } from "@/lib/stock-level";
+import { getStockCounts } from "@/lib/queries/stock-counts";
 
 export const metadata = { title: "Бүтээгдэхүүн | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
@@ -29,14 +31,15 @@ export default async function AdminProducts({
   let q = supabase
     .from("products")
     .select(
-      "id, sku, name_mn, slug, price, old_price, stock, stock_threshold, is_active, is_featured, is_new, is_bio, category:categories(id, name_mn, slug), images:product_images(url)",
+      "id, sku, name_mn, slug, price, old_price, stock, is_active, is_featured, is_new, is_bio, category:categories(id, name_mn, slug), images:product_images(url)",
     )
     .order("created_at", { ascending: false });
 
   if (status === "inactive") q = q.eq("is_active", false);
   if (status === "active") q = q.eq("is_active", true);
-  if (status === "low") q = q.lte("stock", 20).eq("is_active", true);
-  if (status === "out") q = q.eq("stock", 0);
+  // "Дуусч буй" ба "Дууссан" — бүх цонхтой ижил дүрэм (stock-level.ts)
+  if (status === "low") q = q.eq("is_active", true).gt("stock", 0).lte("stock", LOW_STOCK_LIMIT);
+  if (status === "out") q = q.eq("is_active", true).lte("stock", 0);
   if (categorySlug) {
     const cat = categories?.find((c) => c.slug === categorySlug);
     if (cat) q = q.eq("category_id", cat.id);
@@ -51,15 +54,11 @@ export default async function AdminProducts({
   const { count: totalCount } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true });
-  const { count: lowCount } = await supabase
+  const { count: inactiveCount } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
-    .lte("stock", 20)
-    .eq("is_active", true);
-  const { count: outCount } = await supabase
-    .from("products")
-    .select("id", { count: "exact", head: true })
-    .eq("stock", 0);
+    .eq("is_active", false);
+  const { low: lowCount, out: outCount } = await getStockCounts();
 
   return (
     <>
@@ -122,8 +121,9 @@ export default async function AdminProducts({
           <div className="flex flex-wrap gap-2">
             <Chip href="/admin/products" active={!status} label={`Бүгд (${totalCount ?? 0})`} />
             <Chip href="/admin/products?status=active" active={status === "active"} label="Идэвхтэй" />
-            <Chip href="/admin/products?status=low" active={status === "low"} label={`Дуусч буй (${lowCount ?? 0})`} />
-            <Chip href="/admin/products?status=out" active={status === "out"} label={`Дууссан (${outCount ?? 0})`} />
+            <Chip href="/admin/products?status=inactive" active={status === "inactive"} label={`Идэвхгүй (${inactiveCount ?? 0})`} />
+            <Chip href="/admin/products?status=low" active={status === "low"} label={`Дуусч буй (${lowCount})`} />
+            <Chip href="/admin/products?status=out" active={status === "out"} label={`Дууссан (${outCount})`} />
           </div>
         </form>
 
@@ -161,10 +161,11 @@ export default async function AdminProducts({
                     const meta = getProductMeta(p.sku);
                     const cat = p.category as { name_mn: string; slug: string } | null;
                     const firstImg = (p.images as { url: string }[])?.[0]?.url;
+                    const level = stockLevel(p.stock);
                     const stockBadge =
-                      p.stock === 0
+                      level === "out"
                         ? { class: "bg-brand-100 text-brand-700", label: "Дууссан" }
-                        : p.stock <= (p.stock_threshold ?? 20)
+                        : level === "low"
                           ? { class: "bg-[#fdf2dc] text-[#e89823]", label: "Дуусч буй" }
                           : { class: "bg-[#e3f5ea] text-[#2da764]", label: "Бэлэн" };
                     return (

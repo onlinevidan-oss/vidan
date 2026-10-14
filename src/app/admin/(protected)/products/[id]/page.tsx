@@ -54,7 +54,6 @@ export default async function EditProductPage({
             price: Number(product.price),
             old_price: product.old_price ? Number(product.old_price) : null,
             cost_price: product.cost_price ? Number(product.cost_price) : null,
-            stock_threshold: product.stock_threshold ?? 20,
             weight_net_g: product.weight_net_g,
             weight_gross_g: product.weight_gross_g,
             shelf_life: product.shelf_life ?? "",

@@ -87,8 +87,14 @@ export default async function AdminDashboard() {
           <KpiCard
             label="Дуусч буй нөөц"
             value={stats.lowStockCount.toString()}
-            delta={stats.lowStockCount > 0 ? "анхаар" : "бүгд бэлэн"}
-            trend={stats.lowStockCount > 0 ? "down" : "flat"}
+            delta={
+              stats.outStockCount > 0
+                ? `+ ${stats.outStockCount} нь дууссан`
+                : stats.lowStockCount > 0
+                  ? "20-оос доош"
+                  : "бүгд бэлэн"
+            }
+            trend={stats.lowStockCount + stats.outStockCount > 0 ? "down" : "flat"}
             icon="⚠️"
             tone="warn"
           />

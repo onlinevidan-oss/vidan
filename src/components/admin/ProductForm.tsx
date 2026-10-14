@@ -73,7 +73,6 @@ export function ProductForm({
     old_price: initialValues?.old_price ?? null,
     cost_price: initialValues?.cost_price ?? null,
     initial_stock: 0,
-    stock_threshold: initialValues?.stock_threshold ?? 20,
     weight_net_g: initialValues?.weight_net_g ?? null,
     weight_gross_g: initialValues?.weight_gross_g ?? null,
     shelf_life: initialValues?.shelf_life ?? "",
@@ -405,15 +404,6 @@ export function ProductForm({
                 </div>
               </div>
             )}
-            <Field label="Доод хязгаар">
-              <input
-                type="number"
-                min={0}
-                value={v.stock_threshold ?? 20}
-                onChange={(e) => update("stock_threshold", Number(e.target.value) || 0)}
-                className={inputCls}
-              />
-            </Field>
           </div>
           {mode === "edit" && initialId && today && (
             <div className="flex flex-wrap items-start gap-3 rounded-xl bg-cream px-3 py-2.5">

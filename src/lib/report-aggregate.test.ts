@@ -297,7 +297,6 @@ describe("summarizeInventory — агуулахын үлдэгдэл", () => {
       sku: "VDN-001",
       stock: 50,
       price: 12_000,
-      stock_threshold: 20,
       ...over,
     };
   }
@@ -312,18 +311,19 @@ describe("summarizeInventory — агуулахын үлдэгдэл", () => {
     assert.equal(inv.skuCount, 2);
   });
 
-  test("босго хүрсэн ба дууссаныг тоолно", () => {
+  test("дуусч буй (1–20) ба дууссаныг тоолно — босго бүх бараанд 20", () => {
     const inv = summarizeInventory([
-      stock({ sku: "A", stock: 100, stock_threshold: 20 }),
-      stock({ sku: "B", stock: 15, stock_threshold: 20 }),
+      stock({ sku: "A", stock: 100 }),
+      stock({ sku: "B", stock: 15 }),
       stock({ sku: "C", stock: 0 }),
+      stock({ sku: "D", stock: 21 }),
     ]);
     assert.equal(inv.lowCount, 1, "зөвхөн B");
     assert.equal(inv.outCount, 1, "зөвхөн C");
   });
 
   test("дууссан бараа 'дуусах дөхсөн' гэж давхар тоологдохгүй", () => {
-    const inv = summarizeInventory([stock({ stock: 0, stock_threshold: 20 })]);
+    const inv = summarizeInventory([stock({ stock: 0 })]);
     assert.equal(inv.lowCount, 0);
     assert.equal(inv.outCount, 1);
   });

@@ -92,7 +92,8 @@ export function TopBarTools({ alerts }: { alerts: AdminAlerts }) {
   const items = [
     { n: alerts.newOrders, icon: "🆕", label: "Бэлтгэх шинэ захиалга", href: "/admin/orders?status=new" },
     { n: alerts.unpaidOrders, icon: "⏳", label: "Төлбөр хүлээж буй захиалга", href: "/admin/orders?view=unpaid" },
-    { n: alerts.lowStock, icon: "⚠️", label: "Дуусах дөхсөн бараа", href: "/admin/products?status=low" },
+    { n: alerts.outStock, icon: "⛔", label: "Дууссан бараа (дэлгүүрт харагдаж байна)", href: "/admin/products?status=out" },
+    { n: alerts.lowStock, icon: "⚠️", label: "Дуусч буй бараа", href: "/admin/products?status=low" },
     { n: alerts.openFeedback, icon: "💬", label: "Шийдээгүй санал хүсэлт", href: "/admin/feedback" },
   ].filter((i) => i.n > 0);
 

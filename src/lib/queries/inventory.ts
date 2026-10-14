@@ -7,6 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { soldQuantityByProduct, type ReportOrder } from "@/lib/report-aggregate";
 import { periodToUtcRange, type ReportPeriod } from "@/lib/report-period";
+import { stockLevel } from "@/lib/stock-level";
 
 export type InventoryRow = {
   id: string;
@@ -51,7 +52,7 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
     supabase
       .from("products")
       .select(
-        "id, name_mn, sku, stock, price, stock_threshold, " +
+        "id, name_mn, sku, stock, price, " +
           "category:categories(name_mn), images:product_images(url, sort_order)",
       )
       .eq("is_active", true),
@@ -74,7 +75,6 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
     sku: string;
     stock: number;
     price: number;
-    stock_threshold: number;
     category: { name_mn: string } | null;
     images: { url: string; sort_order: number | null }[] | null;
   };
@@ -96,8 +96,8 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
         sold: soldMap.get(p.id) ?? 0,
         price,
         value: stock * price,
-        low: stock > 0 && stock <= Number(p.stock_threshold ?? 0),
-        out: stock <= 0,
+        low: stockLevel(stock) === "low",
+        out: stockLevel(stock) === "out",
       };
     },
   );

@@ -70,7 +70,7 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
       // Агуулахын үлдэгдэл нь ОДООГИЙН зураг — хугацаанаас хамаарахгүй
       supabase
         .from("products")
-        .select("name_mn, sku, stock, price, stock_threshold, category:categories(name_mn)")
+        .select("name_mn, sku, stock, price, category:categories(name_mn)")
         .eq("is_active", true),
       // Ажилтны захиалгыг хэрэглэгчийнхээс салгахад
       supabase.from("staff").select("id"),

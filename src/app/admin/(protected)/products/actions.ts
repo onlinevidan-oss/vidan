@@ -31,7 +31,6 @@ export type ProductFormPayload = {
    * Засах үед үл тооно: үлдэгдэл зөвхөн агуулахын хөдөлгөөнөөр өөрчлөгдөнө.
    */
   initial_stock?: number;
-  stock_threshold?: number;
   weight_net_g?: number | null;
   weight_gross_g?: number | null;
   shelf_life?: string;
@@ -110,7 +109,6 @@ function payloadToRow(payload: ProductFormPayload) {
     price: payload.price,
     old_price: payload.old_price ?? null,
     cost_price: payload.cost_price ?? null,
-    stock_threshold: payload.stock_threshold ?? 20,
     weight_net_g: payload.weight_net_g ?? null,
     weight_gross_g: payload.weight_gross_g ?? null,
     shelf_life: payload.shelf_life?.trim() || null,
