@@ -1,6 +1,7 @@
 /**
  * Бүтээгдэхүүний query-үүд (Server-side)
  */
+import { cache } from "react";
 import { createPublicClient } from "@/lib/supabase/public";
 
 const PRODUCT_SELECT = `
@@ -81,7 +82,7 @@ export async function getBrandsWithProductCount() {
   }));
 }
 
-export async function getBrandBySlug(slug: string) {
+export const getBrandBySlug = cache(async (slug: string) => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("brands")
@@ -91,7 +92,7 @@ export async function getBrandBySlug(slug: string) {
     .maybeSingle();
   if (error) throw error;
   return data;
-}
+});
 
 export async function getCategories() {
   const supabase = createPublicClient();
@@ -104,7 +105,7 @@ export async function getCategories() {
   return data ?? [];
 }
 
-export async function getCategoryBySlug(slug: string) {
+export const getCategoryBySlug = cache(async (slug: string) => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("categories")
@@ -114,7 +115,7 @@ export async function getCategoryBySlug(slug: string) {
     .maybeSingle();
   if (error) throw error;
   return data;
-}
+});
 
 export async function getCategoriesWithProductCount() {
   const supabase = createPublicClient();
@@ -201,7 +202,7 @@ export async function getProducts(opts: {
   return data ?? [];
 }
 
-export async function getProductBySlug(slug: string) {
+export const getProductBySlug = cache(async (slug: string) => {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("products")
@@ -216,7 +217,7 @@ export async function getProductBySlug(slug: string) {
     .maybeSingle();
   if (error) throw error;
   return data;
-}
+});
 
 export async function getRelatedProducts(
   categoryId: string,
