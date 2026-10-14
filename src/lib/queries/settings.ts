@@ -7,6 +7,9 @@ export type HeroSettings = {
   btn_label: string;
   btn_href: string;
   image_url: string;
+  /** Зургийн alt. Постер хэлбэрийн слайд текстээ зурган дотроо агуулдаг
+   *  тул дэлгэц уншигч, хайлтын системд энэ л цорын ганц мэдээлэл болно. */
+  alt: string;
 };
 
 const HERO_DEFAULTS: HeroSettings = {
@@ -16,6 +19,7 @@ const HERO_DEFAULTS: HeroSettings = {
   btn_label: "Бүтээгдэхүүн үзэх",
   btn_href: "/products",
   image_url: "/vidan-leaf.png",
+  alt: "",
 };
 
 export async function getHeroSettings(): Promise<HeroSettings> {
@@ -44,6 +48,7 @@ const SLIDE_EMPTY: HeroSlide = {
   btn_label: "",
   btn_href: "",
   image_url: "",
+  alt: "",
 };
 
 export async function getHeroSlides(): Promise<HeroSlide[]> {

@@ -38,6 +38,7 @@ export async function updateHeroSettings(
     btn_label: payload.btn_label.trim(),
     btn_href:  payload.btn_href.trim(),
     image_url: imageUrl,
+    alt:       (payload.alt || "").trim(),
   };
 
   const supabase = await createClient();
@@ -83,6 +84,7 @@ export async function updateHeroSlides(
       btn_label: (s.btn_label || "").trim(),
       btn_href: (s.btn_href || "").trim(),
       image_url: imageUrl,
+      alt: (s.alt || "").trim(),
     });
   }
 

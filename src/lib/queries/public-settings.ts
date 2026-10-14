@@ -31,6 +31,7 @@ const HERO_DEFAULT: HeroSlide = {
   btn_label: "Бүтээгдэхүүн үзэх",
   btn_href: "/products",
   image_url: "/vidan-leaf.png",
+  alt: "",
 };
 
 export async function getPublicHeroSlides(): Promise<HeroSlide[]> {

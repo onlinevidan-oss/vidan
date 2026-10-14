@@ -16,6 +16,7 @@ const EMPTY: HeroSlide = {
   btn_label: "",
   btn_href: "",
   image_url: "",
+  alt: "",
 };
 
 export function HeroSlidesForm({ initial }: { initial: HeroSlide[] }) {
@@ -209,6 +210,16 @@ function SlideEditor({
         {uploadError && (
           <p className="mt-1 text-xs text-red-600">{uploadError}</p>
         )}
+        <input
+          value={slide.alt}
+          onChange={(e) => onChange("alt", e.target.value)}
+          className={`${inputCls} mt-2`}
+          placeholder="Зургийн тайлбар — alt (жнь: Хүрэн манжин салат хямдралтай)"
+        />
+        <p className="mt-1 text-xs text-ink-500">
+          Зураг дээрээ текстээ агуулсан постер бол заавал бөглөнө — дэлгэц
+          уншигч болон хайлтын систем зөвхөн үүнийг уншина.
+        </p>
         {preview && (
           <div className="relative mt-2 aspect-[16/8] w-full max-w-sm overflow-hidden rounded-lg border border-ink-200 bg-ink-900">
             <Image

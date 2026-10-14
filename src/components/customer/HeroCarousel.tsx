@@ -101,6 +101,18 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
   );
 }
 
+/**
+ * Слайдын alt. Постер хэлбэрийн слайд (текстээ зурган дотроо агуулсан)
+ * хоосон alt-тай үлддэг байсан — дэлгэц уншигчид ч, хайлтын системд ч
+ * юу ч хүрэхгүй. Админы бичсэн alt тэргүүн ээлжинд, байхгүй бол
+ * слайдын текстүүдээс, эцэст нь ерөнхий тайлбар.
+ */
+function slideAlt(slide: HeroSlide): string {
+  const pick = slide.alt || slide.title || slide.badge || slide.btn_label;
+  const text = pick?.replace(/\s+/g, " ").trim();
+  return text || "VIDAN — нүүр хуудасны постер";
+}
+
 /** Нэг слайд — постер зураг + (сонголтоор) текст/товч давхарлана */
 function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
   const hasText = !!(slide.badge || slide.title || slide.body || slide.btn_label);
@@ -112,7 +124,7 @@ function Slide({ slide, priority }: { slide: HeroSlide; priority: boolean }) {
       {slide.image_url && (
         <Image
           src={slide.image_url}
-          alt={slide.title || ""}
+          alt={slideAlt(slide)}
           fill
           className={`pointer-events-none object-center ${
             hasText ? "object-cover" : "object-contain"
