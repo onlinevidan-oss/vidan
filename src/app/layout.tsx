@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import {
@@ -21,6 +21,11 @@ const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
   display: "swap",
 });
+
+/** Хөтчийн дээд мөрний өнгө — хуудасны `bg-brand-700` туузтай нийлнэ. */
+export const viewport: Viewport = {
+  themeColor: "#b81e22",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
