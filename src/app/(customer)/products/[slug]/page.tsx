@@ -290,9 +290,7 @@ export default async function ProductDetailPage({
           <h2 className="font-display mb-4 text-xl font-extrabold tracking-tight text-ink-900">
             Бүтээгдэхүүний тухай
           </h2>
-          <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-700">
-            {htmlToText(product.description)}
-          </p>
+          <Paragraphs text={htmlToText(product.description)} />
         </section>
       )}
 
@@ -317,6 +315,29 @@ export default async function ProductDetailPage({
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+/**
+ * Догол мөр тус бүрийг жинхэнэ <p> болгоно.
+ *
+ * Одоогийн 35 барааны тайлбар бүгд нэг өгүүлбэр тул гаралт өөрчлөгдөхгүй;
+ * хожим олон догол мөртэй тайлбар орж ирвэл CSS-ийн whitespace-pre-line
+ * заль биш, зөв бүтэцтэй рендерлэгдэнэ.
+ */
+function Paragraphs({ text }: { text: string }) {
+  const parts = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  return (
+    <div className="space-y-3">
+      {parts.map((p, i) => (
+        <p
+          key={i}
+          className="whitespace-pre-line text-[15px] leading-relaxed text-ink-700"
+        >
+          {p}
+        </p>
+      ))}
     </div>
   );
 }
