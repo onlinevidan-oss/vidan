@@ -13,6 +13,7 @@ import {
   type CommerceSettings,
 } from "@/lib/pricing";
 import { ecommerceItems, trackEvent } from "@/lib/analytics";
+import { useCartPriceSync } from "./useCartPriceSync";
 
 export function CartView({
   settings = COMMERCE_DEFAULTS,
@@ -29,6 +30,7 @@ export function CartView({
   const removeItem = useCart((s) => s.removeItem);
   const clear = useCart((s) => s.clear);
   const viewCartSent = useRef(false);
+  const priceSync = useCartPriceSync();
 
   useEffect(() => {
     if (!items.length || viewCartSent.current) return;
@@ -86,6 +88,12 @@ export function CartView({
           Сагс хоослох
         </button>
       </div>
+
+      {priceSync.changed > 0 && (
+        <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-ink-700">
+          Зарим барааны үнэ өөрчлөгдсөн тул сагсыг одоогийн үнээр шинэчиллээ.
+        </div>
+      )}
 
       {/* grid-cols-1 — /products-ийнхтэй ижил шалтгаан: эс тэгвээс нарийн
           утсан дээр мөр шахагдахгүй, хуудас хажуу тийш гулсана */}

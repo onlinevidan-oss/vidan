@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
 import { formatMnt, formatMntCents } from "@/lib/utils";
 import { canMeasurePurchase } from "@/lib/analytics";
+import { useCartPriceSync } from "./useCartPriceSync";
 import { checkPromoCode, placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
@@ -58,6 +59,8 @@ export function CheckoutView({
   const subtotal = useCart((s) => s.totalAmount());
   const itemCount = useCart((s) => s.totalCount());
   const clearCart = useCart((s) => s.clear);
+  // Үнэ сангаас шинэчлэгдэхээс өмнө захиалга илгээхгүй — дүн зөрөхөөс сэргийлнэ
+  const priceSync = useCartPriceSync();
 
   const [addressId, setAddressId] = useState<string | "new">(
     addresses[0]?.id ?? "new",
@@ -654,6 +657,12 @@ export function CheckoutView({
               </div>
             </div>
 
+            {priceSync.changed > 0 && (
+              <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-semibold text-ink-700">
+                Зарим барааны үнэ өөрчлөгдсөн тул одоогийн үнээр шинэчиллээ.
+              </div>
+            )}
+
             {error && (
               <div className="mb-3 rounded-lg border border-brand-200 bg-brand-50 p-3 text-xs font-semibold text-brand-700">
                 ⚠️ {error}
@@ -663,7 +672,7 @@ export function CheckoutView({
             <button
               ref={ctaRef}
               onClick={handleSubmit}
-              disabled={pending || belowMinOrder}
+              disabled={pending || belowMinOrder || !priceSync.ready}
               className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-brand-600 py-4 text-base font-extrabold text-white shadow-[0_6px_16px_rgba(215,35,39,0.3)] transition hover:-translate-y-0.5 hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-300 disabled:shadow-none"
             >
               {pending ? "Захиалга үүсгэж байна…" : `✓ Захиалга баталгаажуулах (${formatMnt(total)})`}
@@ -702,7 +711,7 @@ export function CheckoutView({
           </div>
           <button
             onClick={handleSubmit}
-            disabled={pending || belowMinOrder}
+            disabled={pending || belowMinOrder || !priceSync.ready}
             className="flex-1 rounded-[12px] bg-brand-600 py-3.5 text-[15px] font-extrabold text-white transition active:scale-[0.98] disabled:bg-ink-300"
           >
             {pending
