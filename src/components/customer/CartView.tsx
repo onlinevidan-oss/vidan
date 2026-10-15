@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/stores/cart";
-import { formatMnt } from "@/lib/utils";
+import { formatMnt, formatMntCents } from "@/lib/utils";
 import { getProductMeta } from "@/lib/product-meta";
 import {
   calculateOrderTotals,
+  vatBreakdown,
   COMMERCE_DEFAULTS,
   type CommerceSettings,
 } from "@/lib/pricing";
@@ -58,6 +59,9 @@ export function CartView({
   }
 
   const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
+  // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) нэг мөрөөр харуулна
+  const shippingGross = shipping + tax;
+  const { net, vat } = vatBreakdown(total);
   // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
   const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
 
@@ -191,10 +195,12 @@ export function CartView({
             />
             <Row
               label={shipping === 0 ? "Хүргэлт" : `Хүргэлт (${itemCount} ширхэгт)`}
-              value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
+              value={shipping === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
               accent={shipping === 0 ? "success" : undefined}
             />
-            <Row label="Хүргэлтийн НӨАТ (10%)" value={formatMnt(tax)} />
+            <div className="my-3 h-px bg-ink-100" />
+            <Row label="НӨАТ-гүй дүн" value={formatMntCents(net)} />
+            <Row label="НӨАТ" value={formatMntCents(vat)} />
             <div className="my-3 h-px bg-ink-100" />
             <div className="mb-5 flex items-baseline justify-between">
               <div className="text-sm font-bold text-ink-900">Нийт төлөх</div>

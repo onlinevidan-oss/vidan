@@ -11,6 +11,11 @@ export function formatMnt(amount: number): string {
   return `₮${amount.toLocaleString("mn-MN")}`;
 }
 
+/** Мөнгөний 2 оронтой дүн — НӨАТ-ын задаргаанд (жнь. ₮2,736.36) */
+export function formatMntCents(amount: number): string {
+  return `₮${amount.toLocaleString("mn-MN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 /**
  * Mongolian Cyrillic → Latin transliteration + URL slug helper.
  * Жнь: "Даршилсан өргөст хэмх" → "darshilsan-orgost-khemkh"

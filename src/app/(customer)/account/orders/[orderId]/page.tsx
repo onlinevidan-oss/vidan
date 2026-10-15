@@ -4,7 +4,8 @@ import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { formatMnt } from "@/lib/utils";
+import { formatMnt, formatMntCents } from "@/lib/utils";
+import { vatBreakdown } from "@/lib/pricing";
 import { type OrderStatus } from "@/lib/order-status";
 import { OrderStatusTracker } from "@/components/customer/OrderStatusTracker";
 import { formatUbDateTime } from "@/lib/datetime";
@@ -49,6 +50,11 @@ export default async function CustomerOrderDetail({
   }));
   const ebarimt = ebarimtDisplayFromOrder(order, ebarimtItems);
   const ebarimtQrImage = ebarimt ? await qrDataUrl(ebarimt.qrData) : null;
+
+  // Хүргэлтийг НӨАТ-тай нь нэг мөрөөр (жнь. 7,000 + 700 = 7,700) барааны
+  // доор харуулна; дүнгийн хэсэг нийт дүнг НӨАТ-гүй / НӨАТ болгон задална.
+  const shippingGross = Number(order.shipping) + Number(order.tax);
+  const { net, vat } = vatBreakdown(Number(order.total));
 
   return (
     <div className="my-6">
@@ -103,6 +109,17 @@ export default async function CustomerOrderDetail({
                   </div>
                 </div>
               ))}
+              <div className="flex justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-ink-900">Хүргэлт</div>
+                  {shippingGross > 0 && (
+                    <div className="mt-0.5 text-xs text-ink-500">НӨАТ-тай</div>
+                  )}
+                </div>
+                <div className="font-display font-extrabold text-ink-900">
+                  {shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -114,15 +131,11 @@ export default async function CustomerOrderDetail({
             <h3 className="font-display mb-4 text-sm font-extrabold uppercase tracking-wider text-ink-700">
               Дүн
             </h3>
-            <Row label="Дэд дүн" value={formatMnt(Number(order.subtotal))} />
             {Number(order.discount) > 0 && (
               <Row label="Хямдрал" value={`−${formatMnt(Number(order.discount))}`} />
             )}
-            <Row
-              label="Хүргэлт"
-              value={Number(order.shipping) === 0 ? "Үнэгүй" : formatMnt(Number(order.shipping))}
-            />
-            <Row label="Хүргэлтийн НӨАТ" value={formatMnt(Number(order.tax))} />
+            <Row label="НӨАТ-гүй дүн" value={formatMntCents(net)} />
+            <Row label="НӨАТ" value={formatMntCents(vat)} />
             <div className="my-2 h-px bg-ink-100" />
             <div className="flex justify-between">
               <span className="font-bold">Нийт</span>

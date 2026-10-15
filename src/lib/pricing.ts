@@ -117,3 +117,21 @@ export function calculateOrderTotals(
   const total = afterDiscount + shipping + tax;
   return { subtotal, discount: clampedDiscount, shipping, tax, total };
 }
+
+/**
+ * Хэрэглэгчид харуулах НӨАТ-ын задаргаа: нийт төлөх дүнд БАГТСАН НӨАТ
+ * ба НӨАТ-гүй дүн (мөнгөний 2 оронтой).
+ *
+ * Бараа ба хүргэлт (хүргэлтийн НӨАТ-тайгаа) бүгд 10%-ийн НӨАТ-тэй тул
+ * нийт дүнгийн 10/110 нь НӨАТ — и-баримт дээрх НӨАТ-тай ижил тоо гарна
+ * (жнь. 30,100 → НӨАТ 2,736.36, НӨАТ-гүй 27,363.64). Үнийн жагсаалт
+ * дахь барааны НӨАТ-ыг ч ийм дүрмээр бодсон (6,500 → 591).
+ *
+ * Мөнгөөр (×100) бүхэлчилж тооцно — хоёр мөрийн нийлбэр нийт дүнтэй
+ * яг тэнцэнэ.
+ */
+export function vatBreakdown(total: number): { net: number; vat: number } {
+  const totalCents = Math.round(total * 100);
+  const vatCents = Math.round((totalCents * TAX_RATE) / (1 + TAX_RATE));
+  return { net: (totalCents - vatCents) / 100, vat: vatCents / 100 };
+}

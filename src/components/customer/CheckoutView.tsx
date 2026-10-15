@@ -4,11 +4,12 @@ import { useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/stores/cart";
-import { formatMnt } from "@/lib/utils";
+import { formatMnt, formatMntCents } from "@/lib/utils";
 import { canMeasurePurchase } from "@/lib/analytics";
 import { checkPromoCode, placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
+  vatBreakdown,
   COMMERCE_DEFAULTS,
   type CommerceSettings,
 } from "@/lib/pricing";
@@ -151,6 +152,9 @@ export function CheckoutView({
     itemCount,
     discount,
   );
+  // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) барааны доор нэг мөрөөр
+  const shippingGross = shipping + tax;
+  const { net, vat } = vatBreakdown(total);
   // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
   const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
 
@@ -625,9 +629,14 @@ export function CheckoutView({
                   </span>
                 </div>
               ))}
+              <div className="flex justify-between gap-2 text-xs">
+                <span className="truncate text-ink-700">Хүргэлт</span>
+                <span className="shrink-0 font-bold text-ink-900">
+                  {shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
+                </span>
+              </div>
             </div>
             <div className="my-3 h-px bg-ink-100" />
-            <Row label="Барааны дүн" value={formatMnt(subtotal)} />
             {discount > 0 && (
               <Row
                 label={`Хөнгөлөлт (${promo?.code})`}
@@ -635,9 +644,8 @@ export function CheckoutView({
                 accent="success"
               />
             )}
-            <Row label="Хүргэлт" value={shipping === 0 ? "Үнэгүй" : formatMnt(shipping)}
-              accent={shipping === 0 ? "success" : undefined} />
-            <Row label="Хүргэлтийн НӨАТ (10%)" value={formatMnt(tax)} />
+            <Row label="НӨАТ-гүй дүн" value={formatMntCents(net)} />
+            <Row label="НӨАТ" value={formatMntCents(vat)} />
             <div className="my-3 h-px bg-ink-100" />
             <div className="mb-5 flex items-baseline justify-between">
               <div className="text-sm font-bold text-ink-900">Нийт</div>

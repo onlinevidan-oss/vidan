@@ -15,6 +15,7 @@ import {
   COMMERCE_DEFAULTS,
   TAX_RATE,
   shippingForQty,
+  vatBreakdown,
   type CommerceSettings,
 } from "./pricing.ts";
 
@@ -202,5 +203,35 @@ describe("бүхэлчлэл", () => {
     for (const [k, v] of Object.entries(t)) {
       assert.ok(Number.isInteger(v), `${k} бүхэл байх ёстой, гэвч ${v}`);
     }
+  });
+});
+
+describe("vatBreakdown — хэрэглэгчид харуулах НӨАТ-ын задаргаа", () => {
+  test("#10316: 30,100 → НӨАТ 2,736.36 (и-баримттай ижил)", () => {
+    assert.deepEqual(vatBreakdown(30_100), { net: 27_363.64, vat: 2_736.36 });
+  });
+
+  test("үнийн жагсаалтын НӨАТ = үнэ ÷ 11 (6,500 → 591, 7,150 → 650)", () => {
+    assert.equal(Math.round(vatBreakdown(6_500).vat), 591);
+    assert.equal(vatBreakdown(7_150).vat, 650);
+    assert.equal(vatBreakdown(11_000).vat, 1_000);
+  });
+
+  test("хүргэлт 7,700 (НӨАТ-тай) → НӨАТ яг 700", () => {
+    assert.deepEqual(vatBreakdown(7_700), { net: 7_000, vat: 700 });
+  });
+
+  test("НӨАТ-гүй дүн + НӨАТ нь нийт дүнтэй мөнгө хүртэл тэнцэнэ", () => {
+    for (const total of [1, 9_950, 30_100, 80_100, 93_400, 334_950, 521_900, 1_234_567]) {
+      const { net, vat } = vatBreakdown(total);
+      assert.equal(Math.round(net * 100) + Math.round(vat * 100), total * 100, String(total));
+    }
+  });
+
+  test("захиалгын нийт дүнд хүргэлтийн НӨАТ-ыг давхар тоолохгүй", () => {
+    // 22,400 бараа + 7,000 хүргэлт + 700 хүргэлтийн НӨАТ = 30,100
+    const t = calculateOrderTotals(22_400, settings(), 5);
+    assert.equal(t.total, 30_100);
+    assert.equal(vatBreakdown(t.total).vat, 2_736.36);
   });
 });

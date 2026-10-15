@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { formatMnt } from "@/lib/utils";
+import { formatMnt, formatMntCents } from "@/lib/utils";
+import { vatBreakdown } from "@/lib/pricing";
 import { ebarimtDisplayFromOrder } from "@/lib/ebarimt/display";
 import { qrDataUrl } from "@/lib/ebarimt/qr";
 import { ReceiptView } from "@/components/ebarimt/ReceiptView";
@@ -43,6 +44,11 @@ export default async function OrderSuccessPage({
   }));
   const ebarimt = ebarimtDisplayFromOrder(order, ebarimtItems);
   const ebarimtQrImage = ebarimt ? await qrDataUrl(ebarimt.qrData) : null;
+
+  // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) барааны доор нэг мөрөөр
+  const shippingGross = Number(order.shipping) + Number(order.tax);
+  const discount = Number(order.discount);
+  const { net, vat } = vatBreakdown(Number(order.total));
 
   return (
     <div className="my-10 grid grid-cols-1 place-items-center">
@@ -99,6 +105,27 @@ export default async function OrderSuccessPage({
               </div>
             ),
           )}
+          <div className="flex justify-between text-sm">
+            <span className="text-ink-700">Хүргэлт</span>
+            <span className="font-bold text-ink-900">
+              {shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
+            </span>
+          </div>
+          <div className="my-2 h-px bg-ink-100" />
+          {discount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-ink-500">Хямдрал</span>
+              <span className="font-semibold text-ink-900">−{formatMnt(discount)}</span>
+            </div>
+          )}
+          <div className="flex justify-between text-sm">
+            <span className="text-ink-500">НӨАТ-гүй дүн</span>
+            <span className="font-semibold text-ink-900">{formatMntCents(net)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-ink-500">НӨАТ</span>
+            <span className="font-semibold text-ink-900">{formatMntCents(vat)}</span>
+          </div>
           <div className="my-2 h-px bg-ink-100" />
           <div className="flex justify-between">
             <span className="font-bold text-ink-900">Нийт төлсөн</span>

@@ -9,7 +9,7 @@
  */
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { slugify, formatPhone, formatMnt } from "./utils.ts";
+import { slugify, formatPhone, formatMnt, formatMntCents } from "./utils.ts";
 
 describe("slugify", () => {
   test("кирилл нэрийг латин slug болгоно", () => {
@@ -97,5 +97,13 @@ describe("formatMnt", () => {
   test("тэг ба сая", () => {
     assert.equal(formatMnt(0), "₮0");
     assert.equal(formatMnt(1_234_567), "₮1,234,567");
+  });
+});
+
+describe("formatMntCents", () => {
+  test("мөнгөний 2 оронтой", () => {
+    assert.equal(formatMntCents(2_736.36), "₮2,736.36");
+    assert.equal(formatMntCents(700), "₮700.00");
+    assert.equal(formatMntCents(27_363.6), "₮27,363.60");
   });
 });
