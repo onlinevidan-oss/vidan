@@ -65,7 +65,7 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
   const { since, until } = periodToUtcRange(period);
 
   const [
-    { data: orders },
+    { data: orders, error: ordersError },
     { count: customers },
     { data: products },
     { data: staff },
@@ -94,6 +94,13 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
         .from("sale_campaign_log")
         .select("code, name, brand_slug, percent, starts_at, ends_at, enabled, recorded_at"),
     ]);
+
+  // Санхүүгийн тайлан — уншиж чадаагүйг "захиалга алга, ₮0" гэж харуулж
+  // болохгүй (жнь. migration орохоос өмнө шинэ багана сонгоход бүх дүн 0
+  // гарч байсан). Алдааны хуудас харагдана.
+  if (ordersError) {
+    throw new Error(`Тайлангийн захиалгыг уншиж чадсангүй: ${ordersError.message}`);
+  }
 
   // Промо кодын хэрэглээ — зөвхөн энэ хугацааны захиалгуудынх
   const orderIds = ((orders ?? []) as unknown as { id: string }[]).map((o) => o.id);
