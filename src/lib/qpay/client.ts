@@ -316,6 +316,30 @@ export async function createEbarimtInvoice(params: {
 }
 
 // ============================================================
+// E-Barimt унших
+// ============================================================
+/**
+ * Үүссэн и-баримтыг QPay-ээс уншина — дүн, НӨАТ, бүртгэлийн төлөв.
+ * QPay-ийн баримт бичигт зөвхөн DELETE (цуцлах) заасан ч GET ажилладаг —
+ * 2026-10-15-нд жинхэнэ API-аар 6 баримт дээр шалгасан. Зөвхөн уншина,
+ * юу ч өөрчлөхгүй.
+ */
+export async function getEbarimtReceipt(
+  ebarimtId: string,
+): Promise<Record<string, unknown>> {
+  const res = await authedFetch(
+    `/ebarimt_v3/${encodeURIComponent(ebarimtId)}`,
+    { method: "GET" },
+    "ebarimt",
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`QPay и-баримт уншиж чадсангүй (${res.status}): ${body.slice(0, 200)}`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+// ============================================================
 // E-Barimt үүсгэх (best-effort, төлбөр баталгаажсаны дараа)
 // ============================================================
 /**

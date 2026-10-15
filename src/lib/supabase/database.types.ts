@@ -281,11 +281,16 @@ export type Database = {
           driver_notes: string | null
           ebarimt_consumer_no: string | null
           ebarimt_customer_tin: string | null
+          ebarimt_amount: number | null
+          ebarimt_checked_at: string | null
+          ebarimt_city_tax: number | null
           ebarimt_date: string | null
           ebarimt_id: string | null
           ebarimt_lottery: string | null
           ebarimt_qr: string | null
+          ebarimt_status: string | null
           ebarimt_type: string | null
+          ebarimt_vat: number | null
           ga_client_id: string | null
           id: string
           internal_notes: string | null
@@ -315,11 +320,16 @@ export type Database = {
           driver_notes?: string | null
           ebarimt_consumer_no?: string | null
           ebarimt_customer_tin?: string | null
+          ebarimt_amount?: number | null
+          ebarimt_checked_at?: string | null
+          ebarimt_city_tax?: number | null
           ebarimt_date?: string | null
           ebarimt_id?: string | null
           ebarimt_lottery?: string | null
           ebarimt_qr?: string | null
+          ebarimt_status?: string | null
           ebarimt_type?: string | null
+          ebarimt_vat?: number | null
           ga_client_id?: string | null
           id?: string
           internal_notes?: string | null
@@ -349,11 +359,16 @@ export type Database = {
           driver_notes?: string | null
           ebarimt_consumer_no?: string | null
           ebarimt_customer_tin?: string | null
+          ebarimt_amount?: number | null
+          ebarimt_checked_at?: string | null
+          ebarimt_city_tax?: number | null
           ebarimt_date?: string | null
           ebarimt_id?: string | null
           ebarimt_lottery?: string | null
           ebarimt_qr?: string | null
+          ebarimt_status?: string | null
           ebarimt_type?: string | null
+          ebarimt_vat?: number | null
           ga_client_id?: string | null
           id?: string
           internal_notes?: string | null

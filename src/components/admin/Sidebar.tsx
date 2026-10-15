@@ -21,6 +21,7 @@ const OTHER_NAV = [
   { href: "/admin/promotions", label: "Урамшуулал",      icon: "🎁" },
   { href: "/admin/feedback",   label: "Санал хүсэлт",    icon: "💬" },
   { href: "/admin/reports",    label: "Тайлан",          icon: "📈" },
+  { href: "/admin/ebarimt",    label: "И-баримт",        icon: "🧾" },
   { href: "/admin/traffic",    label: "Traffic",         icon: "🌐" },
   { href: "/admin/settings",   label: "Тохиргоо",        icon: "⚙️" },
 ];

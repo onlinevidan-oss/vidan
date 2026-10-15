@@ -4,6 +4,7 @@ import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { formatUbDateTime } from "@/lib/datetime";
+import { EBARIMT_CHECK_LABEL, ebarimtCheck } from "@/lib/ebarimt/check";
 import { OrderActions } from "@/components/admin/OrderActions";
 import {
   STATUS_FLOW,
@@ -266,6 +267,49 @@ export default async function AdminOrderDetail({
                 ) : (
                   <div className="mt-2 text-ink-500">
                     Сугалааны дугаар: баримт хараахан үүсээгүй
+                  </div>
+                )}
+
+                {/* Баримтын бодит дүн — QPay-д бүртгэгдсэнээр (/admin/ebarimt) */}
+                {order.ebarimt_id && (
+                  <div className="mt-2 rounded-lg border border-ink-100 px-3 py-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-ink-500">Баримтын дүн</span>
+                      <strong className="font-display text-ink-900">
+                        {order.ebarimt_amount === null
+                          ? "—"
+                          : formatMnt(Number(order.ebarimt_amount))}
+                      </strong>
+                    </div>
+                    {order.ebarimt_vat !== null && (
+                      <div className="flex items-baseline justify-between gap-2 text-xs">
+                        <span className="text-ink-500">Үүнд НӨАТ</span>
+                        <span className="text-ink-700">
+                          ₮
+                          {Number(order.ebarimt_vat).toLocaleString("mn-MN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <div className="mt-1 text-[11px] font-bold">
+                      {(() => {
+                        const c = ebarimtCheck({
+                          total: Number(order.total),
+                          ebarimt_id: order.ebarimt_id,
+                          ebarimt_amount:
+                            order.ebarimt_amount === null ? null : Number(order.ebarimt_amount),
+                        });
+                        return (
+                          <span className={c === "ok" ? "text-lime-700" : c === "mismatch" ? "text-brand-700" : "text-ink-500"}>
+                            {c === "unchecked"
+                              ? "Дүнг QPay-ээс шалгаагүй — И-баримт цэснээс шалгана"
+                              : `${EBARIMT_CHECK_LABEL[c]} — төлсөн ${formatMnt(Number(order.total))}`}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                 )}
 

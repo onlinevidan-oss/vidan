@@ -17,6 +17,7 @@ import { createEbarimtReceipt } from "./client";
 import { buildEbarimtLines, type QpayInvoiceLine } from "./ebarimt-lines";
 import { normalizePhone, sendSms } from "@/lib/sms/client";
 import { shippingVat } from "@/lib/pricing";
+import { parseReceiptAmounts } from "@/lib/ebarimt/check";
 
 /** Ангиллын код олдохгүй үед ашиглах нөөц код */
 const DEFAULT_CLASSIFICATION =
@@ -187,6 +188,22 @@ export async function createOrderEbarimtViaQpay(
         ebarimt_qr: res.ebarimt_qr_data ?? null,
       })
       .eq("id", orderId);
+
+    // Баримтын бодит дүнг хадгална — /admin/ebarimt-д төлсөн дүнтэй тулгана.
+    // ТУСДАА update: энэ нь бүтэлгүйтсэн ч дээрх ebarimt_id хадгалагдсан
+    // хэвээр тул баримт давхар үүсэхгүй.
+    const amounts = parseReceiptAmounts(res as unknown as Record<string, unknown>);
+    const { error: amountsErr } = await admin
+      .from("orders")
+      .update({
+        ebarimt_amount: amounts.amount,
+        ebarimt_vat: amounts.vat,
+        ebarimt_city_tax: amounts.cityTax,
+        ebarimt_status: amounts.status,
+        ebarimt_checked_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+    if (amountsErr) console.error("[ebarimt amounts save failed]", amountsErr);
 
     await admin.from("order_events").insert({
       order_id: orderId,
