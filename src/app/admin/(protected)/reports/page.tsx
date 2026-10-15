@@ -2,6 +2,7 @@ import Link from "next/link";
 import { TopBar } from "@/components/admin/TopBar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { ReportToolbar } from "@/components/admin/ReportToolbar";
+import { PromoReportSection } from "@/components/admin/PromoReportSection";
 import { getReports } from "@/lib/queries/reports";
 import { resolvePeriod } from "@/lib/report-period";
 import { ubDateKey } from "@/lib/datetime";
@@ -396,6 +397,9 @@ export default async function AdminReports({
             түвшинд бодогддог тул санхүүгийн задаргаанд тусад нь харагдана.
           </p>
         </div>
+
+        {/* ---------- Урамшуулал — кампанит ажил, промо код ---------- */}
+        <PromoReportSection report={data.promotions} />
 
         {/* ---------- 3. Агуулахын үлдэгдэл (хураангуй) ---------- */}
         <div className="print-card print-block rounded-2xl border border-ink-200 bg-white">

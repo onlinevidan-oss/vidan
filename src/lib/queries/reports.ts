@@ -27,6 +27,14 @@ import {
   periodToUtcRange,
   type ReportPeriod,
 } from "@/lib/report-period";
+import {
+  summarizePromotions,
+  type CampaignLogRow,
+  type PromoReport,
+  type PromoReportOrder,
+  type PromotionRow,
+  type RedemptionRow,
+} from "@/lib/promo-report";
 
 export type { DailyRevenue };
 
@@ -42,11 +50,14 @@ export type ReportsData = {
   /** Агуулах — орлого, зарлага, үлдэгдэл */
   /** Ажилтны дотоод/туршилтын захиалгын задаргаа (нийт дүнд ОРСОН) */
   internal: FinanceSummary;
+  /** Урамшуулал — кампанит ажил, промо код, хөнгөлөлт эдэлсэн бараа */
+  promotions: PromoReport;
 };
 
 const ORDER_SELECT =
-  "user_id, subtotal, discount, shipping, tax, total, payment_method, created_at, " +
+  "id, user_id, subtotal, discount, shipping, tax, total, payment_method, created_at, " +
   "items:order_items(product_id, product_name, product_sku, quantity, subtotal, " +
+  "unit_price, list_price, sale_campaign, " +
   "product:products(category:categories(name_mn)))";
 
 export async function getReports(period: ReportPeriod): Promise<ReportsData> {
@@ -58,6 +69,8 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
     { count: customers },
     { data: products },
     { data: staff },
+    { data: promotions },
+    { data: campaignLog },
   ] = await Promise.all([
       supabase
         .from("orders")
@@ -74,7 +87,22 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
         .eq("is_active", true),
       // Ажилтны захиалгыг хэрэглэгчийнхээс салгахад
       supabase.from("staff").select("id"),
+      supabase
+        .from("promotions")
+        .select("id, code, name, type, value, starts_at, ends_at, is_active"),
+      supabase
+        .from("sale_campaign_log")
+        .select("code, name, brand_slug, percent, starts_at, ends_at, enabled, recorded_at"),
     ]);
+
+  // Промо кодын хэрэглээ — зөвхөн энэ хугацааны захиалгуудынх
+  const orderIds = ((orders ?? []) as unknown as { id: string }[]).map((o) => o.id);
+  const { data: redemptions } = orderIds.length
+    ? await supabase
+        .from("promo_redemptions")
+        .select("promo_id, order_id, discount")
+        .in("order_id", orderIds)
+    : { data: [] };
 
   const staffIds = new Set((staff ?? []).map((s) => s.id));
   const raw = (orders ?? []) as unknown as (ReportOrder & { user_id: string | null })[];
@@ -95,5 +123,12 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
     byCategory: summarizeByCategory(list),
     byPayment: summarizeByPayment(list),
     inventory: summarizeInventory((products ?? []) as unknown as StockRow[]),
+    promotions: summarizePromotions({
+      orders: (orders ?? []) as unknown as PromoReportOrder[],
+      campaignLog: (campaignLog ?? []) as CampaignLogRow[],
+      promotions: (promotions ?? []) as PromotionRow[],
+      redemptions: (redemptions ?? []) as RedemptionRow[],
+      period: { start: since.getTime(), end: until.getTime() },
+    }),
   };
 }

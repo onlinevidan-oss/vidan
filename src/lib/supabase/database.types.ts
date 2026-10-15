@@ -220,33 +220,39 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          list_price: number | null
           order_id: string
           product_id: string | null
           product_name: string
           product_sku: string | null
           quantity: number
+          sale_campaign: string | null
           subtotal: number
           unit_price: number
         }
         Insert: {
           created_at?: string
           id?: string
+          list_price?: number | null
           order_id: string
           product_id?: string | null
           product_name: string
           product_sku?: string | null
           quantity: number
+          sale_campaign?: string | null
           subtotal: number
           unit_price: number
         }
         Update: {
           created_at?: string
           id?: string
+          list_price?: number | null
           order_id?: string
           product_id?: string | null
           product_name?: string
           product_sku?: string | null
           quantity?: number
+          sale_campaign?: string | null
           subtotal?: number
           unit_price?: number
         }
@@ -791,6 +797,42 @@ export type Database = {
           id?: number
           refresh_token?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      sale_campaign_log: {
+        Row: {
+          brand_slug: string | null
+          code: string
+          enabled: boolean
+          ends_at: string | null
+          id: string
+          name: string | null
+          percent: number | null
+          recorded_at: string
+          starts_at: string | null
+        }
+        Insert: {
+          brand_slug?: string | null
+          code: string
+          enabled?: boolean
+          ends_at?: string | null
+          id?: string
+          name?: string | null
+          percent?: number | null
+          recorded_at?: string
+          starts_at?: string | null
+        }
+        Update: {
+          brand_slug?: string | null
+          code?: string
+          enabled?: boolean
+          ends_at?: string | null
+          id?: string
+          name?: string | null
+          percent?: number | null
+          recorded_at?: string
+          starts_at?: string | null
         }
         Relationships: []
       }
