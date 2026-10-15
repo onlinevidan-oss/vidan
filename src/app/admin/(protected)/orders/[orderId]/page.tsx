@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { TopBar } from "@/components/admin/TopBar";
 import { createClient } from "@/lib/supabase/server";
-import { formatMnt, formatPhone } from "@/lib/utils";
+import { formatMnt, formatMntCents, formatPhone } from "@/lib/utils";
+import { vatBreakdown } from "@/lib/pricing";
 import { formatUbDateTime } from "@/lib/datetime";
 import { EBARIMT_CHECK_LABEL, ebarimtCheck } from "@/lib/ebarimt/check";
 import { OrderActions } from "@/components/admin/OrderActions";
@@ -35,6 +36,11 @@ export default async function AdminOrderDetail({
     .maybeSingle();
 
   if (!order) notFound();
+
+  // Хүргэлтийг НӨАТ-тай нь нэг мөрөөр, нийт дүнг НӨАТ-гүй / НӨАТ болгон
+  // задална — хэрэглэгчийн хуудас, и-баримттай ижил тоо (vatBreakdown)
+  const shippingGross = Number(order.shipping) + Number(order.tax);
+  const vatSplit = vatBreakdown(Number(order.total));
 
   const userObj = order.user as {
     full_name: string | null;
@@ -101,17 +107,27 @@ export default async function AdminOrderDetail({
                     </div>
                   </div>
                 ))}
+                {/* Хүргэлт НӨАТ-тай нь нэг мөрөөр — хэрэглэгчийн хуудастай ижил */}
+                <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-ink-900">Хүргэлт</div>
+                    {shippingGross > 0 && (
+                      <div className="text-xs text-ink-500">
+                        {formatMnt(Number(order.shipping))} + НӨАТ {formatMnt(Number(order.tax))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="font-display shrink-0 font-extrabold text-ink-900">
+                    {shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
+                  </div>
+                </div>
               </div>
               <div className="border-t border-ink-200 px-5 py-4 text-sm">
-                <Row label="Дэд дүн" value={formatMnt(Number(order.subtotal))} />
                 {Number(order.discount) > 0 && (
                   <Row label="Хямдрал" value={`−${formatMnt(Number(order.discount))}`} />
                 )}
-                <Row
-                  label="Хүргэлт"
-                  value={Number(order.shipping) === 0 ? "Үнэгүй" : formatMnt(Number(order.shipping))}
-                />
-                <Row label="Хүргэлтийн НӨАТ" value={formatMnt(Number(order.tax))} />
+                <Row label="НӨАТ-гүй дүн" value={formatMntCents(vatSplit.net)} />
+                <Row label="НӨАТ" value={formatMntCents(vatSplit.vat)} />
                 <div className="my-2 h-px bg-ink-100" />
                 <div className="flex justify-between">
                   <span className="font-bold">Нийт</span>
