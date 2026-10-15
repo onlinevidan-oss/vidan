@@ -90,6 +90,29 @@ export type PromoReport = {
   totalDiscount: number;
 };
 
+/**
+ * Санхүүгийн задаргаанд оруулах хураангуй.
+ *
+ * Хямдрал (кампанит ажил, гар хямдрал) барааны үнийг өөрийг нь бууруулдаг
+ * тул захиалгын барааны дүнд аль хэдийн хасагдсан байдаг — задаргаанд
+ * "хямдралын өмнөх борлуулалт − хямдрал" гэж ил гаргана, цэвэр орлого
+ * өөрчлөгдөхгүй. Промо код нь orders.discount-оор тусад нь хасагддаг.
+ */
+export function financePromoSummary(report: PromoReport): {
+  /** Үнийн хямдралын нийлбэр — барааны дүнд аль хэдийн хасагдсан */
+  priceDiscount: number;
+  priceRows: PromoEntry[];
+  promoRows: PromoEntry[];
+} {
+  const used = report.entries.filter((e) => e.discount > 0);
+  const priceRows = used.filter((e) => e.kind !== "promo");
+  return {
+    priceDiscount: priceRows.reduce((s, e) => s + e.discount, 0),
+    priceRows,
+    promoRows: used.filter((e) => e.kind === "promo"),
+  };
+}
+
 /** Ижил кампанит ажлын хоёр хувилбарыг нэг гэж үзэх завсар (сунгалт гэх мэт) */
 const MERGE_GAP_MS = 24 * 60 * 60 * 1000;
 

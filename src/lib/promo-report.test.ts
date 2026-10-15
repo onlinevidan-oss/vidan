@@ -11,6 +11,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   campaignSpans,
+  financePromoSummary,
   summarizePromotions,
   type CampaignLogRow,
   type PromoReportOrder,
@@ -247,5 +248,43 @@ describe("summarizePromotions — промо код", () => {
       period: SEP_FIRST,
     });
     assert.equal(r.entries.length, 0);
+  });
+});
+
+describe("financePromoSummary — санхүүгийн задаргааны мөрүүд", () => {
+  const PROMO: PromotionRow = {
+    id: "p1",
+    code: "NEW10",
+    name: "Шинэ хэрэглэгч",
+    type: "percent",
+    value: 10,
+    starts_at: null,
+    ends_at: null,
+    is_active: true,
+  };
+  const orders = [
+    order("a", "2026-09-04T00:00:00Z", [line("VIDAN006", 4_320, 10, 4_800, "vidan-sep-2026")]),
+    order("b", "2026-09-05T00:00:00Z", [line("X", 10_000, 1)], 1_000),
+  ];
+  const report = summarizePromotions({
+    orders,
+    campaignLog: SEP_LOG,
+    promotions: [PROMO, { ...PROMO, id: "p2", code: "VIP5K" }],
+    redemptions: [{ promo_id: "p1", order_id: "b", discount: 1_000 }],
+    period: SEP_FIRST,
+  });
+  const s = financePromoSummary(report);
+
+  test("үнийн хямдрал ба промо кодыг салгана; ашиглагдаагүй код орохгүй", () => {
+    assert.equal(s.priceDiscount, 4_800);
+    assert.deepEqual(s.priceRows.map((e) => e.name), ["VIDAN 10% хямдрал"]);
+    assert.deepEqual(s.promoRows.map((e) => e.detail), ["NEW10 · 10%"]);
+  });
+
+  test("хямдралын өмнөх борлуулалт − хямдрал = захиалгын барааны дүн", () => {
+    const goods = orders.reduce((t, o) => t + o.items.reduce((u, i) => u + i.unit_price * i.quantity, 0), 0);
+    const listGoods = goods + s.priceDiscount;
+    assert.equal(listGoods, 4_800 * 10 + 10_000);
+    assert.equal(listGoods - s.priceDiscount, goods);
   });
 });

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { TopBar } from "@/components/admin/TopBar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { ReportToolbar } from "@/components/admin/ReportToolbar";
-import { PromoReportSection } from "@/components/admin/PromoReportSection";
+import { PromoReportSection, promoPeriodText } from "@/components/admin/PromoReportSection";
+import { financePromoSummary } from "@/lib/promo-report";
 import { getReports } from "@/lib/queries/reports";
 import { resolvePeriod } from "@/lib/report-period";
 import { ubDateKey } from "@/lib/datetime";
@@ -47,6 +48,7 @@ export default async function AdminReports({
   const maxRev = Math.max(1, ...data.byDay.map((d) => d.revenue));
   const maxProduct = Math.max(1, ...data.soldProducts.map((p) => p.revenue));
   const totalSoldUnits = data.soldProducts.reduce((s, p) => s + p.sold, 0);
+  const promoSum = financePromoSummary(data.promotions);
 
   // Donut math — өмнөх сегментүүдийн нийлбэр нь эхлэх байрлал
   const donutSegs = data.byCategory.map((c, i) => ({
@@ -108,14 +110,34 @@ export default async function AdminReports({
               <table className="w-full">
                 <tbody>
                   <tr className="border-b border-ink-100">
-                    <td className={TD}>Барааны борлуулалт</td>
+                    <td className={TD}>
+                      Барааны борлуулалт
+                      {promoSum.priceDiscount > 0 && (
+                        <span className="ml-1.5 text-[11px] text-ink-500">хямдралын өмнөх үнээр</span>
+                      )}
+                    </td>
                     <td className={`${TD} text-right text-[12px] text-ink-500`}>
                       {qty(totalSoldUnits)} ширхэг
                     </td>
                     <td className={`${TD_NUM} font-display font-extrabold text-ink-900`}>
-                      {formatMnt(finance.goods)}
+                      {formatMnt(finance.goods + promoSum.priceDiscount)}
                     </td>
                   </tr>
+                  {/* Үнийн хямдрал барааны дүнд аль хэдийн хасагдсан — энд ил гаргана */}
+                  {promoSum.priceRows.map((e) => (
+                    <tr key={e.key} className="border-b border-ink-100">
+                      <td className={TD}>
+                        {e.name}
+                        <span className="ml-1.5 text-[11px] text-ink-500">{promoPeriodText(e)}</span>
+                      </td>
+                      <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                        {qty(e.quantity)} ширхэг
+                      </td>
+                      <td className={`${TD_NUM} font-display font-extrabold text-brand-600`}>
+                        − {formatMnt(e.discount)}
+                      </td>
+                    </tr>
+                  ))}
                   <tr className="border-b border-ink-100">
                     <td className={TD}>Промо хөнгөлөлт</td>
                     <td className={`${TD} text-right text-[12px] text-ink-500`} />
@@ -123,6 +145,15 @@ export default async function AdminReports({
                       {finance.discount > 0 ? `− ${formatMnt(finance.discount)}` : formatMnt(0)}
                     </td>
                   </tr>
+                  {promoSum.promoRows.map((e) => (
+                    <tr key={e.key} className="border-b border-ink-100">
+                      <td className={`${TD} pl-8 text-ink-500`}>үүнээс {e.detail}</td>
+                      <td className={`${TD} text-right text-[12px] text-ink-500`}>
+                        {e.orders} захиалга
+                      </td>
+                      <td className={`${TD_NUM} text-ink-500`}>{formatMnt(e.discount)}</td>
+                    </tr>
+                  ))}
                   <tr className="border-b-2 border-ink-200 bg-ink-100/50">
                     <td className={`${TD} font-bold text-ink-900`}>
                       Барааны цэвэр орлого

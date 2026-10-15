@@ -20,7 +20,7 @@ const DATE_OPTS: Intl.DateTimeFormatOptions = {
 };
 
 /** Зарлагдсан хугацаа, УБ өдрөөр. Төгсгөл нь оролцохгүй тул нэг мс хасна */
-function periodText(e: PromoEntry): string {
+export function promoPeriodText(e: PromoEntry): string {
   if (e.kind === "manual") return "—";
   const from = e.startsAt ? formatUbDate(e.startsAt, DATE_OPTS) : "…";
   const to = e.endsAt
@@ -70,7 +70,7 @@ function PromoBlock({ e }: { e: PromoEntry }) {
             {e.detail && <span className="text-[12px] text-ink-500">{e.detail}</span>}
           </div>
           <div className="mt-1 text-[12px] text-ink-500">
-            Хугацаа: <b className="text-ink-900">{periodText(e)}</b>
+            Хугацаа: <b className="text-ink-900">{promoPeriodText(e)}</b>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 text-right text-[12px] text-ink-500">
