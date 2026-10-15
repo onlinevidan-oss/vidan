@@ -289,7 +289,9 @@ export default async function AdminEbarimt({
                         )}
                         {o.ebarimt_checked_at && (
                           <div className="mt-1 text-[10px] text-ink-400">
+                            {/* year-гүй бол mn-MN сарыг ромоор ("X/15") бичдэг */}
                             {formatUbDateTime(o.ebarimt_checked_at, {
+                              year: "numeric",
                               month: "2-digit",
                               day: "2-digit",
                               hour: "2-digit",
@@ -310,9 +312,8 @@ export default async function AdminEbarimt({
         <div className="rounded-xl bg-cream px-4 py-3 text-xs leading-relaxed text-ink-700">
           <strong className="text-ink-900">Тайлбар:</strong> «Баримтын дүн», «НӨАТ»
           нь QPay-д бүртгэгдсэн баримтаас шууд авсан утга. Барааны үнэ НӨАТ-тэй
-          тул баримтын НӨАТ нь нийт дүнгийн ойролцоогоор 1/11 байна (захиалгын
-          хуудсанд харагддаг «Хүргэлтийн НӨАТ» бол зөвхөн хүргэлт дээр нэмэгдсэн
-          хэсэг). «Шалгаагүй» бол дээрх товчоор QPay-ээс уншина. Жагсаалт
+          тул баримтын НӨАТ нь нийт дүнгийн 1/11 байна — захиалгын хуудсанд
+          харагддаг «НӨАТ»-тай ижил. «Шалгаагүй» бол дээрх товчоор QPay-ээс уншина. Жагсаалт
           төлөгдсөн захиалгыг л харуулна.
         </div>
       </div>
