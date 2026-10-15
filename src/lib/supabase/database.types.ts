@@ -438,11 +438,13 @@ export type Database = {
           is_featured: boolean
           is_new: boolean
           meta_description: string | null
+          meta_title: string | null
           name_en: string | null
           name_mn: string
           old_price: number | null
           price: number
           sale_campaign: string | null
+          search_keywords: string | null
           shelf_life: string | null
           short_description: string | null
           sku: string
@@ -469,11 +471,13 @@ export type Database = {
           is_featured?: boolean
           is_new?: boolean
           meta_description?: string | null
+          meta_title?: string | null
           name_en?: string | null
           name_mn: string
           old_price?: number | null
           price: number
           sale_campaign?: string | null
+          search_keywords?: string | null
           shelf_life?: string | null
           short_description?: string | null
           sku: string
@@ -500,11 +504,13 @@ export type Database = {
           is_featured?: boolean
           is_new?: boolean
           meta_description?: string | null
+          meta_title?: string | null
           name_en?: string | null
           name_mn?: string
           old_price?: number | null
           price?: number
           sale_campaign?: string | null
+          search_keywords?: string | null
           shelf_life?: string | null
           short_description?: string | null
           sku?: string
@@ -935,6 +941,7 @@ export type Database = {
           total: number
         }[]
       }
+      read_net_response: { Args: { p_id: number }; Returns: Json }
       record_stock_in: {
         Args: {
           p_note?: string
@@ -969,7 +976,14 @@ export type Database = {
           restored_units: number
         }[]
       }
+      set_cron_secret: {
+        Args: { p_key: string; p_value: string }
+        Returns: undefined
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       sync_sale_campaign: { Args: never; Returns: Json }
+      trigger_payment_reminder: { Args: never; Returns: number }
       validate_promo: {
         Args: { p_code: string; p_subtotal: number; p_user_id: string }
         Returns: {

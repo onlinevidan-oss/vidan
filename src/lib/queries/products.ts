@@ -4,6 +4,21 @@
 import { cache } from "react";
 import { createPublicClient } from "@/lib/supabase/public";
 
+/**
+ * `search_keywords` нь зөвхөн сервер талд хэрэглэгдэнэ (дотоод хайлтын шүүлт,
+ * JSON-LD). ProductCard бол client component тул бүтэн объект нь RSC payload-
+ * оор браузерт очдог — тэнд түлхүүр үгийн жагсаалт очвол хуудасны эх кодод
+ * нуусан текст болж, Google-ийн спам бодлого зөрчинө. Тиймээс карт тэжээдэг
+ * query бүр буцаахынхаа өмнө энэ талбарыг салгана.
+ */
+function stripServerOnly<T>(rows: T[]): T[] {
+  return rows.map((row) => {
+    const { search_keywords: _sk, ...rest } = row as Record<string, unknown>;
+    void _sk;
+    return rest as T;
+  });
+}
+
 const PRODUCT_SELECT = `
   *,
   category:categories(id, name_mn, slug, color_gradient),
@@ -28,7 +43,7 @@ export async function getFeaturedProducts(limit = 4) {
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return data ?? [];
+  return stripServerOnly(data ?? []);
 }
 
 export async function getNewArrivals(limit = 4) {
@@ -41,7 +56,7 @@ export async function getNewArrivals(limit = 4) {
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return data ?? [];
+  return stripServerOnly(data ?? []);
 }
 
 // =========================================================
@@ -180,6 +195,8 @@ export async function getProducts(opts: {
         `name_mn.ilike.%${term}%`,
         `name_en.ilike.%${term}%`,
         `sku.ilike.%${term}%`,
+        // Ижил утгатай үгс — "огурцы", "orgost hemh" гэж бичихэд ч олдоно
+        `search_keywords.ilike.%${term}%`,
       ];
       // Брэндийн нэрээр хайсан бол (жнь. "owolovo") тухайн брэндийн бараа
       if (opts.searchBrandId) parts.push(`brand_id.eq.${opts.searchBrandId}`);
@@ -199,7 +216,7 @@ export async function getProducts(opts: {
 
   const { data, error } = await q;
   if (error) throw error;
-  return data ?? [];
+  return stripServerOnly(data ?? []);
 }
 
 export const getProductBySlug = cache(async (slug: string) => {
@@ -233,7 +250,7 @@ export async function getRelatedProducts(
     .neq("id", excludeId)
     .limit(limit);
   if (error) throw error;
-  return data ?? [];
+  return stripServerOnly(data ?? []);
 }
 
 /**

@@ -30,21 +30,23 @@ export async function generateMetadata({ params }: PageProps<"/products/[slug]">
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
   const canonical = `/products/${product.slug}`;
+  // Хайлтад гарах гарчиг. Хуудсан дээрх <h1> нь name_mn хэвээр үлдэнэ.
+  const seoTitle = product.meta_title?.trim() || product.name_mn;
   return {
-    title: product.name_mn,
+    title: seoTitle,
     description,
     alternates: { canonical },
     openGraph: {
       type: "website",
       locale: "mn_MN",
       url: canonical,
-      title: `${product.name_mn} | VIDAN`,
+      title: `${seoTitle} | VIDAN`,
       description,
       images: images[0] ? [{ url: images[0].url, alt: product.name_mn }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${product.name_mn} | VIDAN`,
+      title: `${seoTitle} | VIDAN`,
       description,
       images: images[0] ? [images[0].url] : undefined,
     },
@@ -72,6 +74,9 @@ export default async function ProductDetailPage({
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
   const canonicalUrl = `${SITE_URL}/products/${product.slug}`;
+  const imageAlt = product.category?.name_mn
+    ? `${product.name_mn} — ${product.category.name_mn}`
+    : product.name_mn;
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -82,6 +87,15 @@ export default async function ProductDetailPage({
     sku: product.sku,
     brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
     category: product.category?.name_mn ?? undefined,
+    gtin13: product.barcode?.trim() || undefined,
+    weight: product.weight_net_g
+      ? { "@type": "QuantitativeValue", value: product.weight_net_g, unitCode: "GRM" }
+      : undefined,
+    // Ижил утгатай үгсээс эхний хэдийг л өгнө — бүтэн жагсаалт нь дотоод
+    // хайлтынх. Схемд хэт их үг хийх нь бүтэцт өгөгдлийн журамд нийцэхгүй.
+    keywords: product.search_keywords
+      ? product.search_keywords.split(",").map((w: string) => w.trim()).filter(Boolean).slice(0, 12).join(", ")
+      : undefined,
     url: canonicalUrl,
     offers: {
       "@type": "Offer",
@@ -151,7 +165,7 @@ export default async function ProductDetailPage({
         <div>
           {images.length > 0 ? (
             <ProductGallery
-              images={images.map((i) => ({ url: i.url, alt: product.name_mn }))}
+              images={images.map((i) => ({ url: i.url, alt: imageAlt }))}
               tag={tag}
               tagText={tagText}
             />
