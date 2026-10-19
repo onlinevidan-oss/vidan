@@ -40,7 +40,11 @@ assert(productSchema, "Product JSON-LD must exist");
 assert.equal(productSchema.offers.priceCurrency, "MNT");
 assert(productSchema.offers.price > 0);
 assert(jsonLd.some((entry) => entry["@type"] === "BreadcrumbList"));
-assert(!/150\+ үнэлгээ|4\.8/.test(product), "fabricated rating must not be rendered");
+// Хуурамч үнэлгээ ("★ 4.8 · 150+ үнэлгээ") эргэж орохоос сэргийлнэ.
+// Зүгээр /4\.8/ гэж шалгаж болохгүй — updated_at цагийн тэмдэгт (…T02:37:04.894…)
+// санамсаргүй таарч, худал дохио өгдөг. Үнэлгээний системгүй тул "үнэлгээ"
+// гэдэг үг өөрөө л хангалттай тэмдэг.
+assert(!/үнэлгээ/.test(product), "fabricated rating must not be rendered");
 
 const sitemap = await html("/sitemap.xml");
 for (const route of ["/brands/vidan", "/categories/nuhash", "/privacy"]) {
