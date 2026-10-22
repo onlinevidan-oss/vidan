@@ -25,7 +25,8 @@ function preview(template: string): string {
     .replaceAll("{total}", "26,690₮")
     .replaceAll("{left}", "1 цаг 35 минут")
     .replaceAll("{link}", "vidan.mn/t/10281")
-    .replaceAll("{phone}", "99112233");
+    .replaceAll("{phone}", "99112233")
+    .replaceAll("{staff}", "Номин-Эрдэнэ");
 }
 
 function segments(text: string): number {
@@ -74,6 +75,28 @@ export function SmsSettingsForm({ initial }: { initial: SmsSettings }) {
             value={form.admin_phones}
             onChange={(e) => set("admin_phones", e.target.value)}
             placeholder="94070800, 80012476"
+            className="mt-1 w-full rounded-[8px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-sm font-bold outline-none transition focus:border-brand-500"
+          />
+        </label>
+      </SmsBlock>
+
+      <SmsBlock
+        title="Захиалга шивсэн — эзэнд мэдэгдэх"
+        desc="Ажилтан захиалга дээрх «Шивсэн» товчийг дарахад явна. {staff} — ажилтны нэр"
+        previewLabel="Эзэн харах"
+        enabled={form.entered_enabled}
+        onToggle={(v) => set("entered_enabled", v)}
+        template={form.entered_template}
+        onTemplate={(v) => set("entered_template", v)}
+      >
+        <label className="mt-3 block text-xs text-ink-700">
+          Хүлээн авах дугаар (таслалаар тусгаарлана)
+          <input
+            type="text"
+            inputMode="numeric"
+            value={form.entered_phones}
+            onChange={(e) => set("entered_phones", e.target.value)}
+            placeholder="94070800"
             className="mt-1 w-full rounded-[8px] border-[1.5px] border-ink-200 bg-white px-3 py-2 text-sm font-bold outline-none transition focus:border-brand-500"
           />
         </label>

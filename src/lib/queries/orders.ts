@@ -34,6 +34,9 @@ export type AdminOrder = {
   address_label: string | null;
   address: string | null;
   items: AdminOrderItem[];
+  /** Хүргэлтийн компанид "Шивсэн" цаг ба ажилтны нэр (0046) */
+  courier_entered_at: string | null;
+  courier_entered_by_name: string | null;
 };
 
 /** Supabase-ийн embed нэг мөрийг ч массив хэлбэрээр буцаадаг тохиолдол бий */
@@ -65,7 +68,7 @@ function firstImage(product: unknown): string | null {
 }
 
 const ORDER_SELECT = `id, order_number, total, status, payment_status, payment_method, created_at,
-   contact_phone, contact_phone2,
+   contact_phone, contact_phone2, courier_entered_at, courier_entered_by_name,
    user:profiles(full_name, phone),
    address:addresses(label, district, khoroo, detail),
    items:order_items(product_name, quantity, product:products(images:product_images(url, sort_order)))`;
@@ -94,6 +97,8 @@ function mapOrder(o: any): AdminOrder {
       quantity: it.quantity,
       image_url: firstImage(it.product),
     })),
+    courier_entered_at: o.courier_entered_at ?? null,
+    courier_entered_by_name: o.courier_entered_by_name ?? null,
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */

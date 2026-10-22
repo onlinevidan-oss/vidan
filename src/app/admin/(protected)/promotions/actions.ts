@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { ubAddDays, ubDayStart } from "@/lib/datetime";
 import { normalizePromoCode, validatePromo, type PromoInput } from "@/lib/promo";
+import { logStaffActivity } from "@/lib/staff-activity";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -51,6 +52,8 @@ export async function createPromo(payload: PromoInput): Promise<Result> {
   const { error } = await supabase.from("promotions").insert(toRow(p));
   if (error) return { ok: false, error: humanError(error) };
 
+  await logStaffActivity({ action: "promo_create", summary: `Промо код үүсгэв: ${p.code}`, entityType: "promo" });
+
   revalidatePath("/admin/promotions");
   return { ok: true };
 }
@@ -72,6 +75,8 @@ export async function updatePromo(id: string, payload: PromoInput): Promise<Resu
   if (error) return { ok: false, error: humanError(error) };
   if (!data || data.length === 0) return { ok: false, error: "Урамшуулал олдсонгүй" };
 
+  await logStaffActivity({ action: "promo_update", summary: `Промо код засав: ${p.code}`, entityType: "promo", entityId: id });
+
   revalidatePath("/admin/promotions");
   return { ok: true };
 }
@@ -86,9 +91,16 @@ export async function setPromoActive(id: string, active: boolean): Promise<Resul
     .from("promotions")
     .update({ is_active: active })
     .eq("id", id)
-    .select("id");
+    .select("id, code");
   if (error) return { ok: false, error: error.message };
   if (!data || data.length === 0) return { ok: false, error: "Урамшуулал олдсонгүй" };
+
+  await logStaffActivity({
+    action: "promo_toggle",
+    summary: `Промо код ${data[0].code} ${active ? "асаав" : "унтраав"}`,
+    entityType: "promo",
+    entityId: id,
+  });
 
   revalidatePath("/admin/promotions");
   return { ok: true };
@@ -106,7 +118,7 @@ export async function deletePromo(id: string): Promise<Result> {
 
   const supabase = await createClient();
   const [{ data: promo }, { count }] = await Promise.all([
-    supabase.from("promotions").select("usage_count").eq("id", id).maybeSingle(),
+    supabase.from("promotions").select("usage_count, code").eq("id", id).maybeSingle(),
     supabase
       .from("promo_redemptions")
       .select("id", { count: "exact", head: true })
@@ -122,6 +134,8 @@ export async function deletePromo(id: string): Promise<Result> {
 
   const { error } = await supabase.from("promotions").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({ action: "promo_delete", summary: `Промо код устгав: ${promo.code}`, entityType: "promo", entityId: id });
 
   revalidatePath("/admin/promotions");
   return { ok: true };

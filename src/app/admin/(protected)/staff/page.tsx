@@ -2,11 +2,14 @@ import { TopBar } from "@/components/admin/TopBar";
 import { StaffManager, type StaffListRow } from "@/components/admin/StaffManager";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentStaff } from "@/lib/queries/staff";
+import { StaffActivityLog, type ActivityRow } from "@/components/admin/StaffActivityLog";
 
 export const metadata = { title: "Ажилтан | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminStaff() {
+export default async function AdminStaff({ searchParams }: PageProps<"/admin/staff">) {
+  const sp = await searchParams;
+  const whoRaw = Array.isArray(sp.who) ? sp.who[0] : sp.who;
   const me = await getCurrentStaff();
 
   // Ажилтны эрхийг зөвхөн админ удирдана (actions.ts-ийн шалгалттай ижил)
@@ -32,8 +35,18 @@ export default async function AdminStaff() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("staff")
-    .select("id, full_name, phone, email, role, is_active, created_at")
+    .select("id, full_name, phone, email, role, is_active, created_at, last_login_at")
     .order("created_at");
+
+  // Хэн юу хийсэн — сүүлийн 200, хүнээр шүүж болно
+  const who = whoRaw && (data ?? []).some((s) => s.id === whoRaw) ? whoRaw : null;
+  let activityQ = supabase
+    .from("staff_activity")
+    .select("id, actor_id, actor_name, actor_role, action, summary, entity_type, entity_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (who) activityQ = activityQ.eq("actor_id", who);
+  const { data: activity } = await activityQ;
 
   const staff: StaffListRow[] = (data ?? []).map((s) => ({
     id: s.id,
@@ -59,6 +72,16 @@ export default async function AdminStaff() {
           </div>
         </div>
         <StaffManager staff={staff} meId={me.id} />
+        <StaffActivityLog
+          rows={(activity ?? []) as ActivityRow[]}
+          people={(data ?? []).map((s) => ({
+            id: s.id,
+            full_name: s.full_name,
+            role: s.role,
+            last_login_at: s.last_login_at,
+          }))}
+          selected={who}
+        />
       </div>
     </>
   );

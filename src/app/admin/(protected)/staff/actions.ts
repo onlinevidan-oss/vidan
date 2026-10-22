@@ -8,8 +8,10 @@ import {
   checkStaffChange,
   isStaffRole,
   phoneVariants,
+  STAFF_ROLE_LABEL,
   type StaffRole,
 } from "@/lib/staff-rules";
+import { logStaffActivity } from "@/lib/staff-activity";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -88,6 +90,13 @@ export async function addStaff(input: {
     };
   }
 
+  await logStaffActivity({
+    action: "staff_add",
+    summary: `Ажилтан нэмэв: ${fullName} — ${STAFF_ROLE_LABEL[input.role]}`,
+    entityType: "staff",
+    entityId: profile.id,
+  });
+
   revalidatePath("/admin/staff");
   return { ok: true };
 }
@@ -110,7 +119,7 @@ export async function updateStaff(
 
   const supabase = await createClient();
   const [{ data: target }, { count: admins }] = await Promise.all([
-    supabase.from("staff").select("id, role, is_active").eq("id", id).maybeSingle(),
+    supabase.from("staff").select("id, role, is_active, full_name").eq("id", id).maybeSingle(),
     supabase
       .from("staff")
       .select("id", { count: "exact", head: true })
@@ -129,6 +138,22 @@ export async function updateStaff(
 
   const { error } = await supabase.from("staff").update(clean).eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  const changes: string[] = [];
+  if (clean.role && clean.role !== target.role) {
+    changes.push(`эрх ${STAFF_ROLE_LABEL[target.role as StaffRole] ?? target.role} → ${STAFF_ROLE_LABEL[clean.role]}`);
+  }
+  if (clean.is_active !== undefined && clean.is_active !== target.is_active) {
+    changes.push(clean.is_active ? "идэвхжүүлсэн" : "идэвхгүй болгосон");
+  }
+  if (changes.length) {
+    await logStaffActivity({
+      action: "staff_update",
+      summary: `Ажилтан ${target.full_name}: ${changes.join("; ")}`,
+      entityType: "staff",
+      entityId: id,
+    });
+  }
 
   revalidatePath("/admin/staff");
   return { ok: true };

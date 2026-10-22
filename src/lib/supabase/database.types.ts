@@ -280,6 +280,9 @@ export type Database = {
           cancelled_reason: string | null
           contact_phone: string | null
           contact_phone2: string | null
+          courier_entered_at: string | null
+          courier_entered_by: string | null
+          courier_entered_by_name: string | null
           created_at: string
           delivered_at: string | null
           delivery_window: string | null
@@ -319,6 +322,9 @@ export type Database = {
           cancelled_reason?: string | null
           contact_phone?: string | null
           contact_phone2?: string | null
+          courier_entered_at?: string | null
+          courier_entered_by?: string | null
+          courier_entered_by_name?: string | null
           created_at?: string
           delivered_at?: string | null
           delivery_window?: string | null
@@ -353,6 +359,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          courier_entered_at?: string | null
+          courier_entered_by?: string | null
+          courier_entered_by_name?: string | null
           address_id?: string | null
           cancelled_at?: string | null
           cancelled_reason?: string | null
@@ -887,6 +896,42 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_activity: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          actor_role: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          summary: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          summary: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          summary?: string
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           created_at: string
@@ -950,6 +995,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      mark_courier_entered: {
+        Args: { p_order_id: string }
+        Returns: {
+          entered_at: string
+          entered_by_name: string
+          newly_marked: boolean
+          order_number: string
+        }[]
+      }
+      touch_staff_login: { Args: Record<PropertyKey, never>; Returns: undefined }
       calc_order_totals:
         | {
             Args: { p_item_count?: number; p_subtotal: number }

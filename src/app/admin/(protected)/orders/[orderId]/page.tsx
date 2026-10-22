@@ -7,6 +7,8 @@ import { vatBreakdown } from "@/lib/pricing";
 import { formatUbDateTime } from "@/lib/datetime";
 import { EBARIMT_CHECK_LABEL, ebarimtCheck } from "@/lib/ebarimt/check";
 import { OrderActions } from "@/components/admin/OrderActions";
+import { CourierEnterButton } from "@/components/admin/CourierEnterButton";
+import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/staff-rules";
 import {
   STATUS_FLOW,
   NEXT_STATUS_LABEL as NEXT_LABEL,
@@ -51,7 +53,11 @@ export default async function AdminOrderDetail({
     total_spent: number | null;
   } | null;
 
-  const events = (order.events as { id: string; event_type: string; description: string | null; created_at: string }[]).sort(
+  // Үйл явдал бүрийг хэн хийснийг нэр, эрхтэй нь харуулна
+  const { data: staffList } = await supabase.from("staff").select("id, full_name, role");
+  const staffById = new Map((staffList ?? []).map((s) => [s.id, s]));
+
+  const events = (order.events as { id: string; event_type: string; description: string | null; created_at: string; created_by: string | null }[]).sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
@@ -75,12 +81,23 @@ export default async function AdminOrderDetail({
               </span>
             </div>
           </div>
-          <Link
-            href="/admin/orders"
-            className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-4 py-2 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
-          >
-            ← Буцах
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            {(order.courier_entered_at ||
+              (order.payment_status === "paid" && order.status !== "cancelled")) && (
+              <CourierEnterButton
+                orderId={order.id}
+                orderNumber={order.order_number}
+                enteredAt={order.courier_entered_at}
+                enteredBy={order.courier_entered_by_name}
+              />
+            )}
+            <Link
+              href="/admin/orders"
+              className="rounded-[10px] border-[1.5px] border-ink-200 bg-white px-4 py-2 text-sm font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+            >
+              ← Буцах
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
@@ -157,6 +174,16 @@ export default async function AdminOrderDetail({
                       </div>
                       <div className="text-xs text-ink-500">
                         {formatUbDateTime(e.created_at)}
+                        {e.created_by && (
+                          <span className="ml-2 font-semibold text-ink-700">
+                            · {staffById.get(e.created_by)?.full_name ?? "Ажилтан"}
+                            {staffById.get(e.created_by) && (
+                              <span className="ml-1 font-normal text-ink-500">
+                                ({STAFF_ROLE_LABEL[staffById.get(e.created_by)!.role as StaffRole] ?? staffById.get(e.created_by)!.role})
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logStaffActivity } from "@/lib/staff-activity";
 
 function toSlug(text: string): string {
   return text
@@ -44,6 +45,8 @@ export async function createCategory(formData: FormData): Promise<void> {
 
   if (error) throw new Error(error.message);
 
+  await logStaffActivity({ action: "category_create", summary: `Ангилал нэмэв: ${name_mn}`, entityType: "category" });
+
   revalidatePath("/admin/categories");
   redirect("/admin/categories");
 }
@@ -72,6 +75,8 @@ export async function updateCategory(id: string, formData: FormData): Promise<vo
 
   if (error) throw new Error(error.message);
 
+  await logStaffActivity({ action: "category_update", summary: `Ангилал засав: ${name_mn}`, entityType: "category", entityId: id });
+
   revalidatePath("/admin/categories");
   redirect("/admin/categories");
 }
@@ -91,8 +96,16 @@ export async function deleteCategory(id: string): Promise<void> {
     throw new Error(`Энэ ангилалд ${count} бүтээгдэхүүн байна. Эхлээд бүтээгдэхүүнийг шилжүүлнэ үү.`);
   }
 
+  const { data: gone } = await supabase.from("categories").select("name_mn").eq("id", id).maybeSingle();
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  await logStaffActivity({
+    action: "category_delete",
+    summary: `Ангилал устгав: ${gone?.name_mn ?? id}`,
+    entityType: "category",
+    entityId: id,
+  });
 
   revalidatePath("/admin/categories");
 }

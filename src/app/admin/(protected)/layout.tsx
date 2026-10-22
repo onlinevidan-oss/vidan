@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentStaff } from "@/lib/queries/staff";
+import { createClient } from "@/lib/supabase/server";
 import { getAdminAlerts } from "@/lib/queries/admin-alerts";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { OrdersLive } from "@/components/admin/OrdersLive";
@@ -17,7 +18,14 @@ export default async function AdminLayout({
   const staff = await getCurrentStaff();
   if (!staff) redirect("/admin/forbidden");
 
-  const { newOrders } = await getAdminAlerts();
+  // Хэн, хэзээ админд орсныг бүртгэнэ (30 минутад нэг удаа — 0046).
+  // Алдаа гарвал хуудсыг саатуулахгүй.
+  const supabase = await createClient();
+  const [{ newOrders }, touch] = await Promise.all([
+    getAdminAlerts(),
+    supabase.rpc("touch_staff_login"),
+  ]);
+  if (touch.error) console.error("[touch_staff_login failed]", touch.error);
 
   const initials =
     staff.full_name

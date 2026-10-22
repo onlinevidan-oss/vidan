@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/admin-guard";
 import { slugify } from "@/lib/utils";
 import { isValidSku, normalizeSku, SKU_HINT } from "@/lib/sku";
 import { isValidClassificationCode } from "@/lib/ebarimt/classification";
+import { logStaffActivity } from "@/lib/staff-activity";
+import { describeProductChange } from "@/lib/staff-activity-text";
 import type { Database } from "@/lib/supabase/database.types";
 
 type ProductInsert = Database["public"]["Tables"]["products"]["Insert"];
@@ -166,6 +168,13 @@ export async function createProduct(
     }
   }
 
+  await logStaffActivity({
+    action: "product_create",
+    summary: `Шинэ бараа: ${insert.name_mn}${initialStock > 0 ? ` (эхний үлдэгдэл ${initialStock})` : ""}`,
+    entityType: "product",
+    entityId: data.id,
+  });
+
   revalidateProductPaths(data.slug);
   revalidatePath("/admin/inventory");
   return { ok: true, id: data.id };
@@ -182,14 +191,28 @@ export async function updateProduct(
   if (invalid) return { ok: false, error: invalid };
 
   const supabase = await createClient();
+  // Түүхэнд "юу өөрчлөгдсөн"-ийг бичихийн тулд өмнөх утга
+  const { data: before } = await supabase
+    .from("products")
+    .select("name_mn, price, old_price, is_active")
+    .eq("id", id)
+    .maybeSingle();
+
   const update: ProductUpdate = payloadToRow(payload);
   const { data, error } = await supabase
     .from("products")
     .update(update)
     .eq("id", id)
-    .select("slug")
+    .select("slug, name_mn, price, old_price, is_active")
     .single();
   if (error) return { ok: false, error: humanDbError(error) };
+
+  await logStaffActivity({
+    action: "product_update",
+    summary: `Бараа засав: ${describeProductChange(before, data)}`,
+    entityType: "product",
+    entityId: id,
+  });
 
   revalidateProductPaths(data?.slug);
   return { ok: true };
@@ -200,6 +223,11 @@ export async function deleteProduct(id: string): Promise<{ ok: boolean; error?: 
   if (!guard.ok) return { ok: false, error: guard.error };
 
   const supabase = await createClient();
+  const { data: gone } = await supabase
+    .from("products")
+    .select("name_mn, sku")
+    .eq("id", id)
+    .maybeSingle();
 
   // Эхлээд бүх зургийн storage path-уудыг олж устгана
   const { data: imgs } = await supabase
@@ -217,6 +245,13 @@ export async function deleteProduct(id: string): Promise<{ ok: boolean; error?: 
 
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({
+    action: "product_delete",
+    summary: `Бараа устгав: ${gone?.name_mn ?? id}${gone?.sku ? ` (${gone.sku})` : ""}`,
+    entityType: "product",
+    entityId: id,
+  });
 
   revalidateProductPaths();
   return { ok: true };
@@ -265,6 +300,13 @@ export async function addProductImage(
     .single();
   if (error || !data) return { ok: false, error: error?.message || "Insert failed" };
 
+  await logStaffActivity({
+    action: "product_image_add",
+    summary: "Барааны зураг нэмэв",
+    entityType: "product",
+    entityId: productId,
+  });
+
   revalidatePath(`/admin/products/${productId}`);
   revalidateProductPaths();
   return { ok: true, id: data.id };
@@ -289,6 +331,12 @@ export async function removeProductImage(imageId: string): Promise<{ ok: boolean
       await supabase.storage.from("products").remove([path]);
     }
     await supabase.from("product_images").delete().eq("id", imageId);
+    await logStaffActivity({
+      action: "product_image_remove",
+      summary: "Барааны зураг устгав",
+      entityType: "product",
+      entityId: img.product_id,
+    });
     revalidatePath(`/admin/products/${img.product_id}`);
   }
 

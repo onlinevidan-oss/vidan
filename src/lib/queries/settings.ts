@@ -192,6 +192,11 @@ export type SmsSettings = {
   /** Таслалаар тусгаарласан дугаарууд (parseRecipients задална) */
   admin_phones: string;
   admin_template: string;
+  /** Ажилтан захиалгыг хүргэлтийн компанид "Шивсэн" үед — эзэнд (0046) */
+  entered_enabled: boolean;
+  entered_phones: string;
+  /** {staff} — шивсэн ажилтны нэр, {order} — захиалгын дугаар */
+  entered_template: string;
 };
 
 export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
@@ -210,6 +215,10 @@ export const SMS_SETTINGS_DEFAULTS: SmsSettings = {
   admin_enabled: false,
   admin_phones: "",
   admin_template: "Шинэ захиалга {order}, {total}. Утас {phone}",
+  // Дугаар нь тохиргоонд (0046-д 94070800 оруулсан) — энд хоосон
+  entered_enabled: false,
+  entered_phones: "",
+  entered_template: "{staff} {order} захиалгыг шивлээ",
 };
 
 export async function getSmsSettings(): Promise<SmsSettings> {

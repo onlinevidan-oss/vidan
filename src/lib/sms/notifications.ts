@@ -31,14 +31,15 @@ export type SmsKind = "paid" | "cancelled" | "unpaid";
 export function renderSmsTemplate(
   template: string,
   order: { order_number: string; total: number },
-  extra: { left?: string; link?: string; phone?: string } = {},
+  extra: { left?: string; link?: string; phone?: string; staff?: string } = {},
 ): string {
   return template
     .replaceAll("{order}", order.order_number)
     .replaceAll("{total}", `${Number(order.total).toLocaleString("en-US")}₮`)
     .replaceAll("{left}", extra.left ?? "")
     .replaceAll("{link}", extra.link ?? "")
-    .replaceAll("{phone}", extra.phone ?? "");
+    .replaceAll("{phone}", extra.phone ?? "")
+    .replaceAll("{staff}", extra.staff ?? "");
 }
 
 /**
@@ -211,5 +212,76 @@ export async function sendAdminOrderSms(orderId: string): Promise<void> {
       .eq("event_type", eventType);
   } catch (e) {
     console.error(`[admin sms failed] order=${orderId}`, e);
+  }
+}
+
+/**
+ * Ажилтан захиалгыг хүргэлтийн компанид "Шивсэн" үед эзэнд SMS
+ * (тохиргоо: sms_settings.entered_*). Жнь: "Номин-Эрдэнэ #10323 захиалгыг шивлээ".
+ *
+ * Нэг захиалгад нэг л удаа — илгээхийн ӨМНӨ order_events-д тэмдэглэнэ
+ * (0046-ийн unique index). Best-effort: алдаа шидэхгүй.
+ */
+export async function sendCourierEnteredSms(
+  orderId: string,
+  staffName: string,
+): Promise<void> {
+  try {
+    if (!process.env.SMS_API_KEY || !process.env.SMS_FROM_NUMBER) return;
+
+    const admin = createAdminClient();
+    const { data: cfgRow } = await admin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "sms_settings")
+      .maybeSingle();
+    const cfg = {
+      ...SMS_SETTINGS_DEFAULTS,
+      ...((cfgRow?.value ?? {}) as Partial<SmsSettings>),
+    };
+    if (!cfg.entered_enabled || !cfg.entered_template.trim()) return;
+
+    const phones = parseRecipients(cfg.entered_phones).valid;
+    if (phones.length === 0) return;
+
+    const { data: order } = await admin
+      .from("orders")
+      .select("order_number, total")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const eventType = "sms_courier_entered";
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: eventType,
+      description: `Шивсэн SMS → ${phones.join(", ")}`,
+    });
+    if (claimErr) {
+      if (claimErr.code !== "23505") {
+        console.error("[entered sms claim insert failed]", claimErr);
+      }
+      return;
+    }
+
+    const text = renderSmsTemplate(cfg.entered_template, order, { staff: staffName });
+    const results = await Promise.allSettled(
+      phones.map((to) => sendSms({ to, text })),
+    );
+    const summary = results
+      .map((r, i) =>
+        r.status === "fulfilled"
+          ? `${phones[i]} ✓`
+          : `${phones[i]} ✗ ${String(r.reason?.message ?? r.reason).slice(0, 80)}`,
+      )
+      .join(", ");
+
+    await admin
+      .from("order_events")
+      .update({ description: `Шивсэн SMS → ${summary}` })
+      .eq("order_id", orderId)
+      .eq("event_type", eventType);
+  } catch (e) {
+    console.error(`[entered sms failed] order=${orderId}`, e);
   }
 }

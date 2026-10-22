@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { isValidDateKey } from "@/lib/report-period";
 import { ubDayStart } from "@/lib/datetime";
+import { logStaffActivity } from "@/lib/staff-activity";
 
 export type StockInResult =
   | { ok: true; newStock: number }
@@ -76,6 +77,21 @@ export async function recordStockMovement(input: {
   if (error) return { ok: false, error: humanError(error.message) };
 
   const row = Array.isArray(data) ? data[0] : data;
+
+  const { data: prod } = await supabase
+    .from("products")
+    .select("name_mn")
+    .eq("id", input.productId)
+    .maybeSingle();
+  const kindLabel = { in: "Орлого", out: "Зарлага", adjust: "Тооллогын засвар" }[input.kind];
+  const signed = input.kind === "out" ? -Math.abs(qty) : qty;
+  await logStaffActivity({
+    action: "stock_movement",
+    summary: `${kindLabel}: ${prod?.name_mn ?? "бараа"} ${signed > 0 ? "+" : ""}${signed} ш → үлдэгдэл ${Number(row?.new_stock ?? 0)}`,
+    entityType: "product",
+    entityId: input.productId,
+  });
+
   revalidatePath("/admin/inventory");
   revalidatePath("/admin/inventory/movements");
   revalidatePath("/admin/reports");

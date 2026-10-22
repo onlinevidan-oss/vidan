@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseRecipients } from "@/lib/sms/recipients";
+import { logStaffActivity } from "@/lib/staff-activity";
 import type {
   BrochurePage,
   CommerceSettings,
@@ -47,6 +48,8 @@ export async function updateHeroSettings(
     .upsert({ key: "hero", value, updated_at: new Date().toISOString() });
 
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({ action: "settings_hero", summary: "Тохиргоо: нүүрний баннер засав", entityType: "settings" });
 
   revalidatePath("/");
   revalidatePath("/admin/settings");
@@ -100,6 +103,12 @@ export async function updateHeroSlides(
   });
 
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({
+    action: "settings_hero_slides",
+    summary: `Тохиргоо: нүүрний слайд засав (${cleaned.length} слайд)`,
+    entityType: "settings",
+  });
 
   revalidatePath("/");
   revalidatePath("/admin/settings");
@@ -173,6 +182,12 @@ export async function updateCommerceSettings(
 
   if (error) return { ok: false, error: error.message };
 
+  await logStaffActivity({
+    action: "settings_commerce",
+    summary: "Тохиргоо: худалдаа (хүргэлт, доод дүн) засав",
+    entityType: "settings",
+  });
+
   revalidatePath("/cart");
   revalidatePath("/checkout");
   revalidatePath("/");
@@ -219,6 +234,12 @@ export async function updateAboutBrochure(
   });
 
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({
+    action: "settings_brochure",
+    summary: `Тохиргоо: танилцуулга (${cleaned.length} хуудас)`,
+    entityType: "settings",
+  });
 
   revalidatePath("/about");
   revalidatePath("/admin/settings");
@@ -284,6 +305,12 @@ export async function updateSaleCampaign(
 
   const res = (synced ?? {}) as { active?: boolean; applied?: number; reverted?: number };
 
+  await logStaffActivity({
+    action: "settings_campaign",
+    summary: `Тохиргоо: хямдрал «${value.name || value.code}» ${value.percent}% — ${value.enabled ? "асаалттай" : "унтраалттай"}`,
+    entityType: "settings",
+  });
+
   revalidatePath("/");
   revalidatePath("/products");
   revalidatePath("/admin/settings");
@@ -333,12 +360,27 @@ export async function updateSmsSettings(
   if (payload.admin_enabled && !adminTpl) {
     return { ok: false, error: "Админы мэдэгдлийн текст хоосон байна" };
   }
+  const enteredTpl = (payload.entered_template ?? "").trim();
+  const enteredPhones = parseRecipients(payload.entered_phones ?? "");
+  if (enteredPhones.invalid.length > 0) {
+    return {
+      ok: false,
+      error: `"Шивсэн" мэдэгдлийн дугаар буруу байна: ${enteredPhones.invalid.join(", ")}`,
+    };
+  }
+  if (payload.entered_enabled && enteredPhones.valid.length === 0) {
+    return { ok: false, error: "\"Шивсэн\" мэдэгдэл авах дугаар оруулна уу" };
+  }
+  if (payload.entered_enabled && !enteredTpl) {
+    return { ok: false, error: "\"Шивсэн\" мэдэгдлийн текст хоосон байна" };
+  }
   // Хэт урт SMS = олон segment = илүү төлбөр. 3 segment-ээр хязгаарлав.
   if (
     paid.length > 210 ||
     cancelled.length > 210 ||
     unpaid.length > 210 ||
-    adminTpl.length > 210
+    adminTpl.length > 210 ||
+    enteredTpl.length > 210
   ) {
     return { ok: false, error: "SMS хэт урт байна (дээд тал нь 210 тэмдэгт)" };
   }
@@ -364,6 +406,9 @@ export async function updateSmsSettings(
     admin_enabled: !!payload.admin_enabled,
     admin_phones: adminPhones.valid.join(", "),
     admin_template: adminTpl,
+    entered_enabled: !!payload.entered_enabled,
+    entered_phones: enteredPhones.valid.join(", "),
+    entered_template: enteredTpl,
   };
 
   const supabase = await createClient();
@@ -373,6 +418,8 @@ export async function updateSmsSettings(
     updated_at: new Date().toISOString(),
   });
   if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({ action: "settings_sms", summary: "Тохиргоо: SMS мэдэгдэл засав", entityType: "settings" });
 
   revalidatePath("/admin/settings");
   return { ok: true };
