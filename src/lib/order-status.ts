@@ -93,3 +93,17 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
 export function isFinalStatus(status: OrderStatus): boolean {
   return status === "delivered" || status === "cancelled";
 }
+
+/**
+ * "Шивсэн" товч харагдах эсэх — төлөгдсөн, хүргэгдээгүй, цуцлагдаагүй
+ * захиалгад. Аль хэдийн шивсэн бол (хэн, хэзээ) үргэлж харагдана.
+ * Хүргэгдсэн захиалгыг шивэх утгагүй — жагсаалтыг дүүргэхгүй.
+ */
+export function canShowCourierEnter(o: {
+  payment_status: string;
+  status: string;
+  courier_entered_at: string | null;
+}): boolean {
+  if (o.courier_entered_at) return true;
+  return o.payment_status === "paid" && o.status !== "cancelled" && o.status !== "delivered";
+}

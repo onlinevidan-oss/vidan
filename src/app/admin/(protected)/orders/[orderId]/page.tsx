@@ -12,6 +12,7 @@ import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/staff-rules";
 import {
   STATUS_FLOW,
   NEXT_STATUS_LABEL as NEXT_LABEL,
+  canShowCourierEnter,
   type OrderStatus,
 } from "@/lib/order-status";
 
@@ -82,8 +83,7 @@ export default async function AdminOrderDetail({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {(order.courier_entered_at ||
-              (order.payment_status === "paid" && order.status !== "cancelled")) && (
+            {canShowCourierEnter(order) && (
               <CourierEnterButton
                 orderId={order.id}
                 orderNumber={order.order_number}

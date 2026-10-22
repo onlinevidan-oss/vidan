@@ -10,14 +10,14 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { markCourierEntered } from "@/app/admin/(protected)/orders/[orderId]/actions";
 
+/**
+ * "10.22 15:21" (УБ цаг). Intl-ийн mn-MN-д найдахгүй — зарим браузер
+ * дэмждэггүй тул "10/22, 03:21 PM" гэж англиар гаргаж байв.
+ */
 function hhmm(iso: string): string {
-  return new Date(iso).toLocaleString("mn-MN", {
-    timeZone: "Asia/Ulaanbaatar",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const d = new Date(Date.parse(iso) + 8 * 3600_000);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(d.getUTCMonth() + 1)}.${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
 }
 
 export function CourierEnterButton({

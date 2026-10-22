@@ -5,6 +5,7 @@ import type { AdminOrder } from "@/lib/queries/orders";
 import { formatUbDateTime } from "@/lib/datetime";
 import { msUntilExpiry } from "@/lib/order-hold";
 import { CourierEnterButton } from "./CourierEnterButton";
+import { canShowCourierEnter } from "@/lib/order-status";
 
 /** Төлбөр хүлээгдэж буй захиалга цуцлагдтал үлдсэн хугацаа — "1ц 35м" */
 function timeLeft(createdAt: string): string | null {
@@ -26,9 +27,7 @@ export function OrderCard({ order: o }: { order: AdminOrder }) {
   const unpaid = o.payment_status !== "paid";
   const waiting = o.payment_status === "pending" && o.status !== "cancelled";
   const left = waiting ? timeLeft(o.created_at) : null;
-  // "Шивсэн" — төлөгдсөн, цуцлагдаагүй захиалгад (эсвэл аль хэдийн шивсэн бол)
-  const showEnter =
-    !!o.courier_entered_at || (o.payment_status === "paid" && o.status !== "cancelled");
+  const showEnter = canShowCourierEnter(o);
 
   return (
     // Товч нь холбоос (<a>) дотор байж болохгүй тул картыг div болгож,
