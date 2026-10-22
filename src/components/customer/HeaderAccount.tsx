@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { UserMenu } from "@/components/customer/UserMenu";
+import { FruitToast } from "@/components/customer/FruitToast";
 
 type AccountState = {
   name: string | null;
@@ -40,10 +41,20 @@ export function HeaderAccount() {
   }, []);
 
   if (!loaded) return <div aria-hidden className="h-10 w-[86px] animate-pulse rounded-lg bg-ink-100" />;
-  if (account) return <UserMenu name={account.name} phone={account.phone} isStaff={account.isStaff} />;
+  if (account) {
+    return (
+      <>
+        <UserMenu name={account.name} phone={account.phone} isStaff={account.isStaff} />
+        <FruitToast />
+      </>
+    );
+  }
   return (
-    <Link href="/login" className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-700">
-      Нэвтрэх
-    </Link>
+    <>
+      <FruitToast demoOnly />
+      <Link href="/login" className="rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-brand-700">
+        Нэвтрэх
+      </Link>
+    </>
   );
 }

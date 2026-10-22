@@ -4,6 +4,7 @@ import { getBrands } from "@/lib/queries/products";
 import { HeaderAccount } from "@/components/customer/HeaderAccount";
 import { CartButton } from "@/components/customer/CartButton";
 import { SearchBox } from "@/components/customer/SearchBox";
+import { FRUIT_BRAND, FRUIT_PREVIEW } from "@/lib/fruit-preview";
 
 function CatChip({ href, label }: { href: string; label: string }) {
   return (
@@ -57,6 +58,10 @@ export async function Header() {
                 label={b.name}
               />
             ))}
+            {/* ЗАГВАР — production-д туг байхгүй тул харагдахгүй */}
+            {FRUIT_PREVIEW && (
+              <CatChip href={`/brands/${FRUIT_BRAND.slug}`} label={FRUIT_BRAND.name} />
+            )}
             <CatChip href="/products?new=true" label="Шинэ" />
           </div>
         </nav>
