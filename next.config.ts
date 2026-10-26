@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
         destination: "/products/zogiin-bal-920g",
         permanent: true,
       },
+      // 2026-10-26: масс SMS-ийн холбоос. CallPro Facebook-ийн холбоосыг
+      // "unverified links" гэж татгалздаг тул vidan.mn-ээр дамжуулна.
+      // Түр зуурын урамшуулал тул permanent биш (кэшлэгдэхгүй).
+      {
+        source: "/aztan",
+        destination: "https://www.facebook.com/share/p/1CZk2V7kZj/",
+        permanent: false,
+      },
     ];
   },
   images: {
