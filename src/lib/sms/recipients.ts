@@ -33,3 +33,29 @@ export function parseRecipients(raw: string | null | undefined): {
 
   return { valid, invalid };
 }
+
+/**
+ * Масс SMS-ийн хүлээн авагчид — бүртгэлтэй хэрэглэгчдийн утас (0047).
+ * Ажилтныг хасна, давхардлыг арилгана, зөвхөн Монгол гар утас.
+ */
+export function broadcastRecipients(
+  profiles: { id: string; phone: string | null }[],
+  staffIds: Set<string>,
+): string[] {
+  const out = new Set<string>();
+  for (const p of profiles) {
+    if (staffIds.has(p.id) || !p.phone) continue;
+    const { valid } = parseRecipients(p.phone);
+    if (valid.length === 1) out.add(valid[0]);
+  }
+  return [...out];
+}
+
+/**
+ * Кирилл SMS-ийн хэсгийн тоо. CallPro төгсгөлд " VIDAN" (6 тэмдэгт)
+ * залгадаг. Нэг хэсэг 70, олон хэсэгтэй бол хэсэг бүр 67 тэмдэгт.
+ */
+export function smsSegments(text: string): number {
+  const n = text.length + 6;
+  return n <= 70 ? 1 : Math.ceil(n / 67);
+}

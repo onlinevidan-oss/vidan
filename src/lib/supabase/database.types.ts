@@ -896,6 +896,72 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_broadcasts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          failed: number
+          finished_at: string | null
+          id: string
+          recipients: number | null
+          send_at: string
+          sent: number
+          started_at: string | null
+          status: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          recipients?: number | null
+          send_at: string
+          sent?: number
+          started_at?: string | null
+          status?: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          failed?: number
+          finished_at?: string | null
+          id?: string
+          recipients?: number | null
+          send_at?: string
+          sent?: number
+          started_at?: string | null
+          status?: string
+          text?: string
+        }
+        Relationships: []
+      }
+      sms_broadcast_log: {
+        Row: {
+          broadcast_id: string
+          created_at: string
+          error: string | null
+          ok: boolean | null
+          phone: string
+        }
+        Insert: {
+          broadcast_id: string
+          created_at?: string
+          error?: string | null
+          ok?: boolean | null
+          phone: string
+        }
+        Update: {
+          broadcast_id?: string
+          created_at?: string
+          error?: string | null
+          ok?: boolean | null
+          phone?: string
+        }
+        Relationships: []
+      }
       staff_activity: {
         Row: {
           action: string

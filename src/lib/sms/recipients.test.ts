@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { parseRecipients } from "./recipients.ts";
+import { broadcastRecipients, parseRecipients, smsSegments } from "./recipients.ts";
 
 describe("parseRecipients", () => {
   test("таслалаар тусгаарласан дугааруудыг задална", () => {
@@ -38,5 +38,36 @@ describe("parseRecipients", () => {
   test("хоосон утга алдаа биш", () => {
     assert.deepEqual(parseRecipients(""), { valid: [], invalid: [] });
     assert.deepEqual(parseRecipients(null), { valid: [], invalid: [] });
+  });
+});
+
+describe("broadcastRecipients", () => {
+  test("ажилтныг хасаж, давхардал ба буруу дугаарыг арилгана", () => {
+    const r = broadcastRecipients(
+      [
+        { id: "a", phone: "99112233" },
+        { id: "b", phone: "+976 9911 2233" },
+        { id: "c", phone: "94070800" },
+        { id: "d", phone: null },
+        { id: "e", phone: "12345" },
+        { id: "f", phone: "88001122" },
+      ],
+      new Set(["c"]),
+    );
+    assert.deepEqual(r, ["99112233", "88001122"]);
+  });
+});
+
+describe("smsSegments", () => {
+  test("' VIDAN' залгаасыг тооцно", () => {
+    assert.equal(smsSegments("а".repeat(64)), 1);
+    assert.equal(smsSegments("а".repeat(65)), 2);
+  });
+
+  test("масс SMS-ийн текст 2 хэсэг", () => {
+    assert.equal(
+      smsSegments("Захиалга хийгээд азтан болоорой! Дэлгэрэнгүй: https://www.facebook.com/share/p/1CZk2V7kZj/"),
+      2,
+    );
   });
 });

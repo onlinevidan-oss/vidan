@@ -6,6 +6,8 @@ import { requireAdmin } from "@/lib/admin-guard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseRecipients } from "@/lib/sms/recipients";
 import { logStaffActivity } from "@/lib/staff-activity";
+import { sendSms } from "@/lib/sms/client";
+import { getSmsSettings } from "@/lib/queries/settings";
 import type {
   BrochurePage,
   CommerceSettings,
@@ -423,4 +425,92 @@ export async function updateSmsSettings(
 
   revalidatePath("/admin/settings");
   return { ok: true };
+}
+
+// ============================================================
+// Масс SMS (0047) — хуваарьт илгээлт
+// ============================================================
+
+/** Хуваарьт масс SMS нэмэх. date/time нь УБ цагаар ("2026-10-28", "19:00") */
+export async function scheduleBroadcast(payload: {
+  text: string;
+  date: string;
+  time: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const text = payload.text.trim();
+  if (!text) return { ok: false, error: "Текст хоосон байна" };
+  if (text.length > 300) return { ok: false, error: "Текст хэт урт (300 тэмдэгтээс ихгүй)" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.date) || !/^\d{2}:\d{2}$/.test(payload.time)) {
+    return { ok: false, error: "Огноо, цаг буруу байна" };
+  }
+  const sendAt = new Date(`${payload.date}T${payload.time}:00+08:00`);
+  if (Number.isNaN(sendAt.getTime())) return { ok: false, error: "Огноо, цаг буруу байна" };
+  if (sendAt.getTime() < Date.now() - 60_000) return { ok: false, error: "Өнгөрсөн цаг сонгосон байна" };
+  const hour = Number(payload.time.slice(0, 2));
+  if (hour >= 22 || hour < 8) return { ok: false, error: "Шөнө (22:00–08:00) илгээхгүй — өөр цаг сонгоно уу" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("sms_broadcasts").insert({
+    text,
+    send_at: sendAt.toISOString(),
+    created_by: guard.staff.id,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  await logStaffActivity({
+    action: "sms_broadcast_schedule",
+    summary: `Масс SMS хуваарьт нэмэв: ${payload.date} ${payload.time}`,
+    entityType: "settings",
+  });
+  revalidatePath("/admin/settings");
+  return { ok: true };
+}
+
+/** Хүлээгдэж буй масс SMS-ийг цуцлах */
+export async function cancelBroadcast(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("sms_broadcasts")
+    .update({ status: "cancelled" })
+    .eq("id", id)
+    .eq("status", "scheduled")
+    .select("send_at");
+  if (error) return { ok: false, error: error.message };
+  if (!data?.length) return { ok: false, error: "Аль хэдийн илгээгдэж эхэлсэн эсвэл олдсонгүй" };
+
+  await logStaffActivity({
+    action: "sms_broadcast_cancel",
+    summary: `Масс SMS цуцлав (${new Date(data[0].send_at).toISOString().slice(0, 16)} UTC)`,
+    entityType: "settings",
+  });
+  revalidatePath("/admin/settings");
+  return { ok: true };
+}
+
+/** Туршилт — зөвхөн админы мэдэгдлийн эхний дугаар руу нэг SMS */
+export async function sendBroadcastTest(
+  text: string,
+): Promise<{ ok: true; to: string } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const t = text.trim();
+  if (!t) return { ok: false, error: "Текст хоосон байна" };
+  const sms = await getSmsSettings();
+  const to = parseRecipients(sms.admin_phones).valid[0];
+  if (!to) return { ok: false, error: "Админы дугаар тохируулаагүй (SMS → Шинэ захиалга)" };
+
+  try {
+    await sendSms({ to, text: t });
+  } catch (e) {
+    return { ok: false, error: String((e as Error)?.message ?? e) };
+  }
+  await logStaffActivity({ action: "sms_broadcast_test", summary: `Масс SMS туршилт → ${to}`, entityType: "settings" });
+  return { ok: true, to };
 }
