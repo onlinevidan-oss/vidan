@@ -4,7 +4,7 @@
  * төвлөрүүлж тестээр бэхэлнэ.
  */
 
-export const STAFF_ROLES = ["admin", "manager", "staff", "driver"] as const;
+export const STAFF_ROLES = ["admin", "manager", "staff", "driver", "fruit"] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
 export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
@@ -12,6 +12,7 @@ export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
   manager: "Менежер",
   staff: "Ажилтан",
   driver: "Жолооч",
+  fruit: "Vidan fruit",
 };
 
 /** Эрх тус бүр юу хийж чадах вэ — жагсаалтын доор тайлбарлана */
@@ -20,11 +21,12 @@ export const STAFF_ROLE_HINT: Record<StaffRole, string> = {
   manager: "Бараа, агуулах, тохиргоо, захиалга",
   staff: "Захиалга харах, төлөв солих",
   driver: "Захиалга харах, төлөв солих",
+  fruit: "Зөвхөн жимсний хэсэг — VIDAN-ы мэдээлэл харахгүй",
 };
 
 /**
- * Жимсний компанийн ажилтан (0048). VIDAN-ы админд орохгүй — санд
- * is_staff()-ээс хасагдсан ч апп талд мөн хаана (fail-closed).
+ * Жимсний компанийн ажилтан (0048). VIDAN-ы админд орохгүй, зөвхөн
+ * /admin/fruit-ийг харна. Санд is_staff()-ээс хасагдсан.
  */
 export function isFruitRole(role: string | null | undefined): boolean {
   return role === "fruit";

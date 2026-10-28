@@ -36,12 +36,15 @@ export function StockMovementForm({
   productName,
   currentStock,
   today,
+  action = recordStockMovement,
 }: {
   productId: string;
   productName: string;
   currentStock: number;
   /** УБ өдөр "YYYY-MM-DD" — сервер талаас, клиентийн цагт найдахгүй */
   today: string;
+  /** Жимсний хэсэг өөрийн үйлдлийг дамжуулна (recordFruitStockMovement) */
+  action?: typeof recordStockMovement;
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<StockMovementKind>("in");
@@ -73,7 +76,7 @@ export function StockMovementForm({
       return;
     }
     startTransition(async () => {
-      const res = await recordStockMovement({ productId, kind, quantity: n, date, note });
+      const res = await action({ productId, kind, quantity: n, date, note });
       if (!res.ok) {
         setError(res.error);
         return;

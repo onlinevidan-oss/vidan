@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ComponentProps } from "react";
 import { formatMnt, formatPhone } from "@/lib/utils";
 import { STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
 import type { AdminOrder } from "@/lib/queries/orders";
@@ -22,7 +23,16 @@ function timeLeft(createdAt: string): string | null {
  *
  * Хяналтын самбар болон захиалгын жагсаалт хоёулаа үүнийг ашиглана.
  */
-export function OrderCard({ order: o }: { order: AdminOrder }) {
+export function OrderCard({
+  order: o,
+  hrefBase = "/admin/orders",
+  enterAction,
+}: {
+  order: AdminOrder;
+  /** Жимсний хэсэгт "/admin/fruit/orders" */
+  hrefBase?: string;
+  enterAction?: ComponentProps<typeof CourierEnterButton>["action"];
+}) {
   const pieces = o.items.reduce((s, i) => s + i.quantity, 0);
   const unpaid = o.payment_status !== "paid";
   const waiting = o.payment_status === "pending" && o.status !== "cancelled";
@@ -34,7 +44,7 @@ export function OrderCard({ order: o }: { order: AdminOrder }) {
     // "Шивсэн"-ийг холбоосын гадна байрлуулна
     <div className="relative transition hover:bg-cream">
       <Link
-        href={`/admin/orders/${o.id}`}
+        href={`${hrefBase}/${o.id}`}
         className={`block px-5 pt-4 ${showEnter ? "pb-2 sm:pb-4" : "pb-4"}`}
       >
         {/* Мөр 1 — дугаар, төлөв, дүн, цаг */}
@@ -148,6 +158,7 @@ export function OrderCard({ order: o }: { order: AdminOrder }) {
             orderNumber={o.order_number}
             enteredAt={o.courier_entered_at}
             enteredBy={o.courier_entered_by_name}
+            action={enterAction}
           />
         </div>
       )}

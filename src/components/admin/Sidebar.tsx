@@ -29,15 +29,32 @@ const OTHER_NAV = [
 /** Зөвхөн role = admin-д харагдана */
 const OWNER_NAV = [
   { href: "/admin/staff",      label: "Ажилтан",         icon: "🧑‍💼" },
+  { href: "/admin/fruit",      label: "Vidan fruit",     icon: "🍎" },
+];
+
+/**
+ * Жимсний компанийн админ (0048) — эзний баталсан 6 цэс. Санал хүсэлт,
+ * И-баримт, Traffic, Ангилал, Урамшуулал, Ажилтан харагдахгүй.
+ */
+const FRUIT_NAV = [
+  { href: "/admin/fruit",           label: "Хяналтын самбар", icon: "📊" },
+  { href: "/admin/fruit/orders",    label: "Захиалга",        icon: "📦" },
+  { href: "/admin/fruit/inventory", label: "Агуулах",         icon: "🏬" },
+  { href: "/admin/fruit/customers", label: "Хэрэглэгч",       icon: "👥" },
+  { href: "/admin/fruit/reports",   label: "Тайлан",          icon: "📈" },
+  { href: "/admin/fruit/settings",  label: "Тохиргоо",        icon: "⚙️" },
 ];
 
 export function Sidebar({
   user,
   newOrders = 0,
+  variant = "vidan",
 }: {
   user: { fullName: string; role: string; initials: string };
   /** Төлөгдсөн, хараахан бэлтгэж эхлээгүй захиалгын тоо */
   newOrders?: number;
+  /** "fruit" — жимсний компанийн хэсэг (/admin/fruit) */
+  variant?: "vidan" | "fruit";
 }) {
   const pathname = usePathname();
   // Жижиг дэлгэцэд цэс далд байж, ☰ товчоор гулсаж гарна
@@ -53,9 +70,10 @@ export function Sidebar({
   );
 
   function isActive(href: string) {
-    if (href === "/admin") return pathname === "/admin";
+    if (href === "/admin" || href === "/admin/fruit") return pathname === href;
     return pathname.startsWith(href);
   }
+  const fruit = variant === "fruit";
 
   return (
     <>
@@ -75,20 +93,37 @@ export function Sidebar({
     >
       {/* Logo */}
       <Link
-        href="/admin"
+        href={fruit ? "/admin/fruit" : "/admin"}
         onClick={close}
         className="mb-1 inline-block w-max rounded-[10px] bg-white p-2"
       >
         <Image src="/vidan-logo.png" alt="VIDAN" width={85} height={38} />
       </Link>
 
-      <NavSection title="Үндсэн" items={mainNav} isActive={isActive} onNavigate={close} />
-      <NavSection
-        title="Бусад"
-        items={user.role === "admin" ? [...OTHER_NAV, ...OWNER_NAV] : OTHER_NAV}
-        isActive={isActive}
-        onNavigate={close}
-      />
+      {fruit ? (
+        <>
+          <NavSection title="Vidan fruit" items={FRUIT_NAV} isActive={isActive} onNavigate={close} />
+          {/* VIDAN-ы админ жимсний хэсгийг хянаж байгаа үед буцах зам */}
+          {user.role !== "fruit" && (
+            <NavSection
+              title="VIDAN"
+              items={[{ href: "/admin", label: "VIDAN админ руу", icon: "↩" }]}
+              isActive={() => false}
+              onNavigate={close}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <NavSection title="Үндсэн" items={mainNav} isActive={isActive} onNavigate={close} />
+          <NavSection
+            title="Бусад"
+            items={user.role === "admin" ? [...OTHER_NAV, ...OWNER_NAV] : OTHER_NAV}
+            isActive={isActive}
+            onNavigate={close}
+          />
+        </>
+      )}
 
       {/* User card at bottom */}
       <div className="mt-auto flex items-center gap-2.5 rounded-xl bg-white/5 p-3">

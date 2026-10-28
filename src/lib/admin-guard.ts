@@ -13,7 +13,10 @@ export type GuardResult =
   | { ok: true; staff: StaffRow }
   | { ok: false; error: string };
 
-/** Staff гишүүн байх ёстой */
+/**
+ * VIDAN-ы ажилтан байх ёстой. Жимсний компанийн ажилтан (fruit) энд
+ * орохгүй — VIDAN-ы захиалга, хэрэглэгчид хүрэхгүй (0048).
+ */
 export async function requireStaff(): Promise<GuardResult> {
   const staff = await getCurrentStaff();
   // Жимсний компанийн ажилтан VIDAN-ы өгөгдөлд хүрэхгүй (0048)
@@ -21,6 +24,20 @@ export async function requireStaff(): Promise<GuardResult> {
     return { ok: false, error: "Хандах эрх алга — staff биш" };
   }
   return { ok: true, staff };
+}
+
+/**
+ * Жимсний хэсэг — жимсний ажилтан, эсвэл VIDAN-ы админ/менежер (хянах,
+ * тохируулахын тулд). Бусад нь (VIDAN-ы ажилтан, жолооч) орохгүй.
+ */
+export async function requireFruitAccess(): Promise<
+  { ok: true; staff: StaffRow; isFruit: boolean } | { ok: false; error: string }
+> {
+  const staff = await getCurrentStaff();
+  if (!staff) return { ok: false, error: "Хандах эрх алга" };
+  if (isFruitRole(staff.role)) return { ok: true, staff, isFruit: true };
+  if (isAdminRole(staff.role)) return { ok: true, staff, isFruit: false };
+  return { ok: false, error: "Хандах эрх алга" };
 }
 
 /** Admin/Manager эрхтэй staff байх ёстой */

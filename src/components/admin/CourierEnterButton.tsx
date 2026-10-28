@@ -25,11 +25,14 @@ export function CourierEnterButton({
   orderNumber,
   enteredAt,
   enteredBy,
+  action = markCourierEntered,
 }: {
   orderId: string;
   orderNumber: string;
   enteredAt: string | null;
   enteredBy: string | null;
+  /** Жимсний хэсэг өөрийн үйлдлийг дамжуулна (markFruitCourierEntered) */
+  action?: typeof markCourierEntered;
 }) {
   const router = useRouter();
   const [state, setState] = useState({ at: enteredAt, by: enteredBy });
@@ -53,7 +56,7 @@ export function CourierEnterButton({
     if (!window.confirm(`${orderNumber} захиалгыг хүргэлтийн компанид шивсэн үү?`)) return;
     setError(null);
     startTransition(async () => {
-      const res = await markCourierEntered(orderId);
+      const res = await action(orderId);
       if (!res.ok) {
         setError(res.error);
         return;

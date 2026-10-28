@@ -67,14 +67,14 @@ function firstImage(product: unknown): string | null {
   return imgs[0]?.url ?? null;
 }
 
-const ORDER_SELECT = `id, order_number, total, status, payment_status, payment_method, created_at,
+export const ORDER_SELECT = `id, order_number, total, status, payment_status, payment_method, created_at,
    contact_phone, contact_phone2, courier_entered_at, courier_entered_by_name,
    user:profiles(full_name, phone),
    address:addresses(label, district, khoroo, detail),
    items:order_items(product_name, quantity, product:products(images:product_images(url, sort_order)))`;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function mapOrder(o: any): AdminOrder {
+export function mapOrder(o: any): AdminOrder {
   const addr = one<AddressRow>(o.address);
   return {
     id: o.id,

@@ -18,8 +18,8 @@ export default async function AdminLayout({
   // Энд role шалгана.
   const staff = await getCurrentStaff();
   if (!staff) redirect("/admin/forbidden");
-  // Жимсний компанийн ажилтан VIDAN-ы админд орохгүй (0048)
-  if (isFruitRole(staff.role)) redirect("/admin/forbidden");
+  // Жимсний компанийн ажилтан VIDAN-ы админд орохгүй — өөрийн хэсэг рүү (0048)
+  if (isFruitRole(staff.role)) redirect("/admin/fruit");
 
   // Хэн, хэзээ админд орсныг бүртгэнэ (30 минутад нэг удаа — 0046).
   // Алдаа гарвал хуудсыг саатуулахгүй.
