@@ -1,7 +1,8 @@
 /**
  * Vidan fruit — ЗАГВАР (2026-10-14).
  *
- * Өөр компанийн борлуулалт (шинэхэн жимс, хайрцгаар; эхний ээлжинд алим). Захирал, санхүүгийн
+ * Өөр компанийн борлуулалт (шинэхэн жимс, кг савлагаа ба хайрцгаар;
+ * эхний ээлжинд алим). Захирал, санхүүгийн
  * шийдвэр гарах хүртэл зөвхөн загвар — хэрэглэгчдэд харагдахгүй:
  *   · `NEXT_PUBLIC_FRUIT_PREVIEW=1` тугтай орчинд л цэс, карт, хуудас гарна.
  *     Production-д туг байхгүй тул бүгд нуугдаж, хуудас нь 404 буцаана.
@@ -26,27 +27,68 @@ export const FRUIT_BRAND = {
   logo_mode: "contain",
 } as const;
 
+export type FruitOption = {
+  /** Жнь. "1 кг савлагаа" */
+  label: string;
+  price: number;
+  /** Нэмэлт тайлбар, жнь. 1 кг-ын үнэ */
+  note?: string;
+};
+
 export type FruitProduct = {
   id: string;
   origin: string;
   flag: string;
-  variety: string;
-  boxKg: number;
-  pricePerBox: number;
-  image: string;
+  /** Сорт — Польш алимд заагаагүй */
+  variety: string | null;
+  /** Зураггүй бол "зураг удахгүй" дүрс гарна */
+  image: string | null;
+  options: FruitOption[];
 };
 
 /**
- * `Алим үнэ.xlsx` (2026-10-14)-оос. Зураг: эзний өгсөн (2026-10-15) —
- * Польш Jonagored-ийнх л Facebook-ээс таамгаар сонгосон хэвээр.
- * "Red" нь зураг дээр "Red Prince" гэж бичигдсэн тул тэгж нэрлэв.
+ * Эзний үнийн жагсаалт (2026-10-28). Кг савлагаа ба бүтэн хайрцаг.
+ * Kanzi-ийн зураг хараахан ирээгүй.
  */
 export const FRUIT_PRODUCTS: FruitProduct[] = [
-  { id: "polsh-red", origin: "Польш", flag: "🇵🇱", variety: "Red Prince", boxKg: 12, pricePerBox: 70000, image: "/fruit/polsh-red-v3.jpg" },
-  { id: "polsh-jonagored", origin: "Польш", flag: "🇵🇱", variety: "Jonagored", boxKg: 12, pricePerBox: 70000, image: "/fruit/polsh-jonagored.jpg" },
-  { id: "polsh-gala", origin: "Польш", flag: "🇵🇱", variety: "Gala", boxKg: 12, pricePerBox: 70000, image: "/fruit/polsh-gala-v3.jpg" },
-  { id: "belgi-jonagored", origin: "Бельги", flag: "🇧🇪", variety: "Jonagored", boxKg: 8, pricePerBox: 70000, image: "/fruit/belgi-jonagored-v3.jpg" },
+  {
+    id: "belgi-jonagored",
+    origin: "Бельги",
+    flag: "🇧🇪",
+    variety: "Jonagored",
+    image: "/fruit/belgi-jonagored-v3.jpg",
+    options: [
+      { label: "1 кг савлагаа", price: 12000 },
+      { label: "8 кг бүтэн хайрцаг", price: 92000 },
+    ],
+  },
+  {
+    id: "belgi-kanzi",
+    origin: "Бельги",
+    flag: "🇧🇪",
+    variety: "Kanzi",
+    image: null,
+    options: [
+      { label: "1 кг савлагаа", price: 15500 },
+      { label: "8 кг бүтэн хайрцаг", price: 120000 },
+    ],
+  },
+  {
+    id: "polsh",
+    origin: "Польш",
+    flag: "🇵🇱",
+    variety: null,
+    image: "/fruit/polsh-gala-v3.jpg",
+    options: [
+      { label: "1 кг савлагаа", price: 7900 },
+      { label: "1.5 кг савлагаа", price: 11850 },
+      { label: "12 кг бүтэн хайрцаг", price: 90000 },
+    ],
+  },
 ];
+
+/** Хүргэлтийн нөхцөл (эзний жагсаалт, 2026-10-28) */
+export const FRUIT_DELIVERY = { minOrder: 40000, fee: 7700 } as const;
 
 /** Нэвтэрсэн хэрэглэгчид мэдэгдэл нэг л удаа — энэ түлхүүрээр тэмдэглэнэ */
 export const FRUIT_TOAST_KEY = "vidan-fruit-toast-seen";
