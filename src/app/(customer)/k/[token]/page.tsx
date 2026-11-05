@@ -30,14 +30,8 @@ export default async function DiscountCardPage({ params }: PageProps<"/k/[token]
   const content: Record<string, { icon: string; title: string; text: React.ReactNode }> = {
     claimed: {
       icon: "🎉",
-      title: `${percent}% хөнгөлөлт идэвхжлээ`,
-      text: (
-        <>
-          Дараагийн захиалгад барааны үнээс <strong>{percent}%</strong> автоматаар
-          хасагдана — код оруулах шаардлагагүй.
-          {until && <> Хүчинтэй хугацаа: <strong>{until}</strong> хүртэл.</>}
-        </>
-      ),
+      title: `Та ${percent}% хөнгөлөлтийн картын эзэн боллоо`,
+      text: <strong>{percent}% хөнгөлөлт идэвхжлээ</strong>,
     },
     auth: {
       icon: "🎁",
