@@ -47,6 +47,10 @@ export type PromoRow = {
   state: PromoState;
   /** Энэ кодоор нийт өгсөн хөнгөлөлт (₮) */
   discount_given: number;
+  /** 'code' — захиалга дээр бичдэг; 'card' — хэвлэмэл картын QR (0049) */
+  kind: string;
+  /** Картыг QR-аар идэвхжүүлсэн хүний тоо (зөвхөн card) */
+  claimed: number;
 };
 
 const STATE_STYLE: Record<PromoState, string> = {
@@ -178,6 +182,11 @@ export function PromoManager({ promos, today }: { promos: PromoRow[]; today: str
                     <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATE_STYLE[p.state]}`}>
                       {PROMO_STATE_LABEL[p.state]}
                     </span>
+                    {p.kind === "card" && (
+                      <span className="rounded-full bg-[#e8f1fc] px-2.5 py-0.5 text-[11px] font-bold text-[#2e7eda]">
+                        QR карт
+                      </span>
+                    )}
                     <span className="font-bold text-ink-900">{p.name}</span>
                     <span className="ml-auto font-display text-[15px] font-extrabold text-brand-700">
                       −{discountText(p)}
@@ -207,6 +216,12 @@ export function PromoManager({ promos, today }: { promos: PromoRow[]; today: str
                         {p.usage_limit !== null ? ` / ${p.usage_limit}` : ""}
                       </strong>
                     </span>
+                    {p.kind === "card" && (
+                      <span>
+                        QR-аар идэвхжүүлсэн:{" "}
+                        <strong className="text-ink-700">{p.claimed} хүн</strong>
+                      </span>
+                    )}
                     {p.discount_given > 0 && (
                       <span>
                         Өгсөн хөнгөлөлт:{" "}
@@ -214,6 +229,14 @@ export function PromoManager({ promos, today }: { promos: PromoRow[]; today: str
                       </span>
                     )}
                   </div>
+
+                  {p.kind === "card" && (
+                    <div className="mt-2 text-xs text-ink-500">
+                      Хэвлэмэл картын QR (www.vidan.mn/k/{p.code}) — уншуулсан хүнд
+                      захиалга дээр өөрөө хасагдана, нэг хүн нэг удаа. Код нь QR-д
+                      хэвлэгдсэн тул засах, устгах боломжгүй — зөвхөн унтрааж болно.
+                    </div>
+                  )}
 
                   {p.state === "unsupported" && (
                     <div className="mt-2 text-xs font-semibold text-brand-700">
@@ -235,7 +258,7 @@ export function PromoManager({ promos, today }: { promos: PromoRow[]; today: str
                     >
                       {p.is_active ? "Унтраах" : "Асаах"}
                     </button>
-                    {p.state !== "unsupported" && (
+                    {p.state !== "unsupported" && p.kind !== "card" && (
                       <button
                         type="button"
                         onClick={() => {
@@ -247,7 +270,7 @@ export function PromoManager({ promos, today }: { promos: PromoRow[]; today: str
                         Засах
                       </button>
                     )}
-                    {p.usage_count === 0 && (
+                    {p.usage_count === 0 && p.kind !== "card" && (
                       <button
                         type="button"
                         disabled={pending}

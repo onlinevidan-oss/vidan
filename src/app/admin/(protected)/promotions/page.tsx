@@ -9,15 +9,21 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPromotions() {
   const supabase = await createClient();
-  const [{ data: promos }, { data: redemptions }] = await Promise.all([
+  const [{ data: promos }, { data: redemptions }, { data: claims }] = await Promise.all([
     supabase
       .from("promotions")
       .select(
-        "id, code, name, type, value, min_order, max_discount, segment, starts_at, ends_at, usage_limit, usage_per_user, usage_count, is_active, created_at",
+        "id, code, name, type, value, min_order, max_discount, segment, starts_at, ends_at, usage_limit, usage_per_user, usage_count, is_active, kind, created_at",
       )
       .order("created_at", { ascending: false }),
     supabase.from("promo_redemptions").select("promo_id, discount"),
+    supabase.from("discount_card_claims").select("promo_id"),
   ]);
+
+  const claimedBy = new Map<string, number>();
+  for (const c of claims ?? []) {
+    claimedBy.set(c.promo_id, (claimedBy.get(c.promo_id) ?? 0) + 1);
+  }
 
   const given = new Map<string, number>();
   for (const r of redemptions ?? []) {
@@ -42,6 +48,8 @@ export default async function AdminPromotions() {
     is_active: p.is_active,
     state: promoState(p, now),
     discount_given: given.get(p.id) ?? 0,
+    kind: p.kind ?? "code",
+    claimed: claimedBy.get(p.id) ?? 0,
   }));
 
   const live = rows.filter((r) => r.state === "active").length;
@@ -66,7 +74,8 @@ export default async function AdminPromotions() {
         <div className="mt-5 rounded-xl bg-cream px-4 py-3 text-xs leading-relaxed text-ink-700">
           <strong className="text-ink-900">Хэрхэн ажилладаг вэ:</strong> хөнгөлөлт
           <strong> барааны дүнгээс</strong> хасагдана (хүргэлтийн төлбөрөөс
-          биш). Нэг захиалгад нэг л код орно. Брэндээр хугацаатай үнэ буулгах
+          биш). Нэг захиалгад нэг л код орно; QR картын хөнгөлөлт түүн дээр
+          давхар хасагдана. Брэндээр хугацаатай үнэ буулгах
           бол Тохиргоо → Хямдралын кампанит ажлыг ашиглана.
         </div>
       </div>

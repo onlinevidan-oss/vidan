@@ -30,10 +30,13 @@ export default async function CheckoutPage() {
       .order("is_default", { ascending: false }),
   ]);
 
-  const [settings, staff] = await Promise.all([
+  const [settings, staff, { data: cards }] = await Promise.all([
     getCommerceSettings(),
     getCurrentStaff(),
+    // QR-аар идэвхжүүлсэн хөнгөлөлтийн карт (0049) — захиалгад өөрөө хасагдана
+    supabase.rpc("my_discount_card"),
   ]);
+  const card = Array.isArray(cards) ? cards[0] : null;
 
   return (
     <CheckoutView
@@ -44,6 +47,7 @@ export default async function CheckoutPage() {
       // QPay-ийн и-баримт (шинэ) эсвэл PosAPI (хуучин) аль нэг нь идэвхтэй бол
       ebarimtEnabled={isEbarimtEnabled() || isEbarimtConfigured()}
       isStaff={!!staff}
+      card={card ? { name: card.name, percent: Number(card.percent) } : null}
     />
   );
 }

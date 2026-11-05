@@ -669,6 +669,24 @@ export type Database = {
           },
         ]
       }
+      discount_card_claims: {
+        Row: {
+          claimed_at: string
+          promo_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          promo_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          promo_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       promotions: {
         Row: {
           code: string
@@ -677,6 +695,7 @@ export type Database = {
           ends_at: string | null
           id: string
           is_active: boolean
+          kind: string
           max_discount: number | null
           min_order: number | null
           name: string
@@ -696,6 +715,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           is_active?: boolean
+          kind?: string
           max_discount?: number | null
           min_order?: number | null
           name: string
@@ -715,6 +735,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           is_active?: boolean
+          kind?: string
           max_discount?: number | null
           min_order?: number | null
           name?: string
@@ -1071,6 +1092,24 @@ export type Database = {
         }[]
       }
       touch_staff_login: { Args: Record<PropertyKey, never>; Returns: undefined }
+      claim_discount_card: {
+        Args: { p_token: string }
+        Returns: {
+          ends_at: string | null
+          name: string | null
+          percent: number | null
+          status: string
+        }[]
+      }
+      my_discount_card: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ends_at: string | null
+          name: string
+          percent: number
+          promo_id: string
+        }[]
+      }
       calc_order_totals:
         | {
             Args: { p_item_count?: number; p_subtotal: number }

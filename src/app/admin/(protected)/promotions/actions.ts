@@ -35,6 +35,17 @@ function clean(payload: PromoInput): PromoInput {
   return { ...payload, code: normalizePromoCode(payload.code ?? "") };
 }
 
+/** Хэвлэмэл картын QR-д код нь хэвлэгдсэн — засвал/устгавал картууд ажиллахаа болино */
+const CARD_LOCKED = "QR картын урамшууллыг засах, устгах боломжгүй — зөвхөн унтрааж болно";
+
+async function isCardPromo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+): Promise<boolean> {
+  const { data } = await supabase.from("promotions").select("kind").eq("id", id).maybeSingle();
+  return data?.kind === "card";
+}
+
 function humanError(error: { code?: string; message: string }): string {
   if (error.code === "23505") return "Ийм кодтой урамшуулал аль хэдийн байна";
   return error.message;
@@ -67,6 +78,7 @@ export async function updatePromo(id: string, payload: PromoInput): Promise<Resu
   if (invalid) return { ok: false, error: invalid };
 
   const supabase = await createClient();
+  if (await isCardPromo(supabase, id)) return { ok: false, error: CARD_LOCKED };
   const { data, error } = await supabase
     .from("promotions")
     .update(toRow(p))
@@ -117,6 +129,7 @@ export async function deletePromo(id: string): Promise<Result> {
   if (!guard.ok) return { ok: false, error: guard.error };
 
   const supabase = await createClient();
+  if (await isCardPromo(supabase, id)) return { ok: false, error: CARD_LOCKED };
   const [{ data: promo }, { count }] = await Promise.all([
     supabase.from("promotions").select("usage_count, code").eq("id", id).maybeSingle(),
     supabase

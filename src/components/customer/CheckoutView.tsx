@@ -45,6 +45,7 @@ export function CheckoutView({
   settings = COMMERCE_DEFAULTS,
   ebarimtEnabled = false,
   isStaff = false,
+  card = null,
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
@@ -53,6 +54,8 @@ export function CheckoutView({
   ebarimtEnabled?: boolean;
   /** Ажилтан доод дүнгийн хязгаарлалтад үл хамаарна */
   isStaff?: boolean;
+  /** QR-аар идэвхжүүлсэн хөнгөлөлтийн карт — place_order өөрөө хасна */
+  card?: { name: string; percent: number } | null;
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
@@ -148,7 +151,13 @@ export function CheckoutView({
     );
   }
 
-  const discount = promo?.discount ?? 0;
+  const promoDiscount = promo?.discount ?? 0;
+  // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил: барааны
+  // дүнгээс хувиар, промо кодын дараа үлдсэн дүнгээс хэтрэхгүй
+  const cardDiscount = card
+    ? Math.min(Math.round((subtotal * card.percent) / 100), subtotal - promoDiscount)
+    : 0;
+  const discount = promoDiscount + Math.max(0, cardDiscount);
   const { shipping, tax, total } = calculateOrderTotals(
     subtotal,
     settings,
@@ -640,10 +649,17 @@ export function CheckoutView({
               </div>
             </div>
             <div className="my-3 h-px bg-ink-100" />
-            {discount > 0 && (
+            {promoDiscount > 0 && (
               <Row
                 label={`Хөнгөлөлт (${promo?.code})`}
-                value={`−${formatMnt(discount)}`}
+                value={`−${formatMnt(promoDiscount)}`}
+                accent="success"
+              />
+            )}
+            {cardDiscount > 0 && (
+              <Row
+                label={`Картын хөнгөлөлт (${card?.percent}%)`}
+                value={`−${formatMnt(cardDiscount)}`}
                 accent="success"
               />
             )}
