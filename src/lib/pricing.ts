@@ -119,6 +119,21 @@ export function calculateOrderTotals(
 }
 
 /**
+ * Хөнгөлөлтийн картын (QR, 0049) хөнгөлөлт — DB-ийн card_discount_for ба
+ * place_order-той яг ижил: барааны дүнгийн хувь, бүхэлчилсэн; промо
+ * кодын хөнгөлөлтийн дараа үлдсэн барааны дүнгээс хэтрэхгүй, сөрөг биш.
+ */
+export function cardDiscount(
+  subtotal: number,
+  percent: number,
+  promoDiscount = 0,
+): number {
+  if (!(percent > 0) || !(subtotal > 0)) return 0;
+  const raw = Math.round((subtotal * percent) / 100);
+  return Math.max(0, Math.min(raw, subtotal - Math.max(0, promoDiscount)));
+}
+
+/**
  * Хэрэглэгчид харуулах НӨАТ-ын задаргаа: нийт төлөх дүнд БАГТСАН НӨАТ
  * ба НӨАТ-гүй дүн (мөнгөний 2 оронтой).
  *

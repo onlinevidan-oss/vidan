@@ -10,6 +10,7 @@ import { useCartPriceSync } from "./useCartPriceSync";
 import { checkPromoCode, placeOrder } from "@/app/(customer)/checkout/actions";
 import {
   calculateOrderTotals,
+  cardDiscount,
   vatBreakdown,
   COMMERCE_DEFAULTS,
   type CommerceSettings,
@@ -152,12 +153,9 @@ export function CheckoutView({
   }
 
   const promoDiscount = promo?.discount ?? 0;
-  // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил: барааны
-  // дүнгээс хувиар, промо кодын дараа үлдсэн дүнгээс хэтрэхгүй
-  const cardDiscount = card
-    ? Math.min(Math.round((subtotal * card.percent) / 100), subtotal - promoDiscount)
-    : 0;
-  const discount = promoDiscount + Math.max(0, cardDiscount);
+  // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил тооцоо
+  const cardOff = card ? cardDiscount(subtotal, card.percent, promoDiscount) : 0;
+  const discount = promoDiscount + cardOff;
   const { shipping, tax, total } = calculateOrderTotals(
     subtotal,
     settings,
@@ -656,10 +654,10 @@ export function CheckoutView({
                 accent="success"
               />
             )}
-            {cardDiscount > 0 && (
+            {cardOff > 0 && (
               <Row
                 label={`Картын хөнгөлөлт (${card?.percent}%)`}
-                value={`−${formatMnt(cardDiscount)}`}
+                value={`−${formatMnt(cardOff)}`}
                 accent="success"
               />
             )}

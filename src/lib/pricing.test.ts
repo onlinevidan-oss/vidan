@@ -12,6 +12,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import {
   calculateOrderTotals,
+  cardDiscount,
   COMMERCE_DEFAULTS,
   TAX_RATE,
   shippingForQty,
@@ -233,5 +234,42 @@ describe("vatBreakdown — хэрэглэгчид харуулах НӨАТ-ын
     const t = calculateOrderTotals(22_400, settings(), 5);
     assert.equal(t.total, 30_100);
     assert.equal(vatBreakdown(t.total).vat, 2_736.36);
+  });
+});
+
+// ЭТАЛОН: 0049_discount_card.sql — card_discount_for + place_order
+//   round(subtotal * pct / 100.0), дараа нь least(.., subtotal − promo)
+describe("cardDiscount — QR хөнгөлөлтийн карт", () => {
+  test("барааны дүнгийн 5% (туршилтын хуудсан дахь сагс)", () => {
+    assert.equal(cardDiscount(16_700, 5), 835);
+    assert.equal(cardDiscount(44_000, 5), 2_200);
+  });
+
+  test("Postgres round-тай ижил: .5 дээш бүхэлчилнэ", () => {
+    assert.equal(cardDiscount(16_710, 5), 836); // 835.5 → 836
+    assert.equal(cardDiscount(16_690, 5), 835); // 834.5 → 835
+    assert.equal(cardDiscount(16_701, 5), 835); // 835.05 → 835
+  });
+
+  test("промо кодтой давхар: хоёулаа бүтэн дүнгээс, үлдсэнээс хэтрэхгүй", () => {
+    // place_order-ийн дуурайлгасан тест: 44,000 − 10% (4,400) − 5% (2,200)
+    assert.equal(cardDiscount(44_000, 5, 4_400), 2_200);
+    // Промо бараг бүх дүнг хассан бол үлдсэнээс хэтрэхгүй
+    assert.equal(cardDiscount(10_000, 5, 9_800), 200);
+    assert.equal(cardDiscount(10_000, 5, 10_000), 0);
+  });
+
+  test("хүргэлтэд хамаарахгүй — нийт дүнд зөвхөн бараанаас хасагдана", () => {
+    const off = cardDiscount(16_700, 5);
+    const t = calculateOrderTotals(16_700, COMMERCE_DEFAULTS, 5, off);
+    assert.equal(t.shipping, 7_000);
+    assert.equal(t.tax, 700);
+    assert.equal(t.total, 23_565);
+  });
+
+  test("хоосон / буруу утга 0", () => {
+    assert.equal(cardDiscount(0, 5), 0);
+    assert.equal(cardDiscount(10_000, 0), 0);
+    assert.equal(cardDiscount(10_000, Number.NaN), 0);
   });
 });
