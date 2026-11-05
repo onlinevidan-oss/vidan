@@ -27,21 +27,17 @@ export default async function DiscountCardPage({ params }: PageProps<"/k/[token]
   const percent = row?.percent != null ? Number(row.percent) : 5;
   const until = row?.ends_at ? ubDateDots(row.ends_at) : null;
 
-  const content: Record<string, { icon: string; title: string; text: React.ReactNode }> = {
+  const content: Record<string, { icon: string; title: string; text?: React.ReactNode }> = {
+    // QR уншуулаад нэвтэрсний дараа — зөвхөн гарчиг
     claimed: {
       icon: "🎉",
-      title: `Та ${percent}% хөнгөлөлтийн картын эзэн боллоо`,
-      text: <strong>{percent}% хөнгөлөлт идэвхжлээ</strong>,
+      title: `${percent}% хөнгөлөлт идэвхжлээ`,
     },
+    // QR уншуулмагц (нэвтрээгүй)
     auth: {
       icon: "🎁",
-      title: `${percent}% хөнгөлөлтийн карт`,
-      text: (
-        <>
-          Хөнгөлөлтөө идэвхжүүлэхийн тулд утасны дугаараараа нэвтэрнэ үү.
-          Нэвтэрмэгц хөнгөлөлт таны бүртгэлд хадгалагдана.
-        </>
-      ),
+      title: `Та ${percent}% хөнгөлөлтийн картын эзэн боллоо`,
+      text: <>Хөнгөлөлтөө идэвхжүүлэхийн тулд утасны дугаараараа нэвтэрнэ үү.</>,
     },
     used: {
       icon: "✓",
@@ -73,7 +69,7 @@ export default async function DiscountCardPage({ params }: PageProps<"/k/[token]
           {c.icon}
         </div>
         <h1 className="font-display mb-2 text-xl font-extrabold text-ink-900">{c.title}</h1>
-        <p className="text-sm leading-relaxed text-ink-700">{c.text}</p>
+        {c.text && <p className="text-sm leading-relaxed text-ink-700">{c.text}</p>}
 
         {status === "auth" ? (
           <Link
