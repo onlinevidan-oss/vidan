@@ -83,7 +83,7 @@ export default async function DiscountCardPage({ params }: PageProps<"/k/[token]
             href="/products"
             className="mt-6 block rounded-[12px] bg-brand-600 py-3.5 text-base font-extrabold text-white transition hover:bg-brand-700"
           >
-            Бараа сонгох
+            Бүтээгдэхүүн сонгох
           </Link>
         )}
       </div>
