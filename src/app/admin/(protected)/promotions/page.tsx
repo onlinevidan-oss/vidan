@@ -3,13 +3,21 @@ import { PromoManager, type PromoRow } from "@/components/admin/PromoManager";
 import { createClient } from "@/lib/supabase/server";
 import { ubDateKey } from "@/lib/datetime";
 import { promoState } from "@/lib/promo";
+import { VoucherManager, type VoucherRow } from "@/components/admin/VoucherManager";
+import { voucherBalance, voucherState } from "@/lib/gift-voucher";
 
 export const metadata = { title: "Урамшуулал | VIDAN Backoffice" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminPromotions() {
   const supabase = await createClient();
-  const [{ data: promos }, { data: redemptions }, { data: claims }] = await Promise.all([
+  const [
+    { data: promos },
+    { data: redemptions },
+    { data: claims },
+    { data: vouchers },
+    { data: voucherUses },
+  ] = await Promise.all([
     supabase
       .from("promotions")
       .select(
@@ -18,7 +26,29 @@ export default async function AdminPromotions() {
       .order("created_at", { ascending: false }),
     supabase.from("promo_redemptions").select("promo_id, discount"),
     supabase.from("discount_card_claims").select("promo_id"),
+    supabase
+      .from("gift_vouchers")
+      .select("id, code, amount, ends_at, is_active, note, user_id")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("gift_voucher_uses")
+      .select("voucher_id, order_id, amount, created_at")
+      .order("created_at", { ascending: true }),
   ]);
+
+  // Эрхийн бичгийн хэрэглээний захиалга ба эзэмшигч
+  const useOrderIds = [...new Set((voucherUses ?? []).map((u) => u.order_id))];
+  const ownerIds = [...new Set((vouchers ?? []).map((v) => v.user_id).filter(Boolean))] as string[];
+  const [{ data: useOrders }, { data: owners }] = await Promise.all([
+    useOrderIds.length
+      ? supabase.from("orders").select("id, order_number, status").in("id", useOrderIds)
+      : Promise.resolve({ data: [] as { id: string; order_number: string; status: string }[] }),
+    ownerIds.length
+      ? supabase.from("profiles").select("id, full_name, phone").in("id", ownerIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string | null; phone: string | null }[] }),
+  ]);
+  const orderById = new Map((useOrders ?? []).map((o) => [o.id, o]));
+  const ownerById = new Map((owners ?? []).map((p) => [p.id, p]));
 
   const claimedBy = new Map<string, number>();
   for (const c of claims ?? []) {
@@ -54,6 +84,37 @@ export default async function AdminPromotions() {
 
   const live = rows.filter((r) => r.state === "active").length;
 
+  const voucherRows: VoucherRow[] = (vouchers ?? []).map((v) => {
+    const uses = (voucherUses ?? [])
+      .filter((u) => u.voucher_id === v.id)
+      .map((u) => {
+        const o = orderById.get(u.order_id);
+        return {
+          order_id: u.order_id,
+          order_number: o?.order_number ?? "—",
+          amount: Number(u.amount),
+          cancelled: o?.status === "cancelled",
+          date: ubDateKey(new Date(u.created_at)).replaceAll("-", "."),
+        };
+      });
+    const balance = voucherBalance(Number(v.amount), uses);
+    const owner = v.user_id ? ownerById.get(v.user_id) : undefined;
+    return {
+      id: v.id,
+      code: v.code,
+      amount: Number(v.amount),
+      balance,
+      ends_on: v.ends_at ? ubDateKey(new Date(v.ends_at)) : "",
+      is_active: v.is_active,
+      state: voucherState({ is_active: v.is_active, ends_at: v.ends_at, balance }, now),
+      note: v.note,
+      owner: v.user_id
+        ? { id: v.user_id, name: owner?.full_name ?? null, phone: owner?.phone ?? null }
+        : null,
+      uses,
+    };
+  });
+
   return (
     <>
       <TopBar title="Урамшуулал" crumb="Промо код" />
@@ -78,6 +139,18 @@ export default async function AdminPromotions() {
           давхар хасагдана. Брэндээр хугацаатай үнэ буулгах
           бол Тохиргоо → Хямдралын кампанит ажлыг ашиглана.
         </div>
+
+        <div className="mb-4 mt-10">
+          <h2 className="font-display text-xl font-extrabold tracking-tight text-ink-900">
+            Эрхийн бичиг
+          </h2>
+          <div className="mt-0.5 text-[13px] text-ink-500">
+            Тодорхой дүнгийн худалдан авалтын эрх — хүргэлтийн төлбөр орно, хэд хуваан
+            ашиглана, үлдэгдэл хадгалагдана
+          </div>
+        </div>
+        <VoucherManager vouchers={voucherRows} today={ubDateKey()} />
+
       </div>
     </>
   );

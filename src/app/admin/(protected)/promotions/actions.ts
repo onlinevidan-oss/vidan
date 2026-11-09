@@ -3,9 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin-guard";
-import { ubAddDays, ubDayStart } from "@/lib/datetime";
+import { randomBytes } from "node:crypto";
+import { ubAddDays, ubDateKey, ubDayStart } from "@/lib/datetime";
 import { normalizePromoCode, validatePromo, type PromoInput } from "@/lib/promo";
 import { logStaffActivity } from "@/lib/staff-activity";
+import {
+  generateVoucherCode,
+  normalizeVoucherCode,
+  validateVoucher,
+  type VoucherInput,
+} from "@/lib/gift-voucher";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -150,6 +157,92 @@ export async function deletePromo(id: string): Promise<Result> {
 
   await logStaffActivity({ action: "promo_delete", summary: `Промо код устгав: ${promo.code}`, entityType: "promo", entityId: id });
 
+  revalidatePath("/admin/promotions");
+  return { ok: true };
+}
+
+// ============================================================
+// Эрхийн бичиг (0050) — үүсгэх, асаах/унтраах.
+// Дүн, кодыг үүсгэсний дараа засахгүй: хэрэглэгчид өгөгдсөн, хэрэглээ
+// бүртгэгдсэн байж болно. Буруу бол унтраагаад шинээр үүсгэнэ.
+// ============================================================
+export async function createVoucher(
+  payload: VoucherInput,
+): Promise<{ ok: true; code: string } | { ok: false; error: string }> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const v: VoucherInput = {
+    ...payload,
+    code: normalizeVoucherCode(payload.code ?? ""),
+    note: (payload.note ?? "").trim(),
+  };
+  const invalid = validateVoucher(v, ubDateKey());
+  if (invalid) return { ok: false, error: invalid };
+
+  const supabase = await createClient();
+  const ends_at = v.ends_on
+    ? new Date(ubDayStart(ubAddDays(v.ends_on, 1)).getTime() - 1000).toISOString()
+    : null;
+
+  // Код өгөөгүй бол санамсаргүй — давхцвал (маш ховор) дахин оролдоно
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = v.code || generateVoucherCode(randomBytes(8));
+
+    // Промо кодтой ижил байвал захиалга дээр аль нь болох нь бүрхэг болно
+    const { data: clash } = await supabase
+      .from("promotions")
+      .select("id")
+      .ilike("code", code)
+      .maybeSingle();
+    if (clash) {
+      if (v.code) return { ok: false, error: "Ийм кодтой промо код байна" };
+      continue;
+    }
+
+    const { error } = await supabase.from("gift_vouchers").insert({
+      code,
+      amount: v.amount,
+      ends_at,
+      note: v.note || null,
+      created_by: guard.staff.id,
+    });
+    if (error?.code === "23505") {
+      if (v.code) return { ok: false, error: "Ийм кодтой эрхийн бичиг аль хэдийн байна" };
+      continue;
+    }
+    if (error) return { ok: false, error: error.message };
+
+    await logStaffActivity({
+      action: "voucher_create",
+      summary: `Эрхийн бичиг үүсгэв: ${code} — ${v.amount.toLocaleString("en-US")}₮`,
+      entityType: "voucher",
+    });
+    revalidatePath("/admin/promotions");
+    return { ok: true, code };
+  }
+  return { ok: false, error: "Код үүсгэж чадсангүй — дахин оролдоно уу" };
+}
+
+export async function setVoucherActive(id: string, active: boolean): Promise<Result> {
+  const guard = await requireAdmin();
+  if (!guard.ok) return { ok: false, error: guard.error };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("gift_vouchers")
+    .update({ is_active: active })
+    .eq("id", id)
+    .select("id, code");
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) return { ok: false, error: "Эрхийн бичиг олдсонгүй" };
+
+  await logStaffActivity({
+    action: "voucher_toggle",
+    summary: `Эрхийн бичиг ${data[0].code} ${active ? "асаав" : "унтраав"}`,
+    entityType: "voucher",
+    entityId: id,
+  });
   revalidatePath("/admin/promotions");
   return { ok: true };
 }
