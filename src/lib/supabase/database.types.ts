@@ -313,6 +313,7 @@ export type Database = {
           subtotal: number
           tax: number
           total: number
+          voucher_amount: number
           updated_at: string
           user_id: string | null
         }
@@ -355,6 +356,7 @@ export type Database = {
           subtotal?: number
           tax?: number
           total?: number
+          voucher_amount?: number
           updated_at?: string
           user_id?: string | null
         }
@@ -397,6 +399,7 @@ export type Database = {
           subtotal?: number
           tax?: number
           total?: number
+          voucher_amount?: number
           updated_at?: string
           user_id?: string | null
         }
@@ -668,6 +671,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      gift_vouchers: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          note: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          note?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      gift_voucher_uses: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          order_id: string
+          user_id: string | null
+          voucher_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          user_id?: string | null
+          voucher_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          user_id?: string | null
+          voucher_id?: string
+        }
+        Relationships: []
       }
       discount_card_claims: {
         Row: {
@@ -1100,6 +1166,20 @@ export type Database = {
           percent: number | null
           status: string
         }[]
+      }
+      my_gift_voucher: {
+        Args: { p_code: string }
+        Returns: {
+          balance: number
+          code: string | null
+          ends_at: string | null
+          error: string | null
+          valid: boolean
+        }[]
+      }
+      mark_order_paid_by_voucher: {
+        Args: { p_order_id: string }
+        Returns: boolean
       }
       my_discount_card: {
         Args: Record<PropertyKey, never>

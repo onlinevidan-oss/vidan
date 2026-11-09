@@ -201,6 +201,18 @@ export default async function AdminReports({
                       </td>
                     </tr>
                   )}
+                  {finance.voucher > 0 && (
+                    <tr className="border-b border-ink-100">
+                      <td className={TD}>
+                        Эрхийн бичгээр төлсөн
+                        <span className="ml-1.5 text-[11px] text-ink-500">мөнгө ороогүй</span>
+                      </td>
+                      <td className={TD} />
+                      <td className={`${TD_NUM} font-display font-extrabold text-brand-600`}>
+                        − {formatMnt(finance.voucher)}
+                      </td>
+                    </tr>
+                  )}
                   <tr className="bg-brand-50">
                     <td className={`${TD} font-display text-[15px] font-extrabold text-ink-900`}>
                       НИЙТ ОРЛОГО

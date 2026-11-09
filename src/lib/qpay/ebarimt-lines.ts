@@ -232,3 +232,22 @@ function makeLine(a: {
           ],
   };
 }
+
+/**
+ * Эрхийн бичгээр төлсөн дүнг (orders.voucher_amount) баримтын мөрөөс
+ * хасна — эхлээд хүргэлтээс (НӨАТ-тай дүн), үлдсэнийг бараанаас.
+ * Үр дүнгийн нийлбэр = бараа + хүргэлт − эрхийн бичиг = orders.total.
+ */
+export function splitVoucher(
+  goodsGross: number,
+  shippingGross: number,
+  voucher: number,
+): { goodsGrossTotal: number; shippingGross: number } {
+  const v = Math.max(0, voucher);
+  const fromShipping = Math.min(v, shippingGross);
+  const fromGoods = Math.min(v - fromShipping, goodsGross);
+  return {
+    shippingGross: shippingGross - fromShipping,
+    goodsGrossTotal: goodsGross - fromGoods,
+  };
+}

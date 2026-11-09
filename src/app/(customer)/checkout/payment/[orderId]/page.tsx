@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ensureInvoiceForOrder, type QpayBankUrl } from "@/lib/qpay/orders";
+import {
+  ensureInvoiceForOrder,
+  finalizeVoucherPaidOrder,
+  type QpayBankUrl,
+} from "@/lib/qpay/orders";
 import { QpayPayment } from "@/components/customer/QpayPayment";
 
 export const metadata = { title: "QPay төлбөр", robots: { index: false, follow: false } };
@@ -28,6 +32,17 @@ export default async function PaymentPage({
 
   // Аль хэдийн төлөгдсөн бол шууд амжилтын хуудас руу
   if (order.payment_status === "paid") {
+    redirect(`/checkout/success/${orderId}`);
+  }
+
+  // Бүтэн дүнг эрхийн бичиг хаасан (0₮) — QPay нэхэмжлэл үүсгэхгүй.
+  // Захиалга өгөх үед баталгаажих ёстой; тэр алгассан бол энд дахин оролдоно.
+  if (Number(order.total) === 0) {
+    try {
+      await finalizeVoucherPaidOrder(order.id);
+    } catch (e) {
+      console.error("[voucher order finalize retry failed]", e);
+    }
     redirect(`/checkout/success/${orderId}`);
   }
 

@@ -26,6 +26,8 @@ export type ReportOrder = {
   shipping: number;
   tax: number;
   total: number;
+  /** Эрхийн бичгээр төлсөн хэсэг (0050) — total-оос аль хэдийн хасагдсан */
+  voucher_amount?: number;
   payment_method: string | null;
   created_at: string;
   items: ReportOrderItem[];
@@ -67,7 +69,9 @@ export type FinanceSummary = {
   legacyGoodsVat: number;
   /** Хуучин дүрмээр бодогдсон захиалгын тоо */
   legacyOrders: number;
-  /** Нийт (= netGoods + shipping + tax) */
+  /** Эрхийн бичгээр төлсөн дүн — мөнгө орж ирээгүй хэсэг */
+  voucher: number;
+  /** Нийт мөнгөөр орсон (= netGoods + shipping + tax − voucher) */
   total: number;
   orders: number;
   avgOrder: number;
@@ -84,6 +88,7 @@ export function summarizeFinance(orders: ReportOrder[]): FinanceSummary {
       s.shipping += shipping;
       s.tax += tax;
       s.total += n(o.total);
+      s.voucher += n(o.voucher_amount);
       if (shipping > 0) s.deliveries += 1;
 
       // Захиалга бүтнээр нь аль нэг дүрэмд хамаарна. ±1₮ тэвчээр нь
@@ -106,6 +111,7 @@ export function summarizeFinance(orders: ReportOrder[]): FinanceSummary {
       shippingVat: 0,
       legacyGoodsVat: 0,
       legacyOrders: 0,
+      voucher: 0,
     },
   );
 

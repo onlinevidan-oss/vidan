@@ -14,7 +14,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createEbarimtReceipt } from "./client";
-import { buildEbarimtLines, type QpayInvoiceLine } from "./ebarimt-lines";
+import { buildEbarimtLines, splitVoucher, type QpayInvoiceLine } from "./ebarimt-lines";
 import { normalizePhone, sendSms } from "@/lib/sms/client";
 import { shippingVat } from "@/lib/pricing";
 import { parseReceiptAmounts } from "@/lib/ebarimt/check";
@@ -52,7 +52,7 @@ export async function buildOrderEbarimtLines(
 
   const { data: order } = await admin
     .from("orders")
-    .select("id, total, shipping, discount")
+    .select("id, total, shipping, discount, voucher_amount")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return null;
@@ -82,12 +82,21 @@ export async function buildOrderEbarimtLines(
     (s, it) => s + Number(it.unit_price) * it.quantity,
     0,
   );
-  const goodsGrossTotal =
+  const goodsAfterDiscount =
     subtotal - Math.max(0, Math.min(Number(order.discount) || 0, subtotal));
 
   // Хүргэлтэд НӨАТ НЭМЭГДДЭГ тул баримтын мөр нь НӨАТ-той дүнгээр очно
   const shippingNet = Number(order.shipping) || 0;
-  const shippingGross = shippingNet + shippingVat(shippingNet);
+  const shippingFull = shippingNet + shippingVat(shippingNet);
+
+  // Эрхийн бичгээр төлсөн хэсэг (0050) — баримт зөвхөн мөнгөөр төлсөн
+  // дүнгээр гарна. Эхлээд хүргэлтээс, дараа нь бараанаас хасна: бараа
+  // 0₮-ийн мөртэй баримт гарахаас сэргийлнэ.
+  const { shippingGross, goodsGrossTotal } = splitVoucher(
+    goodsAfterDiscount,
+    shippingFull,
+    Number(order.voucher_amount) || 0,
+  );
 
   const built = buildEbarimtLines({
     items: items.map((it) => {

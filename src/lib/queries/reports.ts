@@ -55,7 +55,7 @@ export type ReportsData = {
 };
 
 const ORDER_SELECT =
-  "id, user_id, subtotal, discount, shipping, tax, total, payment_method, created_at, " +
+  "id, user_id, subtotal, discount, shipping, tax, total, voucher_amount, payment_method, created_at, " +
   "items:order_items(product_id, product_name, product_sku, quantity, subtotal, " +
   "unit_price, list_price, sale_campaign, " +
   "product:products(category:categories(name_mn)))";

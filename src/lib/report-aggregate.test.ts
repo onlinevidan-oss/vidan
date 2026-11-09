@@ -58,6 +58,17 @@ describe("summarizeFinance — барааны орлого ба хүргэлт �
     assert.equal(f.avgOrder, 0, "тэгд хуваахгүй");
   });
 
+  test("эрхийн бичиг: мөнгөөр орсон нийт = цэвэр бараа + хүргэлт + НӨАТ − эрхийн бичиг", () => {
+    // 0050: total-оос эрхийн бичгээр төлсөн хэсэг аль хэдийн хасагдсан
+    const f = summarizeFinance([
+      order({ items: [item({ subtotal: 78_000 })], discount: 3_900, shipping: 14_000, tax: 1_400, total: 0, voucher_amount: 89_500 }),
+      order({ items: [item({ subtotal: 30_000 })], shipping: 7_000, tax: 700 }),
+    ]);
+    assert.equal(f.voucher, 89_500);
+    assert.equal(f.total, 37_700);
+    assert.equal(f.netGoods + f.shipping + f.tax - f.voucher, f.total);
+  });
+
   test("бараа, хүргэлт, НӨАТ тус тусдаа нэгтгэгдэнэ", () => {
     const f = summarizeFinance([
       order({ items: [item({ subtotal: 30_000, quantity: 2 })], shipping: 7_000 }),

@@ -118,6 +118,14 @@ export default async function OrderSuccessPage({
               <span className="font-semibold text-ink-900">−{formatMnt(discount)}</span>
             </div>
           )}
+          {Number(order.voucher_amount) > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-ink-500">Эрхийн бичиг</span>
+              <span className="font-semibold text-ink-900">
+                −{formatMnt(Number(order.voucher_amount))}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-ink-500">НӨАТ-гүй дүн</span>
             <span className="font-semibold text-ink-900">{formatMntCents(net)}</span>

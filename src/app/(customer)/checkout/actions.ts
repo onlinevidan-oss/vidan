@@ -8,6 +8,7 @@ import { getCommerceSettings } from "@/lib/queries/settings";
 import { formatMnt } from "@/lib/utils";
 import { normalizePhone } from "@/lib/sms/client";
 import { parseGaClientId } from "@/lib/ga4-mp";
+import { finalizeVoucherPaidOrder } from "@/lib/qpay/orders";
 
 export type CheckoutPayload = {
   items: { productId: string; quantity: number }[];
@@ -61,6 +62,10 @@ function translateError(message: string, minOrder: number): string {
     return (
       PROMO_ERRORS[key] ?? "Промо код хүчингүй байна — дахин оруулна уу"
     );
+  }
+  if (message.includes("VOUCHER_INVALID")) {
+    const key = message.split("VOUCHER_INVALID:")[1]?.trim() ?? "";
+    return VOUCHER_ERRORS[key] ?? "Эрхийн бичиг хүчингүй байна";
   }
   if (message.includes("INSUFFICIENT_STOCK")) {
     return "Зарим бараа дутагдалтай — сагсаа шинэчилнэ үү";
@@ -196,6 +201,17 @@ export async function placeOrder(
     console.error("[profile phone backfill failed]", e);
   }
 
+  // Бүтэн дүнг эрхийн бичиг хаасан (төлөх 0₮) — QPay-гүйгээр шууд
+  // төлөгдсөнд тооцож, төлбөрийн дараах мэдэгдлүүдийг илгээнэ.
+  // Төлбөрийн хуудас төлөгдсөн захиалгыг амжилтын хуудас руу шилжүүлдэг.
+  if (Number(row.total) === 0) {
+    try {
+      await finalizeVoucherPaidOrder(row.order_id);
+    } catch (e) {
+      console.error("[voucher order finalize failed]", e);
+    }
+  }
+
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
 
@@ -214,8 +230,17 @@ export async function placeOrder(
 // Захиалга өгөх үед place_order дотор ДАХИН шалгагдана.
 // ============================================================
 export type PromoCheck =
-  | { ok: true; code: string; discount: number }
+  | { ok: true; kind: "promo"; code: string; discount: number }
+  /** Эрхийн бичиг (0050) — үлдэгдлээс захиалгын нийт дүн хүртэл хасагдана */
+  | { ok: true; kind: "voucher"; code: string; balance: number }
   | { ok: false; error: string };
+
+const VOUCHER_ERRORS: Record<string, string> = {
+  INACTIVE: "Энэ эрхийн бичиг идэвхгүй байна",
+  EXPIRED: "Энэ эрхийн бичгийн хугацаа дууссан байна",
+  OTHER_USER: "Энэ эрхийн бичгийг өөр хэрэглэгч ашиглаж байна",
+  EMPTY: "Эрхийн бичгийн үлдэгдэл дууссан байна",
+};
 
 const PROMO_ERRORS: Record<string, string> = {
   EMPTY: "Промо кодоо оруулна уу",
@@ -243,6 +268,24 @@ export async function checkPromoCode(
   const trimmed = code.trim();
   if (!trimmed) return { ok: false, error: PROMO_ERRORS.EMPTY };
   if (!items.length) return { ok: false, error: "Сагс хоосон байна" };
+
+  // Эхлээд эрхийн бичгээс хайна — place_order ч ийм дарааллаар шалгадаг
+  const { data: vData } = await supabase.rpc("my_gift_voucher", { p_code: trimmed });
+  const voucher = Array.isArray(vData) ? vData[0] : null;
+  if (voucher && voucher.error !== "NOT_FOUND") {
+    if (!voucher.valid) {
+      return {
+        ok: false,
+        error: VOUCHER_ERRORS[voucher.error ?? ""] ?? "Эрхийн бичиг хүчингүй байна",
+      };
+    }
+    return {
+      ok: true,
+      kind: "voucher",
+      code: voucher.code ?? trimmed.toUpperCase(),
+      balance: Number(voucher.balance),
+    };
+  }
 
   // Барааны дүнг DB-ийн үнээр тооцно
   const { data: products } = await supabase
@@ -276,5 +319,10 @@ export async function checkPromoCode(
     };
   }
 
-  return { ok: true, code: trimmed.toUpperCase(), discount: Number(row.discount) };
+  return {
+    ok: true,
+    kind: "promo",
+    code: trimmed.toUpperCase(),
+    discount: Number(row.discount),
+  };
 }

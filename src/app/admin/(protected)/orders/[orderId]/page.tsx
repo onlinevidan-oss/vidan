@@ -143,6 +143,9 @@ export default async function AdminOrderDetail({
                 {Number(order.discount) > 0 && (
                   <Row label="Хямдрал" value={`−${formatMnt(Number(order.discount))}`} />
                 )}
+                {Number(order.voucher_amount) > 0 && (
+                  <Row label="Эрхийн бичиг" value={`−${formatMnt(Number(order.voucher_amount))}`} />
+                )}
                 <Row label="НӨАТ-гүй дүн" value={formatMntCents(vatSplit.net)} />
                 <Row label="НӨАТ" value={formatMntCents(vatSplit.vat)} />
                 <div className="my-2 h-px bg-ink-100" />

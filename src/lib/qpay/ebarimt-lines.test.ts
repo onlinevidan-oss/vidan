@@ -12,6 +12,7 @@ import {
   allocateByLargestRemainder,
   buildEbarimtLines,
   round4,
+  splitVoucher,
   vatFromGross,
   type EbarimtSourceItem,
 } from "./ebarimt-lines.ts";
@@ -379,5 +380,50 @@ describe("buildEbarimtLines — goodsGrossTotal (НӨАТ багтсан дүн)
       ...DEFAULTS,
     });
     assert.equal(r.total, 0);
+  });
+});
+
+// Эрхийн бичиг (0050): баримт зөвхөн мөнгөөр төлсөн дүнгээр
+describe("splitVoucher — эрхийн бичгээр төлсөн хэсгийг хасах", () => {
+  test("эхлээд хүргэлтээс, дараа нь бараанаас", () => {
+    assert.deepEqual(splitVoucher(100_000, 7_700, 5_000), {
+      shippingGross: 2_700,
+      goodsGrossTotal: 100_000,
+    });
+    assert.deepEqual(splitVoucher(100_000, 7_700, 50_000), {
+      shippingGross: 0,
+      goodsGrossTotal: 57_700,
+    });
+  });
+
+  test("бүтэн дүнг хаасан бол 0 (баримт гарахгүй)", () => {
+    assert.deepEqual(splitVoucher(74_100, 15_400, 89_500), {
+      shippingGross: 0,
+      goodsGrossTotal: 0,
+    });
+  });
+
+  test("эрхийн бичиггүй бол өөрчлөгдөхгүй", () => {
+    assert.deepEqual(splitVoucher(16_700, 7_700, 0), {
+      shippingGross: 7_700,
+      goodsGrossTotal: 16_700,
+    });
+  });
+
+  test("мөрүүдийн нийлбэр = төлөх дүн (orders.total)", () => {
+    // 15 × 7,800 = 117,000; карт −5,850; хүргэлт 21,000 + 2,100; эрхийн бичиг 110,500
+    // → төлөх 23,750. Нэгж үнэ 4 оронтой тул <1₮ зөрүү зөвшөөрөгдөнө
+    // (buildOrderEbarimtLines-ийн matchesOrderTotal-тэй ижил тэвчээр).
+    const goods = 117_000 - 5_850;
+    const ship = 21_000 + 2_100;
+    const split = splitVoucher(goods, ship, 110_500);
+    const built = buildEbarimtLines({
+      items: [{ name: "Бараа", quantity: 15, unitPrice: 7_800, barcode: null, classificationCode: "x" }],
+      shipping: split.shippingGross,
+      goodsGrossTotal: split.goodsGrossTotal,
+      defaultClassificationCode: "x",
+      shippingClassificationCode: "y",
+    });
+    assert.ok(Math.abs(built.total - (goods + ship - 110_500)) < 1, String(built.total));
   });
 });

@@ -82,7 +82,12 @@ export function CheckoutView({
   const [phone2, setPhone2] = useState("");
   // Промо код — сервер шалгаж хөнгөлөлтийг буцаана
   const [promoInput, setPromoInput] = useState("");
-  const [promo, setPromo] = useState<{ code: string; discount: number } | null>(null);
+  // kind = voucher — эрхийн бичиг: хөнгөлөлт биш, үлдэгдлээс нийт дүнг хаана
+  const [promo, setPromo] = useState<
+    | { kind: "promo"; code: string; discount: number }
+    | { kind: "voucher"; code: string; balance: number }
+    | null
+  >(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoChecking, setPromoChecking] = useState(false);
   const [notes, setNotes] = useState("");
@@ -152,16 +157,21 @@ export function CheckoutView({
     );
   }
 
-  const promoDiscount = promo?.discount ?? 0;
+  const promoDiscount = promo?.kind === "promo" ? promo.discount : 0;
   // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил тооцоо
   const cardOff = card ? cardDiscount(subtotal, card.percent, promoDiscount) : 0;
   const discount = promoDiscount + cardOff;
-  const { shipping, tax, total } = calculateOrderTotals(
+  const { shipping, tax, total: orderTotal } = calculateOrderTotals(
     subtotal,
     settings,
     itemCount,
     discount,
   );
+  // Эрхийн бичиг (place_order-той ижил): үлдэгдлээс нийт дүн хүртэл
+  const voucherAmount =
+    promo?.kind === "voucher" ? Math.min(promo.balance, orderTotal) : 0;
+  // Хэрэглэгчийн QPay-ээр төлөх дүн
+  const total = orderTotal - voucherAmount;
   // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) барааны доор нэг мөрөөр
   const shippingGross = shipping + tax;
   const { net, vat } = vatBreakdown(total);
@@ -177,7 +187,11 @@ export function CheckoutView({
     );
     setPromoChecking(false);
     if (res.ok) {
-      setPromo({ code: res.code, discount: res.discount });
+      setPromo(
+        res.kind === "voucher"
+          ? { kind: "voucher", code: res.code, balance: res.balance }
+          : { kind: "promo", code: res.code, discount: res.discount },
+      );
       setPromoInput(res.code);
     } else {
       setPromo(null);
@@ -488,7 +502,9 @@ export function CheckoutView({
                     🎟 {promo.code}
                   </div>
                   <div className="mt-0.5 text-sm font-semibold text-ink-900">
-                    {formatMnt(promo.discount)} хөнгөлөлт хэрэгжлээ
+                    {promo.kind === "voucher"
+                      ? `Эрхийн бичиг: үлдэгдэл ${formatMnt(promo.balance)}, энэ захиалгад ${formatMnt(voucherAmount)}`
+                      : `${formatMnt(promo.discount)} хөнгөлөлт хэрэгжлээ`}
                   </div>
                 </div>
                 <button
@@ -502,7 +518,7 @@ export function CheckoutView({
             ) : (
               <div>
                 <p className="mb-2.5 text-sm text-ink-700">
-                  Промо код байвал энд оруулаад{" "}
+                  Промо код эсвэл эрхийн бичгийн код байвал энд оруулаад{" "}
                   <strong className="text-ink-900">Ашиглах</strong> дарна уу.
                 </p>
                 <div className="flex gap-2">
@@ -661,6 +677,13 @@ export function CheckoutView({
                 accent="success"
               />
             )}
+            {voucherAmount > 0 && (
+              <Row
+                label={`Эрхийн бичиг (${promo?.code})`}
+                value={`−${formatMnt(voucherAmount)}`}
+                accent="success"
+              />
+            )}
             <Row label="НӨАТ-гүй дүн" value={formatMntCents(net)} />
             <Row label="НӨАТ" value={formatMntCents(vat)} />
             <div className="my-3 h-px bg-ink-100" />
@@ -692,7 +715,9 @@ export function CheckoutView({
               {pending ? "Захиалга үүсгэж байна…" : `✓ Захиалга баталгаажуулах (${formatMnt(total)})`}
             </button>
             <p className="mt-2.5 text-center text-[11px] text-ink-500">
-              Баталгаажуулсны дараа QPay төлбөрийн хуудас руу шилжинэ
+              {total === 0
+                ? "Эрхийн бичгээр бүрэн төлөгдөнө — QPay төлбөр шаардлагагүй"
+                : "Баталгаажуулсны дараа QPay төлбөрийн хуудас руу шилжинэ"}
             </p>
             <Link
               href="/cart"

@@ -212,4 +212,24 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
   return "paid";
 }
 
+/**
+ * Бүтэн дүнг эрхийн бичиг хаасан (total = 0) захиалгыг төлөгдсөнд тооцож,
+ * QPay-ийн төлбөрийн дараах мэдэгдлүүдийг илгээнэ. Төлсөн мөнгө байхгүй
+ * тул и-баримт гаргахгүй. DB функц нь total = 0, эрхийн бичигтэй захиалгад
+ * л ажилладаг (0050) — өөр захиалгыг энэ замаар төлөгдсөн болгох боломжгүй.
+ */
+export async function finalizeVoucherPaidOrder(orderId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data: ok, error } = await admin.rpc("mark_order_paid_by_voucher", {
+    p_order_id: orderId,
+  });
+  if (error) throw new Error(`Эрхийн бичгээр баталгаажуулахад алдаа: ${error.message}`);
+  if (!ok) return false;
+
+  await sendAdminOrderSms(orderId);
+  await sendOrderSms(orderId, "paid");
+  await sendPurchaseEvent(orderId);
+  return true;
+}
+
 export type { QpayBankUrl };
