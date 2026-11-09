@@ -158,8 +158,10 @@ export function CheckoutView({
   }
 
   const promoDiscount = promo?.kind === "promo" ? promo.discount : 0;
-  // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил тооцоо
-  const cardOff = card ? cardDiscount(subtotal, card.percent, promoDiscount) : 0;
+  // Картын хөнгөлөлт — place_order (card_discount_for)-тай ижил тооцоо.
+  // Эрхийн бичигтэй захиалгад карт хэрэгжихгүй (0051).
+  const cardOff =
+    card && promo?.kind !== "voucher" ? cardDiscount(subtotal, card.percent, promoDiscount) : 0;
   const discount = promoDiscount + cardOff;
   const { shipping, tax, total: orderTotal } = calculateOrderTotals(
     subtotal,
