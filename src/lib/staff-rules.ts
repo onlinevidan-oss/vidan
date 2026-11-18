@@ -12,7 +12,7 @@ export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
   manager: "Менежер",
   staff: "Ажилтан",
   driver: "Жолооч",
-  fruit: "Vidan fruit",
+  fruit: "Жимс",
 };
 
 /** Эрх тус бүр юу хийж чадах вэ — жагсаалтын доор тайлбарлана */

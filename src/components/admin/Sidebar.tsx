@@ -29,7 +29,7 @@ const OTHER_NAV = [
 /** Зөвхөн role = admin-д харагдана */
 const OWNER_NAV = [
   { href: "/admin/staff",      label: "Ажилтан",         icon: "🧑‍💼" },
-  { href: "/admin/fruit",      label: "Vidan fruit",     icon: "🍎" },
+  { href: "/admin/fruit",      label: "Жимс",            icon: "🍎" },
 ];
 
 /**
@@ -102,7 +102,7 @@ export function Sidebar({
 
       {fruit ? (
         <>
-          <NavSection title="Vidan fruit" items={FRUIT_NAV} isActive={isActive} onNavigate={close} />
+          <NavSection title="Жимс" items={FRUIT_NAV} isActive={isActive} onNavigate={close} />
           {/* VIDAN-ы админ жимсний хэсгийг хянаж байгаа үед буцах зам */}
           {user.role !== "fruit" && (
             <NavSection

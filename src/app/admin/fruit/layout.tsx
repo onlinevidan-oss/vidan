@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { StaffNoTrack } from "@/components/analytics/StaffNoTrack";
 
-export const metadata = { title: "Vidan fruit | Backoffice" };
+export const metadata = { title: "Жимс | Backoffice" };
 
 /**
  * Vidan fruit-ийн админ (0048). Жимсний ажилтан болон VIDAN-ы админ,
