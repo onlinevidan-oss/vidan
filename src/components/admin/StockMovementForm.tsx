@@ -37,6 +37,7 @@ export function StockMovementForm({
   currentStock,
   today,
   action = recordStockMovement,
+  unit = "ширхэг",
 }: {
   productId: string;
   productName: string;
@@ -45,6 +46,8 @@ export function StockMovementForm({
   today: string;
   /** Жимсний хэсэг өөрийн үйлдлийг дамжуулна (recordFruitStockMovement) */
   action?: typeof recordStockMovement;
+  /** Тоо хэмжээний нэгж — жимсний нөөц "кг" (0053) */
+  unit?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<StockMovementKind>("in");
@@ -109,7 +112,7 @@ export function StockMovementForm({
     <div className="print-hide flex w-[240px] flex-col gap-1.5 rounded-[10px] border-[1.5px] border-lime-600 bg-lime-50 p-2">
       {done !== null ? (
         <div className="text-[11px] font-bold text-lime-700">
-          ✓ Бүртгэгдлээ · шинэ үлдэгдэл {done}
+          ✓ Бүртгэгдлээ · шинэ үлдэгдэл {done} {unit}
         </div>
       ) : (
         <>
@@ -136,6 +139,7 @@ export function StockMovementForm({
           <div className="flex items-center gap-1.5">
             <input
               type="number"
+              step={unit === "ширхэг" ? 1 : 0.5}
               value={qty}
               onChange={(e) => setQty(e.target.value)}
               placeholder={active.signed ? "+/− тоо" : "тоо"}
@@ -158,7 +162,7 @@ export function StockMovementForm({
                   : "text-[11px] font-semibold text-ink-700"
               }
             >
-              {currentStock} → <strong>{preview}</strong> ширхэг
+              {currentStock} → <strong>{preview}</strong> {unit}
             </div>
           )}
 

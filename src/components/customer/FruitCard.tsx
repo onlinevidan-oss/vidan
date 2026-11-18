@@ -1,22 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { formatMnt } from "@/lib/utils";
+import { useCart } from "@/stores/cart";
+import { flyToCart } from "@/lib/fly-to-cart";
+import { trackEvent } from "@/lib/analytics";
 import type { FruitProduct } from "@/lib/fruit-preview";
 
 /**
- * Vidan fruit — барааны карт (ЗАГВАР). Савлагааны сонголтоор үнэ солигдоно.
- * Сагслах товч идэвхгүй — захиалгын урсгал шийдэгдээгүй.
+ * "Жимс" — барааны карт. Савлагааны сонголт бүр сангийн тусдаа бараа
+ * (0053); сонгосноо сагсална. Үлдэгдэлгүй сонголт "Дууссан".
  */
 export function FruitCard({ product: p }: { product: FruitProduct }) {
-  const [selected, setSelected] = useState(0);
+  // Анхдагч сонголт — үлдэгдэлтэй эхнийх
+  const [selected, setSelected] = useState(() => Math.max(0, p.options.findIndex((o) => o.stock > 0)));
   const option = p.options[selected];
   const title = p.variety ?? `${p.origin} алим`;
+  const imageRef = useRef<HTMLDivElement | null>(null);
+  const addItem = useCart((s) => s.addItem);
+  const inCart = useCart((s) => s.items.find((i) => i.productId === option.productId)?.quantity ?? 0);
+  const soldOut = option.stock <= 0;
+  const atLimit = inCart >= option.stock;
+
+  function add() {
+    if (soldOut || atLimit) return;
+    flyToCart(imageRef.current);
+    addItem({
+      productId: option.productId,
+      sku: option.sku,
+      slug: option.slug,
+      name: option.name,
+      price: option.price,
+      imageUrl: p.image,
+    });
+    trackEvent("add_to_cart", {
+      currency: "MNT",
+      value: option.price,
+      items: [{ item_id: option.productId, item_name: option.name, item_category: "Жимс", price: option.price, quantity: 1 }],
+    });
+  }
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[14px] bg-white">
-      <div className="relative aspect-[4/3] overflow-hidden bg-cream-100 sm:aspect-square">
+      <div ref={imageRef} className="relative aspect-[4/3] overflow-hidden bg-cream-100 sm:aspect-square">
         {p.image ? (
           <Image
             src={p.image}
@@ -66,7 +93,9 @@ export function FruitCard({ product: p }: { product: FruitProduct }) {
               }`}
             >
               <span>{o.label}</span>
-              <span className="tabular-nums">{formatMnt(o.price)}</span>
+              <span className="tabular-nums">
+                {o.stock > 0 ? formatMnt(o.price) : <span className="font-semibold text-ink-400">Дууссан</span>}
+              </span>
             </button>
           ))}
         </div>
@@ -76,14 +105,18 @@ export function FruitCard({ product: p }: { product: FruitProduct }) {
             <div className="font-display text-[17px] font-extrabold leading-tight text-ink-900">
               {formatMnt(option.price)}
             </div>
-            <div className="text-[11px] text-ink-500">{option.note ?? option.label}</div>
+            <div className="text-[11px] text-ink-500">
+              {option.label}
+              {inCart > 0 && <span className="ml-1 font-bold text-lime-700">· сагсанд {inCart}</span>}
+            </div>
           </div>
           <button
-            disabled
-            title="Захиалга удахгүй нээгдэнэ"
-            className="h-[38px] w-full cursor-not-allowed rounded-[10px] bg-brand-600/60 text-[13px] font-extrabold text-white"
+            type="button"
+            onClick={add}
+            disabled={soldOut || atLimit}
+            className="h-[38px] w-full rounded-[10px] bg-brand-600 text-[13px] font-extrabold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-ink-300"
           >
-            Захиалга удахгүй нээгдэнэ
+            {soldOut ? "Дууссан" : atLimit ? "Үлдэгдэл хүрэлцэхгүй" : inCart > 0 ? "Дахин сагслах" : "Сагслах"}
           </button>
         </div>
       </div>

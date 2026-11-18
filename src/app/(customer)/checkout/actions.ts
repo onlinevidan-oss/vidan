@@ -48,12 +48,16 @@ export type CheckoutResult =
  * minOrder-ийг админы тохиргооноос дамжуулна (hardcode хийвэл тохиргоо
  * өөрчлөгдөхөд алдааны текст худал болно).
  */
-function translateError(message: string, minOrder: number): string {
+function translateError(message: string, minOrder: number, fruitMin = 40_000): string {
   if (message.includes("AUTH_REQUIRED")) return "Нэвтрэх шаардлагатай";
   if (message.includes("EMPTY_CART")) return "Сагс хоосон байна";
   if (message.includes("INVALID_ADDRESS")) return "Хүргэх хаяг буруу байна";
   if (message.includes("INVALID_PAYMENT_METHOD")) return "Төлбөрийн арга буруу";
   if (message.includes("INVALID_QUANTITY")) return "Барааны тоо буруу";
+  // FRUIT_… нь MIN_ORDER_NOT_MET-ийг агуулдаг тул түрүүлж шалгана (0053)
+  if (message.includes("FRUIT_MIN_ORDER_NOT_MET")) {
+    return `Жимсний захиалгын доод дүн ${formatMnt(fruitMin)} — сагсандаа жимс нэмнэ үү`;
+  }
   if (message.includes("MIN_ORDER_NOT_MET")) {
     return `Захиалгын барааны доод дүн ${formatMnt(minOrder)} (хүргэлт ороогүй) — сагсандаа бараа нэмнэ үү`;
   }
@@ -132,8 +136,11 @@ export async function placeOrder(
   });
 
   if (error) {
-    const { min_order_amount } = await getCommerceSettings();
-    return { ok: false, error: translateError(error.message, min_order_amount) };
+    const { min_order_amount, fruit_min_order_amount } = await getCommerceSettings();
+    return {
+      ok: false,
+      error: translateError(error.message, min_order_amount, fruit_min_order_amount),
+    };
   }
 
   // RPC `returns table(...)` буцаах учир data нь массив

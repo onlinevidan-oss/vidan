@@ -11,7 +11,7 @@ import { getPublicHeroSlides } from "@/lib/queries/public-settings";
 import { HeroCarousel } from "@/components/customer/HeroCarousel";
 import type { Metadata } from "next";
 import { ViewItemListEvent } from "@/components/analytics/EcommerceEvents";
-import { FRUIT_BRAND, FRUIT_PREVIEW, FRUIT_PRODUCTS } from "@/lib/fruit-preview";
+import { FRUIT_BRAND, FRUIT_PREVIEW, FRUIT_VARIETIES } from "@/lib/fruit-preview";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
@@ -51,7 +51,7 @@ export default async function HomePage() {
           brands={
             // ЗАГВАР — production-д туг байхгүй тул нэмэгдэхгүй
             FRUIT_PREVIEW
-              ? [...brands, { ...FRUIT_BRAND, product_count: FRUIT_PRODUCTS.length }]
+              ? [...brands, { ...FRUIT_BRAND, product_count: FRUIT_VARIETIES.length }]
               : brands
           }
         />

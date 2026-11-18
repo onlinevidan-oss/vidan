@@ -84,7 +84,9 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
       supabase
         .from("products")
         .select("name_mn, sku, stock, price, category:categories(name_mn)")
-        .eq("is_active", true),
+        .eq("is_active", true)
+        // Жимсний савлагаа кг-ын нөөцөөс тооцогддог (0053) — давхар тоолохгүй
+        .is("stock_source_id", null),
       // Ажилтны захиалгыг хэрэглэгчийнхээс салгахад
       supabase.from("staff").select("id"),
       supabase

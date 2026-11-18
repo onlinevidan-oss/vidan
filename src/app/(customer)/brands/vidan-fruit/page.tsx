@@ -1,45 +1,44 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { formatMnt } from "@/lib/utils";
 import { FruitCard } from "@/components/customer/FruitCard";
-import { FRUIT_BRAND, FRUIT_DELIVERY, FRUIT_PREVIEW, FRUIT_PRODUCTS } from "@/lib/fruit-preview";
+import { FRUIT_BRAND, FRUIT_DELIVERY_FEE, FRUIT_PREVIEW } from "@/lib/fruit-preview";
+import { getFruitCatalog } from "@/lib/queries/fruit-public";
+import { FruitBannerSlides } from "@/components/customer/FruitBannerSlides";
+import { getPublicCommerceSettings, getFruitBanners } from "@/lib/queries/public-settings";
 
 /**
- * Vidan fruit — ЗАГВАР хуудас. Туггүй орчинд (production) 404.
- * `[slug]` нь DB-ээс брэнд хайдаг тул энэ тогтмол зам түүнээс түрүүлж таарна.
+ * "Жимс" хуудас — үнэ, үлдэгдэл сангаас (0053), баннер нь жимсний админы
+ * тохиргооноос. `[slug]` нь DB-ээс брэнд хайдаг тул энэ тогтмол зам
+ * түүнээс түрүүлж таарна.
  */
+
+// Үлдэгдэл, үнэ хурдан шинэчлэгдэнэ
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${FRUIT_BRAND.name} — шинэхэн алим`,
-  robots: { index: false, follow: false },
+  description: "Бельги, Польшийн шинэхэн алим — 1кг савлагаа болон бүтэн хайрцгаар гэрт тань хүргэнэ.",
 };
 
-export default function FruitPage() {
+export default async function FruitPage() {
   if (!FRUIT_PREVIEW) notFound();
+  const [products, settings, banners] = await Promise.all([
+    getFruitCatalog(),
+    getPublicCommerceSettings(),
+    getFruitBanners(),
+  ]);
+  const minOrder = settings.fruit_min_order_amount;
 
   return (
     <div className="my-6">
-      <div className="mb-4 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50 px-4 py-2.5 text-[13px] font-semibold text-amber-900">
-        ЗАГВАР — хэрэглэгчдэд харагдахгүй. Захиалга, төлбөрийн урсгал захирлын шийдвэрийн дараа нээгдэнэ.
-      </div>
-
       <nav aria-label="Breadcrumb" className="mb-3 flex gap-2 text-xs text-ink-500">
         <Link href="/">Нүүр</Link><span>/</span><span>{FRUIT_BRAND.name}</span>
       </nav>
 
       <header className="relative overflow-hidden rounded-2xl bg-brand-600 text-white">
-        <Image
-          src="/fruit/cover-jims2.jpg"
-          alt=""
-          fill
-          priority
-          // Vercel-ийн зураг оновчлолын хязгаар (402) — шууд ачаална
-          unoptimized
-          className="object-cover object-center"
-          sizes="(max-width: 1240px) 100vw, 1240px"
-        />
+        <FruitBannerSlides urls={banners} />
         <div className="absolute inset-0 bg-gradient-to-r from-[#b81e22] via-[#b81e22]/80 via-45% to-transparent to-80%" />
         <div className="relative max-w-[640px] p-6 md:p-10">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-lime-500 px-3 py-1 text-[12px] font-extrabold uppercase tracking-wide text-ink-900">
@@ -57,20 +56,20 @@ export default function FruitPage() {
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-xl bg-white px-4 py-3 text-sm text-ink-700">
         <span>
           <span aria-hidden>🚚 </span>
-          <b className="text-ink-900">{formatMnt(FRUIT_DELIVERY.minOrder)}</b>-өөс дээш захиалгад хүргэлттэй
+          <b className="text-ink-900">{formatMnt(minOrder)}</b>-өөс дээш жимсний захиалгад хүргэлттэй
         </span>
         <span>
-          Хүргэлтийн төлбөр <b className="text-ink-900">{formatMnt(FRUIT_DELIVERY.fee)}</b>
+          Хүргэлтийн төлбөр <b className="text-ink-900">{formatMnt(FRUIT_DELIVERY_FEE)}</b>
         </span>
       </div>
 
       <section className="mt-10">
         <div className="mb-5 flex items-end justify-between">
           <h2 className="font-display text-2xl font-extrabold">Алим</h2>
-          <span className="text-sm text-ink-500">{FRUIT_PRODUCTS.length} төрөл</span>
+          <span className="text-sm text-ink-500">{products.length} төрөл</span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FRUIT_PRODUCTS.map((p) => (
+          {products.map((p) => (
             <FruitCard key={p.id} product={p} />
           ))}
         </div>
@@ -80,7 +79,7 @@ export default function FruitPage() {
         {[
           ["Шинэхэн", "Бельги, Польшийн алим"],
           ["Савлагаа", "1 кг-аас 12 кг хайрцаг хүртэл"],
-          ["Гэрт хүргэнэ", `${formatMnt(FRUIT_DELIVERY.minOrder)}-өөс дээш захиалгад`],
+          ["Гэрт хүргэнэ", `${formatMnt(minOrder)}-өөс дээш захиалгад`],
         ].map(([t, d]) => (
           <div key={t} className="border-l-2 border-lime-500 pl-4">
             <h3 className="text-sm font-bold text-ink-900">{t}</h3>

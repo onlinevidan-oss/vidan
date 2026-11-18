@@ -10,6 +10,7 @@ import {
   calculateOrderTotals,
   vatBreakdown,
   COMMERCE_DEFAULTS,
+  fruitShortfall,
   type CommerceSettings,
 } from "@/lib/pricing";
 import { ecommerceItems, trackEvent } from "@/lib/analytics";
@@ -18,10 +19,13 @@ import { useCartPriceSync } from "./useCartPriceSync";
 export function CartView({
   settings = COMMERCE_DEFAULTS,
   isStaff = false,
+  fruitIds = [],
 }: {
   settings?: CommerceSettings;
   /** Ажилтан доод дүнгийн хязгаарлалтад үл хамаарна */
   isStaff?: boolean;
+  /** Жимсний барааны id — жимсний доод дүнг тооцоход (0053) */
+  fruitIds?: string[];
 }) {
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
@@ -66,6 +70,8 @@ export function CartView({
   const { net, vat } = vatBreakdown(total);
   // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
   const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
+  // Жимсний дүн дангаараа доод хэмжээнд хүрэх ёстой (place_order-той ижил)
+  const fruit = fruitShortfall(items, new Set(fruitIds), settings.fruit_min_order_amount, isStaff);
 
   return (
     <div className="my-6">
@@ -216,7 +222,23 @@ export function CartView({
                 {formatMnt(total)}
               </div>
             </div>
-            {belowMinOrder ? (
+            {!belowMinOrder && fruit.shortfall > 0 && (
+              <>
+                <div className="mb-3 rounded-xl bg-[#fff3d6] p-3 text-center text-[13px] text-[#7a4d00]">
+                  🍎 Жимсний захиалгын доод дүн{" "}
+                  <strong>{formatMnt(settings.fruit_min_order_amount)}</strong>. Сагсан дахь
+                  жимсний дүн <strong>{formatMnt(fruit.fruitSubtotal)}</strong> — ахиад{" "}
+                  <strong>{formatMnt(fruit.shortfall)}</strong>-ийн жимс нэмнэ үү.
+                  <Link href="/brands/vidan-fruit" className="mt-1 block font-bold underline">
+                    Жимс үзэх →
+                  </Link>
+                </div>
+                <div className="flex w-full cursor-not-allowed items-center justify-center rounded-[12px] bg-ink-300 py-4 text-base font-extrabold text-white">
+                  Захиалга өгөх →
+                </div>
+              </>
+            )}
+            {fruit.shortfall > 0 && !belowMinOrder ? null : belowMinOrder ? (
               <>
                 <div className="mb-3 rounded-xl bg-ink-100 p-3 text-center text-[13px] text-ink-700">
                   Захиалгын <strong>барааны</strong> доод дүн{" "}

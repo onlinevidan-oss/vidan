@@ -46,6 +46,24 @@ export async function getPublicCommerceSettings(): Promise<CommerceSettings> {
   return { ...COMMERCE_DEFAULTS, ...(value ?? {}) };
 }
 
+/** "Жимс" хуудасны баннер — жимсний админы тохиргооноос (site_settings.fruit_banner) */
+export const FRUIT_BANNER_DEFAULT = "/fruit/cover-jims2.jpg";
+/** Баннерт нэгэн зэрэг байх зургийн дээд тоо */
+export const FRUIT_BANNER_MAX = 8;
+
+/** Тохиргооны утгаас зургийн жагсаалт (`{urls}`; хуучин `{url}` хэлбэрийг ч уншина) */
+export function fruitBannerUrls(value: unknown): string[] {
+  const v = (value ?? {}) as { urls?: unknown; url?: unknown };
+  const urls = Array.isArray(v.urls) ? v.urls : typeof v.url === "string" ? [v.url] : [];
+  return urls.filter((u): u is string => typeof u === "string" && u.length > 0).slice(0, FRUIT_BANNER_MAX);
+}
+
+/** Ээлжлэн солигдох баннерын зургууд — хоосон бол анхдагч зураг */
+export async function getFruitBanners(): Promise<string[]> {
+  const urls = fruitBannerUrls(await getSetting("fruit_banner", 60));
+  return urls.length > 0 ? urls : [FRUIT_BANNER_DEFAULT];
+}
+
 export async function getPublicAboutBrochure(): Promise<AboutBrochure | null> {
   const value = await getSetting<Partial<AboutBrochure>>("about_brochure", 300);
   if (!value?.pages?.length) return null;

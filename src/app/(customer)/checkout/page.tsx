@@ -6,6 +6,7 @@ import { isEbarimtConfigured } from "@/lib/ebarimt/posapi";
 import { isEbarimtEnabled } from "@/lib/qpay/client";
 import { getCurrentStaff } from "@/lib/queries/staff";
 import { isFruitRole } from "@/lib/staff-rules";
+import { getFruitProductIdsPublic } from "@/lib/queries/fruit-public";
 
 export const metadata = { title: "Захиалга өгөх", robots: { index: false, follow: false } };
 
@@ -31,11 +32,12 @@ export default async function CheckoutPage() {
       .order("is_default", { ascending: false }),
   ]);
 
-  const [settings, staff, { data: cards }] = await Promise.all([
+  const [settings, staff, { data: cards }, fruitIds] = await Promise.all([
     getCommerceSettings(),
     getCurrentStaff(),
     // QR-аар идэвхжүүлсэн хөнгөлөлтийн карт (0049) — захиалгад өөрөө хасагдана
     supabase.rpc("my_discount_card"),
+    getFruitProductIdsPublic(),
   ]);
   const card = Array.isArray(cards) ? cards[0] : null;
 
@@ -49,6 +51,7 @@ export default async function CheckoutPage() {
       ebarimtEnabled={isEbarimtEnabled() || isEbarimtConfigured()}
       isStaff={!!staff && !isFruitRole(staff.role)}
       card={card ? { name: card.name, percent: Number(card.percent) } : null}
+      fruitIds={fruitIds}
     />
   );
 }

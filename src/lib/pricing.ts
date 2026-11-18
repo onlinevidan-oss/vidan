@@ -53,6 +53,8 @@ export function shippingForQty(
 
 export type CommerceSettings = {
   min_order_amount: number;
+  /** Сагсан дахь ЖИМСНИЙ барааны дүн дангаараа хүрэх ёстой доод хэмжээ (0053) */
+  fruit_min_order_amount: number;
   /** threshold ба түүнээс доош ширхэгт хүргэлт */
   shipping_base: number;
   /** threshold-с дээш, tier2_max хүртэл ширхэгт хүргэлт */
@@ -71,6 +73,7 @@ export type CommerceSettings = {
 
 export const COMMERCE_DEFAULTS: CommerceSettings = {
   min_order_amount: 20_000,
+  fruit_min_order_amount: 40_000,
   shipping_base: 7_000,
   shipping_over: 14_000,
   shipping_qty_threshold: 7,
@@ -149,4 +152,23 @@ export function vatBreakdown(total: number): { net: number; vat: number } {
   const totalCents = Math.round(total * 100);
   const vatCents = Math.round((totalCents * TAX_RATE) / (1 + TAX_RATE));
   return { net: (totalCents - vatCents) / 100, vat: vatCents / 100 };
+}
+
+/**
+ * Сагсан дахь жимсний дүн доод хэмжээнд хүрээгүй бол дутуу дүнг буцаана
+ * (place_order-ийн FRUIT_MIN_ORDER_NOT_MET-тэй ижил дүрэм, 0053).
+ * Жимсгүй сагс эсвэл ажилтан бол 0.
+ */
+export function fruitShortfall(
+  items: { productId: string; price: number; quantity: number }[],
+  fruitIds: ReadonlySet<string>,
+  minAmount: number,
+  isStaff = false,
+): { fruitSubtotal: number; shortfall: number } {
+  const fruitSubtotal = items
+    .filter((i) => fruitIds.has(i.productId))
+    .reduce((s, i) => s + i.price * i.quantity, 0);
+  const shortfall =
+    !isStaff && fruitSubtotal > 0 && fruitSubtotal < minAmount ? minAmount - fruitSubtotal : 0;
+  return { fruitSubtotal, shortfall };
 }

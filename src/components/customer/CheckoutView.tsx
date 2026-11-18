@@ -13,6 +13,7 @@ import {
   cardDiscount,
   vatBreakdown,
   COMMERCE_DEFAULTS,
+  fruitShortfall,
   type CommerceSettings,
 } from "@/lib/pricing";
 import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
@@ -47,6 +48,7 @@ export function CheckoutView({
   ebarimtEnabled = false,
   isStaff = false,
   card = null,
+  fruitIds = [],
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
@@ -57,6 +59,8 @@ export function CheckoutView({
   isStaff?: boolean;
   /** QR-аар идэвхжүүлсэн хөнгөлөлтийн карт — place_order өөрөө хасна */
   card?: { name: string; percent: number } | null;
+  /** Жимсний барааны id — жимсний доод дүнд (0053) */
+  fruitIds?: string[];
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
@@ -178,7 +182,10 @@ export function CheckoutView({
   const shippingGross = shipping + tax;
   const { net, vat } = vatBreakdown(total);
   // Ажилтан туршилтын захиалга хийхэд доод дүн саад болохгүй
-  const belowMinOrder = !isStaff && subtotal < settings.min_order_amount;
+  const belowGeneralMin = !isStaff && subtotal < settings.min_order_amount;
+  // Жимсний дүн дангаараа доод хэмжээнд хүрэх ёстой (place_order-той ижил, 0053)
+  const fruit = fruitShortfall(items, new Set(fruitIds), settings.fruit_min_order_amount, isStaff);
+  const belowMinOrder = belowGeneralMin || fruit.shortfall > 0;
 
   async function applyPromo() {
     setPromoError(null);
@@ -211,7 +218,9 @@ export function CheckoutView({
     setError(null);
     if (belowMinOrder) {
       setError(
-        `Захиалгын барааны доод дүн ${formatMnt(settings.min_order_amount)} (хүргэлт ороогүй) — сагсандаа бараа нэмнэ үү`,
+        belowGeneralMin
+          ? `Захиалгын барааны доод дүн ${formatMnt(settings.min_order_amount)} (хүргэлт ороогүй) — сагсандаа бараа нэмнэ үү`
+          : `Жимсний захиалгын доод дүн ${formatMnt(settings.fruit_min_order_amount)} — ахиад ${formatMnt(fruit.shortfall)}-ийн жимс нэмнэ үү`,
       );
       return;
     }
@@ -708,6 +717,16 @@ export function CheckoutView({
               </div>
             )}
 
+            {!belowGeneralMin && fruit.shortfall > 0 && (
+              <div className="mb-3 rounded-xl bg-[#fff3d6] p-3 text-center text-[13px] text-[#7a4d00]">
+                🍎 Жимсний захиалгын доод дүн{" "}
+                <strong>{formatMnt(settings.fruit_min_order_amount)}</strong>. Ахиад{" "}
+                <strong>{formatMnt(fruit.shortfall)}</strong>-ийн жимс нэмнэ үү.
+                <Link href="/brands/vidan-fruit" className="mt-1 block font-bold underline">
+                  Жимс үзэх →
+                </Link>
+              </div>
+            )}
             <button
               ref={ctaRef}
               onClick={handleSubmit}

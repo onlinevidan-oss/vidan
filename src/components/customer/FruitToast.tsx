@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FRUIT_BRAND, FRUIT_PREVIEW, FRUIT_TOAST_KEY } from "@/lib/fruit-preview";
 
 /** Мэдэгдэл харагдах хугацаа */
-const TOAST_MS = 2500;
+const TOAST_MS = 7000;
 
 /**
  * Vidan fruit — нэвтэрсэн хэрэглэгчид нэг удаа гарах мэдэгдэл (ЗАГВАР).
@@ -62,7 +62,7 @@ export function FruitToast({ demoOnly = false }: { demoOnly?: boolean }) {
         <span className="text-sm leading-snug text-ink-900">
           <b className="font-extrabold">{FRUIT_BRAND.name} цэс нэмэгдлээ!</b>
           <br />
-          Бельги, Польшийн шинэхэн алимны үнээ хараарай.
+          Бельги, Польшийн шинэхэн алимыг 1кг-аар эсвэл бүтэн хайрцгаар захиалаарай.
         </span>
       </Link>
     </div>

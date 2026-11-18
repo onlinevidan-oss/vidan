@@ -55,7 +55,9 @@ export async function getInventory(period: ReportPeriod): Promise<InventoryData>
         "id, name_mn, sku, stock, price, " +
           "category:categories(name_mn), images:product_images(url, sort_order)",
       )
-      .eq("is_active", true),
+      .eq("is_active", true)
+      // Жимсний савлагаа кг-ын нөөцөөс тооцогддог (0053) — давхар тоолохгүй
+      .is("stock_source_id", null),
     supabase
       .from("orders")
       .select("items:order_items(product_id, quantity)")

@@ -1,24 +1,10 @@
 /**
- * Vidan fruit — ЗАГВАР (2026-10-14).
+ * "Жимс" цэс (Vidan fruit) — өөр компанийн борлуулалт, шинэхэн алим кг
+ * савлагаа ба хайрцгаар. 2026-11-18 захирал зөвшөөрч сайтад гарсан.
+ * Бараа нь сангийн жинхэнэ бараа (0053), баримт Дөрвөн-Өлзийн нэр дээр
+ * (одоогийн QPay, и-баримт); хоёр компани дотоод хөдөлгөөнөөр тооцоо нийлнэ.
  *
- * Өөр компанийн борлуулалт (шинэхэн жимс, кг савлагаа ба хайрцгаар;
- * эхний ээлжинд алим). Захирал, санхүүгийн
- * шийдвэр гарах хүртэл зөвхөн загвар — хэрэглэгчдэд харагдахгүй:
- *   · `NEXT_PUBLIC_FRUIT_PREVIEW=1` тугтай орчинд л цэс, карт, хуудас гарна.
- *     Production-д туг байхгүй тул бүгд нуугдаж, хуудас нь 404 буцаана.
- *   · Өгөгдлийн санд ХҮРЭХГҮЙ — брэнд/бараа DB-д нэмбэл vidan.mn-д шууд
- *     гарна. Тиймээс өгөгдөл энд, код дотор.
- *   · Захиалга, төлбөр хийгдэхгүй — сагсны урсгал, QPay, и-баримт аль
- *     компанийн нэр дээр явах нь шийдэгдээгүй.
- *
- * Шийдвэр гарсны дараа: брэнд, барааг DB-д жинхэнэ байдлаар нэмж, энэ
- * файлыг устгана.
- */
-
-/**
- * 2026-11-18: эзэн "сайтад гарга" гэсэн — цэс, хуудас, үнэ бүх хүнд
- * харагдана; захиалга хараахан авахгүй (товч идэвхгүй). Яаралтай
- * нуух бол орчинд NEXT_PUBLIC_FRUIT_PREVIEW=0 гэж тавина.
+ * Яаралтай нуух бол орчинд NEXT_PUBLIC_FRUIT_PREVIEW=0 гэж тавина.
  */
 export const FRUIT_PREVIEW = process.env.NEXT_PUBLIC_FRUIT_PREVIEW !== "0";
 
@@ -32,30 +18,29 @@ export const FRUIT_BRAND = {
   logo_mode: "contain",
 } as const;
 
-export type FruitOption = {
+/** Савлагааны сонголт — бараа нь сангийн жинхэнэ бараа (SKU-аар) */
+export type FruitOptionDef = {
   /** Жнь. "1 кг савлагаа" */
   label: string;
-  price: number;
-  /** Нэмэлт тайлбар, жнь. 1 кг-ын үнэ */
-  note?: string;
+  sku: string;
 };
 
-export type FruitProduct = {
+export type FruitVarietyDef = {
   id: string;
   origin: string;
   flag: string;
   /** Сорт — Польш алимд заагаагүй */
   variety: string | null;
-  /** Зураггүй бол "зураг удахгүй" дүрс гарна */
-  image: string | null;
-  options: FruitOption[];
+  image: string;
+  options: FruitOptionDef[];
 };
 
 /**
- * Эзний үнийн жагсаалт (2026-10-28). Кг савлагаа ба бүтэн хайрцаг.
- * Kanzi-ийн зураг хараахан ирээгүй.
+ * Жимсний хуудасны бүтэц (эзний үнийн жагсаалт, 2026-10-28). Үнэ,
+ * үлдэгдэл, id нь САНГААС (0053) — энд зөвхөн бүлэглэлт ба зураг.
+ * Сорт бүрийн сонголтууд нэг кг-ын нөөцөөс зарагдана.
  */
-export const FRUIT_PRODUCTS: FruitProduct[] = [
+export const FRUIT_VARIETIES: FruitVarietyDef[] = [
   {
     id: "belgi-jonagored",
     origin: "Бельги",
@@ -63,8 +48,8 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     variety: "Jonagored",
     image: "/fruit/belgi-jonagored-v4.jpg",
     options: [
-      { label: "1 кг савлагаа", price: 12000 },
-      { label: "8 кг бүтэн хайрцаг", price: 92000 },
+      { label: "1 кг савлагаа", sku: "VIDAN052" },
+      { label: "8 кг бүтэн хайрцаг", sku: "VIDAN051" },
     ],
   },
   {
@@ -74,8 +59,8 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     variety: "Kanzi",
     image: "/fruit/belgi-kanzi-v4.jpg",
     options: [
-      { label: "1 кг савлагаа", price: 15500 },
-      { label: "8 кг бүтэн хайрцаг", price: 120000 },
+      { label: "1 кг савлагаа", sku: "VIDAN054" },
+      { label: "8 кг бүтэн хайрцаг", sku: "VIDAN053" },
     ],
   },
   {
@@ -85,15 +70,31 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     variety: null,
     image: "/fruit/polsh-red-v4.jpg",
     options: [
-      { label: "1 кг савлагаа", price: 7900 },
-      { label: "1.5 кг савлагаа", price: 11850 },
-      { label: "12 кг бүтэн хайрцаг", price: 90000 },
+      { label: "1 кг савлагаа", sku: "VIDAN055" },
+      { label: "1.5 кг савлагаа", sku: "VIDAN056" },
+      { label: "12 кг бүтэн хайрцаг", sku: "VIDAN048" },
     ],
   },
 ];
 
-/** Хүргэлтийн нөхцөл (эзний жагсаалт, 2026-10-28) */
-export const FRUIT_DELIVERY = { minOrder: 40000, fee: 7700 } as const;
+export const FRUIT_SKUS = FRUIT_VARIETIES.flatMap((v) => v.options.map((o) => o.sku));
+
+/** Хуудсанд дамжих бэлэн сонголт — сангийн бараатай нийлсэн */
+export type FruitOption = {
+  label: string;
+  productId: string;
+  sku: string;
+  slug: string;
+  name: string;
+  price: number;
+  stock: number;
+};
+
+export type FruitProduct = Omit<FruitVarietyDef, "options"> & { options: FruitOption[] };
+
+/** Хүргэлтийн төлбөр (сайтынхтай ижил 7,000 + НӨАТ). Доод дүн нь
+ * site_settings.commerce.fruit_min_order_amount-аас (0053). */
+export const FRUIT_DELIVERY_FEE = 7700;
 
 /** Нэвтэрсэн хэрэглэгчид мэдэгдэл нэг л удаа — энэ түлхүүрээр тэмдэглэнэ */
 export const FRUIT_TOAST_KEY = "vidan-fruit-toast-seen";

@@ -3,6 +3,7 @@ import { FruitTopBar } from "@/components/admin/FruitTopBar";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { OrderCard } from "@/components/admin/OrderCard";
 import { getFruitOrders, getFruitProducts, getFruitSales } from "@/lib/queries/fruit";
+import { formatKg, poolUnitsToKg } from "@/lib/fruit-stock";
 import { summarizeFruitSales } from "@/lib/fruit-report";
 import { startOfMonthMongolia } from "@/lib/datetime";
 import { formatMnt } from "@/lib/utils";
@@ -18,7 +19,10 @@ export default async function FruitDashboard() {
     getFruitSales({ since: startOfMonthMongolia(now), until: now }),
   ]);
   const month = summarizeFruitSales(sales.orders, sales.fruitProductIds);
-  const stock = products.reduce((s, p) => s + p.stock, 0);
+  // Кг-ын нөөцүүдийн нийлбэр (0053) — савлагаа нь нөөцөөс тооцогддог тул давхар нэмэхгүй
+  const stockKg = products
+    .filter((p) => p.sku.startsWith("POOL-"))
+    .reduce((s, p) => s + poolUnitsToKg(p.stock), 0);
 
   return (
     <>
@@ -28,7 +32,7 @@ export default async function FruitDashboard() {
           <KpiCard label="Энэ сарын жимсний борлуулалт" value={formatMnt(month.revenue)} icon="💰" tone="brand" />
           <KpiCard label="Захиалга (энэ сар)" value={String(month.orders)} icon="📦" tone="info" />
           <KpiCard label="Зарагдсан ширхэг" value={String(month.quantity)} icon="🍎" tone="lime" />
-          <KpiCard label="Агуулахын үлдэгдэл" value={`${stock} ш`} icon="🏬" tone="warn" />
+          <KpiCard label="Агуулахын үлдэгдэл" value={formatKg(stockKg)} icon="🏬" tone="warn" />
         </div>
 
         {products.length === 0 && (

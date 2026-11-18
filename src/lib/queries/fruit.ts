@@ -31,6 +31,9 @@ export type FruitProduct = {
   stock: number;
   is_active: boolean;
   image_url: string | null;
+  /** 0053 — кг-ын нөөц (POOL-*) рүү заана; null бол өөрийн үлдэгдэлтэй */
+  stock_source_id: string | null;
+  stock_unit_qty: number;
 };
 
 /** Жимсний бүх бараа (идэвхгүй ч гэсэн) */
@@ -40,7 +43,9 @@ export async function getFruitProducts(): Promise<FruitProduct[]> {
   if (!brandId) return [];
   const { data } = await admin
     .from("products")
-    .select("id, name_mn, sku, price, stock, is_active, images:product_images(url, sort_order)")
+    .select(
+      "id, name_mn, sku, price, stock, is_active, stock_source_id, stock_unit_qty, images:product_images(url, sort_order)",
+    )
     .eq("brand_id", brandId)
     .order("sku");
   return (data ?? []).map((p) => ({
@@ -50,6 +55,8 @@ export async function getFruitProducts(): Promise<FruitProduct[]> {
     price: Number(p.price),
     stock: p.stock,
     is_active: p.is_active,
+    stock_source_id: p.stock_source_id,
+    stock_unit_qty: p.stock_unit_qty,
     image_url:
       [...(p.images ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]?.url ?? null,
   }));

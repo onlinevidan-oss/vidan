@@ -8,6 +8,7 @@ import { parseRecipients } from "@/lib/sms/recipients";
 import { logStaffActivity } from "@/lib/staff-activity";
 import { sendSms } from "@/lib/sms/client";
 import { getSmsSettings } from "@/lib/queries/settings";
+import { COMMERCE_DEFAULTS } from "@/lib/pricing";
 import type {
   BrochurePage,
   CommerceSettings,
@@ -165,8 +166,21 @@ export async function updateCommerceSettings(
     return { ok: false, error: "Үнэгүй хүргэлтийн босго буруу байна" };
   }
 
+  const supabase = await createClient();
+  // Жимсний доод дүн энэ маягтад байхгүй — байгаа утгыг хадгална (0053)
+  const { data: current } = await supabase
+    .from("site_settings")
+    .select("value")
+    .eq("key", "commerce")
+    .maybeSingle();
+  const fruitMin = Number(
+    (current?.value as Partial<CommerceSettings> | null)?.fruit_min_order_amount ??
+      COMMERCE_DEFAULTS.fruit_min_order_amount,
+  );
+
   const value: CommerceSettings = {
     min_order_amount: minOrder,
+    fruit_min_order_amount: fruitMin,
     shipping_base: shipping,
     shipping_over: shipOver,
     shipping_qty_threshold: qtyThresh,
@@ -177,7 +191,6 @@ export async function updateCommerceSettings(
     free_shipping_min: freeMin,
   };
 
-  const supabase = await createClient();
   const { error } = await supabase
     .from("site_settings")
     .upsert({ key: "commerce", value, updated_at: new Date().toISOString() });

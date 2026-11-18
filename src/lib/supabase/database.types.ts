@@ -301,6 +301,9 @@ export type Database = {
           ebarimt_type: string | null
           ebarimt_vat: number | null
           ga_client_id: string | null
+          invoice_due_at: string | null
+          invoice_email: string | null
+          invoice_org_name: string | null
           id: string
           internal_notes: string | null
           order_number: string
@@ -344,6 +347,9 @@ export type Database = {
           ebarimt_type?: string | null
           ebarimt_vat?: number | null
           ga_client_id?: string | null
+          invoice_due_at?: string | null
+          invoice_email?: string | null
+          invoice_org_name?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string
@@ -387,6 +393,9 @@ export type Database = {
           ebarimt_type?: string | null
           ebarimt_vat?: number | null
           ga_client_id?: string | null
+          invoice_due_at?: string | null
+          invoice_email?: string | null
+          invoice_org_name?: string | null
           id?: string
           internal_notes?: string | null
           order_number?: string
@@ -484,6 +493,8 @@ export type Database = {
           slug: string
           stock: number
           stock_threshold: number
+          stock_source_id: string | null
+          stock_unit_qty: number
           tags: string[] | null
           updated_at: string
           weight_gross_g: number | null
@@ -517,6 +528,8 @@ export type Database = {
           slug: string
           stock?: number
           stock_threshold?: number
+          stock_source_id?: string | null
+          stock_unit_qty?: number
           tags?: string[] | null
           updated_at?: string
           weight_gross_g?: number | null
@@ -550,6 +563,8 @@ export type Database = {
           slug?: string
           stock?: number
           stock_threshold?: number
+          stock_source_id?: string | null
+          stock_unit_qty?: number
           tags?: string[] | null
           updated_at?: string
           weight_gross_g?: number | null
@@ -1148,6 +1163,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      invoice_due_at: {
+        Args: { p_created: string }
+        Returns: string
+      }
       mark_courier_entered: {
         Args: { p_order_id: string }
         Returns: {
