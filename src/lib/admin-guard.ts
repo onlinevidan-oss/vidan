@@ -4,6 +4,7 @@
  * server action бүрд нэмэлт шалгалт хийнэ.
  */
 import { getCurrentStaff, isAdminRole } from "@/lib/queries/staff";
+import { isFruitRole } from "@/lib/staff-rules";
 import type { Database } from "@/lib/supabase/database.types";
 
 type StaffRow = Database["public"]["Tables"]["staff"]["Row"];
@@ -15,7 +16,10 @@ export type GuardResult =
 /** Staff гишүүн байх ёстой */
 export async function requireStaff(): Promise<GuardResult> {
   const staff = await getCurrentStaff();
-  if (!staff) return { ok: false, error: "Хандах эрх алга — staff биш" };
+  // Жимсний компанийн ажилтан VIDAN-ы өгөгдөлд хүрэхгүй (0048)
+  if (!staff || isFruitRole(staff.role)) {
+    return { ok: false, error: "Хандах эрх алга — staff биш" };
+  }
   return { ok: true, staff };
 }
 

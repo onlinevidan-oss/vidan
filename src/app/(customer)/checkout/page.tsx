@@ -5,6 +5,7 @@ import { getCommerceSettings } from "@/lib/queries/settings";
 import { isEbarimtConfigured } from "@/lib/ebarimt/posapi";
 import { isEbarimtEnabled } from "@/lib/qpay/client";
 import { getCurrentStaff } from "@/lib/queries/staff";
+import { isFruitRole } from "@/lib/staff-rules";
 
 export const metadata = { title: "Захиалга өгөх", robots: { index: false, follow: false } };
 
@@ -46,7 +47,7 @@ export default async function CheckoutPage() {
       settings={settings}
       // QPay-ийн и-баримт (шинэ) эсвэл PosAPI (хуучин) аль нэг нь идэвхтэй бол
       ebarimtEnabled={isEbarimtEnabled() || isEbarimtConfigured()}
-      isStaff={!!staff}
+      isStaff={!!staff && !isFruitRole(staff.role)}
       card={card ? { name: card.name, percent: Number(card.percent) } : null}
     />
   );

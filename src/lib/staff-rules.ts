@@ -22,6 +22,14 @@ export const STAFF_ROLE_HINT: Record<StaffRole, string> = {
   driver: "Захиалга харах, төлөв солих",
 };
 
+/**
+ * Жимсний компанийн ажилтан (0048). VIDAN-ы админд орохгүй — санд
+ * is_staff()-ээс хасагдсан ч апп талд мөн хаана (fail-closed).
+ */
+export function isFruitRole(role: string | null | undefined): boolean {
+  return role === "fruit";
+}
+
 export function isStaffRole(v: unknown): v is StaffRole {
   return (STAFF_ROLES as readonly unknown[]).includes(v);
 }

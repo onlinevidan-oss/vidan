@@ -1,6 +1,7 @@
 import { CartView } from "@/components/customer/CartView";
 import { getPublicCommerceSettings } from "@/lib/queries/public-settings";
 import { getCurrentStaff } from "@/lib/queries/staff";
+import { isFruitRole } from "@/lib/staff-rules";
 
 export const metadata = { title: "Сагс", robots: { index: false, follow: false } };
 
@@ -9,5 +10,5 @@ export default async function CartPage() {
     getPublicCommerceSettings(),
     getCurrentStaff(),
   ]);
-  return <CartView settings={settings} isStaff={!!staff} />;
+  return <CartView settings={settings} isStaff={!!staff && !isFruitRole(staff.role)} />;
 }
