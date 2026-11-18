@@ -15,11 +15,16 @@
  * файлыг устгана.
  */
 
-export const FRUIT_PREVIEW = process.env.NEXT_PUBLIC_FRUIT_PREVIEW === "1";
+/**
+ * 2026-11-18: эзэн "сайтад гарга" гэсэн — цэс, хуудас, үнэ бүх хүнд
+ * харагдана; захиалга хараахан авахгүй (товч идэвхгүй). Яаралтай
+ * нуух бол орчинд NEXT_PUBLIC_FRUIT_PREVIEW=0 гэж тавина.
+ */
+export const FRUIT_PREVIEW = process.env.NEXT_PUBLIC_FRUIT_PREVIEW !== "0";
 
 export const FRUIT_BRAND = {
   id: "vidan-fruit-preview",
-  name: "Vidan fruit",
+  name: "Жимс",
   slug: "vidan-fruit",
   logo_url: "/fruit/logo.png",
   card_from: "#e3262a",
@@ -56,7 +61,7 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     origin: "Бельги",
     flag: "🇧🇪",
     variety: "Jonagored",
-    image: "/fruit/belgi-jonagored-v3.jpg",
+    image: "/fruit/belgi-jonagored-v4.jpg",
     options: [
       { label: "1 кг савлагаа", price: 12000 },
       { label: "8 кг бүтэн хайрцаг", price: 92000 },
@@ -67,7 +72,7 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     origin: "Бельги",
     flag: "🇧🇪",
     variety: "Kanzi",
-    image: null,
+    image: "/fruit/belgi-kanzi-v4.jpg",
     options: [
       { label: "1 кг савлагаа", price: 15500 },
       { label: "8 кг бүтэн хайрцаг", price: 120000 },
@@ -78,7 +83,7 @@ export const FRUIT_PRODUCTS: FruitProduct[] = [
     origin: "Польш",
     flag: "🇵🇱",
     variety: null,
-    image: "/fruit/polsh-gala-v3.jpg",
+    image: "/fruit/polsh-red-v4.jpg",
     options: [
       { label: "1 кг савлагаа", price: 7900 },
       { label: "1.5 кг савлагаа", price: 11850 },

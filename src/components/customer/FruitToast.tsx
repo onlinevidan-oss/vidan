@@ -62,7 +62,7 @@ export function FruitToast({ demoOnly = false }: { demoOnly?: boolean }) {
         <span className="text-sm leading-snug text-ink-900">
           <b className="font-extrabold">{FRUIT_BRAND.name} цэс нэмэгдлээ!</b>
           <br />
-          Шинэхэн жимсээ захиалаад гэртээ хүргүүлээрэй.
+          Бельги, Польшийн шинэхэн алимны үнээ хараарай.
         </span>
       </Link>
     </div>

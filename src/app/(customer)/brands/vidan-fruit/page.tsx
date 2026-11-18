@@ -12,7 +12,7 @@ import { FRUIT_BRAND, FRUIT_DELIVERY, FRUIT_PREVIEW, FRUIT_PRODUCTS } from "@/li
  */
 
 export const metadata: Metadata = {
-  title: `${FRUIT_BRAND.name} — шинэхэн жимс`,
+  title: `${FRUIT_BRAND.name} — шинэхэн алим`,
   robots: { index: false, follow: false },
 };
 
@@ -35,6 +35,8 @@ export default function FruitPage() {
           alt=""
           fill
           priority
+          // Vercel-ийн зураг оновчлолын хязгаар (402) — шууд ачаална
+          unoptimized
           className="object-cover object-center"
           sizes="(max-width: 1240px) 100vw, 1240px"
         />

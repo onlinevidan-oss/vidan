@@ -22,6 +22,7 @@ export function FruitCard({ product: p }: { product: FruitProduct }) {
             src={p.image}
             alt={`${p.origin} алим ${p.variety ?? ""}`.trim()}
             fill
+            unoptimized
             className="object-cover"
             sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
           />
@@ -79,10 +80,10 @@ export function FruitCard({ product: p }: { product: FruitProduct }) {
           </div>
           <button
             disabled
-            title="Загвар — захиалга хараахан нээгдээгүй"
+            title="Захиалга удахгүй нээгдэнэ"
             className="h-[38px] w-full cursor-not-allowed rounded-[10px] bg-brand-600/60 text-[13px] font-extrabold text-white"
           >
-            Сагслах
+            Захиалга удахгүй нээгдэнэ
           </button>
         </div>
       </div>
