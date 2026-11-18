@@ -5,7 +5,7 @@
  */
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { canShowCourierEnter } from "./order-status.ts";
+import { canShowCourierEnter, isAwaitingPayment } from "./order-status.ts";
 
 const o = (payment_status: string, status: string, courier_entered_at: string | null = null) => ({
   payment_status,
@@ -28,5 +28,17 @@ describe("canShowCourierEnter", () => {
 
   test("шивсэн бол хүргэгдсэний дараа ч хэн шивснийг харуулна", () => {
     assert.equal(canShowCourierEnter(o("paid", "delivered", "2026-10-22T13:05:00Z")), true);
+  });
+});
+
+describe("isAwaitingPayment — төлөгдөөгүй бол 'Баталгаажсан' биш", () => {
+  test("шинэ, төлөгдөөгүй → төлбөр хүлээгдэж", () => {
+    assert.equal(isAwaitingPayment("new", "pending"), true);
+    assert.equal(isAwaitingPayment("new", null), true);
+  });
+  test("төлөгдсөн эсвэл цааш шилжсэн → үгүй", () => {
+    assert.equal(isAwaitingPayment("new", "paid"), false);
+    assert.equal(isAwaitingPayment("preparing", "pending"), false);
+    assert.equal(isAwaitingPayment("cancelled", "pending"), false);
   });
 });

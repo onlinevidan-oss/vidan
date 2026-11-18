@@ -10,9 +10,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
+  AWAITING_PAYMENT_LABEL,
   CUSTOMER_STATUS_HINT,
   CUSTOMER_STATUS_LABEL,
   STATUS_FLOW,
+  isAwaitingPayment,
   type OrderStatus,
 } from "@/lib/order-status";
 
@@ -107,6 +109,8 @@ export function OrderStatusTracker({
   }, []);
 
   const isCancelled = status === "cancelled";
+  // Төлөгдөөгүй бол эхний алхам "Баталгаажсан" биш — төлбөр хүлээгдэж байна
+  const unpaid = isAwaitingPayment(status, paymentStatus);
   const currentStep = STATUS_FLOW.indexOf(
     status as (typeof STATUS_FLOW)[number],
   );
@@ -185,7 +189,7 @@ export function OrderStatusTracker({
                     : "mt-1.5 text-[11px] text-ink-500"
                 }
               >
-                {CUSTOMER_STATUS_LABEL[s]}
+                {unpaid && s === "new" ? AWAITING_PAYMENT_LABEL : CUSTOMER_STATUS_LABEL[s]}
               </div>
             </div>
           );
@@ -193,7 +197,7 @@ export function OrderStatusTracker({
       </div>
 
       {/* Одоогийн алхмын тайлбар */}
-      {currentStep >= 0 && (
+      {currentStep >= 0 && !unpaid && (
         <div className="mt-4 rounded-xl bg-lime-50 px-4 py-3 text-center text-sm font-semibold text-lime-700">
           {CUSTOMER_STATUS_HINT[STATUS_FLOW[currentStep]]}
         </div>

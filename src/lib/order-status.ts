@@ -42,6 +42,17 @@ export const CUSTOMER_STATUS_LABEL: Record<OrderStatus, string> = {
   cancelled: "Цуцлагдсан",
 };
 
+/**
+ * Төлбөр нь хараахан төлөгдөөгүй шинэ захиалга — хэрэглэгчид
+ * "Баталгаажсан" гэж ХАРУУЛАХГҮЙ (захиалга төлөгдсөнөөр баталгаажна).
+ */
+export function isAwaitingPayment(status: string, paymentStatus: string | null | undefined): boolean {
+  return status === "new" && paymentStatus !== "paid";
+}
+
+export const AWAITING_PAYMENT_LABEL = "Төлбөр хүлээгдэж байна";
+export const AWAITING_PAYMENT_STYLE = "bg-warn-bg text-warn";
+
 /** Тухайн алхамд хэрэглэгчид харуулах тайлбар */
 export const CUSTOMER_STATUS_HINT: Record<OrderStatus, string> = {
   new: "Захиалга баталгаажлаа — 24 цагийн дотор хүргэгдэнэ",

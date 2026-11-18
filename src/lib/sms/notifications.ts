@@ -14,6 +14,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSms, normalizePhone } from "./client";
 import { parseRecipients } from "./recipients";
+import { isFruitOrder } from "@/lib/queries/fruit";
 import {
   SMS_SETTINGS_DEFAULTS,
   type SmsSettings,
@@ -160,6 +161,21 @@ export async function sendAdminOrderSms(orderId: string): Promise<void> {
     if (!cfg.admin_enabled || !cfg.admin_template.trim()) return;
 
     const phones = parseRecipients(cfg.admin_phones).valid;
+
+    // Жимсний захиалга (эзэн, 2026-11-18): жимсний идэвхтэй ажилтнуудад
+    // (staff.role='fruit') ч явна, текстийн эхэнд "Жимс:" гэж тэмдэглэнэ
+    const fruit = await isFruitOrder(orderId);
+    if (fruit) {
+      const { data: fruitStaff } = await admin
+        .from("staff")
+        .select("phone")
+        .eq("role", "fruit")
+        .eq("is_active", true);
+      for (const s of fruitStaff ?? []) {
+        const p = normalizePhone(s.phone);
+        if (p && !phones.includes(p)) phones.push(p);
+      }
+    }
     if (phones.length === 0) return;
 
     const { data: order } = await admin
@@ -185,12 +201,13 @@ export async function sendAdminOrderSms(orderId: string): Promise<void> {
     const profile = Array.isArray(order.profiles)
       ? order.profiles[0]
       : order.profiles;
-    const text = renderSmsTemplate(cfg.admin_template, order, {
+    const body = renderSmsTemplate(cfg.admin_template, order, {
       phone:
         normalizePhone(order.contact_phone) ||
         normalizePhone(profile?.phone) ||
         "",
     });
+    const text = fruit ? `Жимс: ${body}` : body;
 
     // Нэг дугаар унасан ч нөгөөд нь очно
     const results = await Promise.allSettled(

@@ -2,7 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt } from "@/lib/utils";
-import { CUSTOMER_STATUS_LABEL, STATUS_STYLE, type OrderStatus } from "@/lib/order-status";
+import {
+  AWAITING_PAYMENT_LABEL,
+  AWAITING_PAYMENT_STYLE,
+  CUSTOMER_STATUS_LABEL,
+  STATUS_STYLE,
+  isAwaitingPayment,
+  type OrderStatus,
+} from "@/lib/order-status";
 import { formatUbDateTime } from "@/lib/datetime";
 
 export const metadata = { title: "Миний захиалга", robots: { index: false, follow: false } };
@@ -17,7 +24,7 @@ export default async function MyOrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, order_number, status, total, created_at, items:order_items(quantity)")
+    .select("id, order_number, status, payment_status, total, created_at, items:order_items(quantity)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -51,6 +58,8 @@ export default async function MyOrdersPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((o) => {
+            // Төлөгдөөгүй шинэ захиалга "Баталгаажсан" биш
+            const unpaid = isAwaitingPayment(o.status, o.payment_status);
             const itemCount = (o.items as { quantity: number }[]).reduce(
               (s, i) => s + i.quantity,
               0,
@@ -83,11 +92,11 @@ export default async function MyOrdersPage() {
                 </div>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold ${
-                    STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100"
+                    unpaid ? AWAITING_PAYMENT_STYLE : (STATUS_STYLE[o.status as OrderStatus] ?? "bg-ink-100")
                   }`}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {CUSTOMER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}
+                  {unpaid ? AWAITING_PAYMENT_LABEL : (CUSTOMER_STATUS_LABEL[o.status as OrderStatus] ?? o.status)}
                 </span>
               </Link>
             );
