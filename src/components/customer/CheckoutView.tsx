@@ -14,6 +14,7 @@ import {
   vatBreakdown,
   COMMERCE_DEFAULTS,
   fruitShortfall,
+  shippingUnits,
   type CommerceSettings,
 } from "@/lib/pricing";
 import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
@@ -49,6 +50,7 @@ export function CheckoutView({
   isStaff = false,
   card = null,
   fruitIds = [],
+  boxIds = [],
 }: {
   user: { id: string; email: string | null };
   profile: { full_name: string | null; phone: string | null } | null;
@@ -61,11 +63,12 @@ export function CheckoutView({
   card?: { name: string; percent: number } | null;
   /** Жимсний барааны id — жимсний доод дүнд (0053) */
   fruitIds?: string[];
+  /** Бүтэн хайрцгийн id — хүргэлтийн тооцоонд (0054) */
+  boxIds?: string[];
 }) {
   const router = useRouter();
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
-  const itemCount = useCart((s) => s.totalCount());
   const clearCart = useCart((s) => s.clear);
   // Үнэ сангаас шинэчлэгдэхээс өмнө захиалга илгээхгүй — дүн зөрөхөөс сэргийлнэ
   const priceSync = useCartPriceSync();
@@ -167,11 +170,14 @@ export function CheckoutView({
   const cardOff =
     card && promo?.kind !== "voucher" ? cardDiscount(subtotal, card.percent, promoDiscount) : 0;
   const discount = promoDiscount + cardOff;
+  // Бүтэн хайрцаг: эхнийх нь нэг ширхэг, бусад нь хайрцаг тутамд нэмэгдэнэ (0054)
+  const ship = shippingUnits(items, new Set(boxIds));
   const { shipping, tax, total: orderTotal } = calculateOrderTotals(
     subtotal,
     settings,
-    itemCount,
+    ship.count,
     discount,
+    ship.extraBoxes,
   );
   // Эрхийн бичиг (place_order-той ижил): үлдэгдлээс нийт дүн хүртэл
   const voucherAmount =

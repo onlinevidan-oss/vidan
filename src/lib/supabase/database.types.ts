@@ -495,6 +495,7 @@ export type Database = {
           stock_threshold: number
           stock_source_id: string | null
           stock_unit_qty: number
+          shipping_box: boolean
           tags: string[] | null
           updated_at: string
           weight_gross_g: number | null
@@ -530,6 +531,7 @@ export type Database = {
           stock_threshold?: number
           stock_source_id?: string | null
           stock_unit_qty?: number
+          shipping_box?: boolean
           tags?: string[] | null
           updated_at?: string
           weight_gross_g?: number | null
@@ -565,6 +567,7 @@ export type Database = {
           stock_threshold?: number
           stock_source_id?: string | null
           stock_unit_qty?: number
+          shipping_box?: boolean
           tags?: string[] | null
           updated_at?: string
           weight_gross_g?: number | null

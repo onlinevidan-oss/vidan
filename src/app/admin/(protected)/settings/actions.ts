@@ -178,9 +178,15 @@ export async function updateCommerceSettings(
       COMMERCE_DEFAULTS.fruit_min_order_amount,
   );
 
+  const fruitBoxFee = Number(
+    (current?.value as Partial<CommerceSettings> | null)?.fruit_box_extra_fee ??
+      COMMERCE_DEFAULTS.fruit_box_extra_fee,
+  );
+
   const value: CommerceSettings = {
     min_order_amount: minOrder,
     fruit_min_order_amount: fruitMin,
+    fruit_box_extra_fee: fruitBoxFee,
     shipping_base: shipping,
     shipping_over: shipOver,
     shipping_qty_threshold: qtyThresh,

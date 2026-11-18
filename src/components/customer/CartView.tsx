@@ -11,6 +11,7 @@ import {
   vatBreakdown,
   COMMERCE_DEFAULTS,
   fruitShortfall,
+  shippingUnits,
   type CommerceSettings,
 } from "@/lib/pricing";
 import { ecommerceItems, trackEvent } from "@/lib/analytics";
@@ -20,12 +21,15 @@ export function CartView({
   settings = COMMERCE_DEFAULTS,
   isStaff = false,
   fruitIds = [],
+  boxIds = [],
 }: {
   settings?: CommerceSettings;
   /** Ажилтан доод дүнгийн хязгаарлалтад үл хамаарна */
   isStaff?: boolean;
   /** Жимсний барааны id — жимсний доод дүнг тооцоход (0053) */
   fruitIds?: string[];
+  /** Бүтэн хайрцгийн id — хүргэлтийн тооцоонд (0054) */
+  boxIds?: string[];
 }) {
   const items = useCart((s) => s.items);
   const subtotal = useCart((s) => s.totalAmount());
@@ -64,7 +68,15 @@ export function CartView({
     );
   }
 
-  const { shipping, tax, total } = calculateOrderTotals(subtotal, settings, itemCount);
+  // Бүтэн хайрцаг: эхнийх нь нэг ширхэг, бусад нь хайрцаг тутамд нэмэгдэнэ (0054)
+  const ship = shippingUnits(items, new Set(boxIds));
+  const { shipping, tax, total } = calculateOrderTotals(
+    subtotal,
+    settings,
+    ship.count,
+    0,
+    ship.extraBoxes,
+  );
   // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) нэг мөрөөр харуулна
   const shippingGross = shipping + tax;
   const { net, vat } = vatBreakdown(total);

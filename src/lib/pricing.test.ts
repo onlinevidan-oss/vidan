@@ -16,6 +16,7 @@ import {
   COMMERCE_DEFAULTS,
   TAX_RATE,
   shippingForQty,
+  shippingUnits,
   vatBreakdown,
   type CommerceSettings,
 } from "./pricing.ts";
@@ -271,5 +272,30 @@ describe("cardDiscount — QR хөнгөлөлтийн карт", () => {
     assert.equal(cardDiscount(0, 5), 0);
     assert.equal(cardDiscount(10_000, 0), 0);
     assert.equal(cardDiscount(10_000, Number.NaN), 0);
+  });
+});
+
+describe("shippingUnits + хайрцгийн хүргэлт (0054)", () => {
+  const box = new Set(["b1", "b2"]);
+  const gross = (items: { productId: string; quantity: number }[]) => {
+    const u = shippingUnits(items, box);
+    const t = calculateOrderTotals(100_000, COMMERCE_DEFAULTS, u.count, 0, u.extraBoxes);
+    return t.shipping + t.tax;
+  };
+
+  test("place_order-ийн туршилттай ижил дүн", () => {
+    assert.equal(gross([{ productId: "b1", quantity: 1 }]), 7_700);
+    assert.equal(gross([{ productId: "b1", quantity: 1 }, { productId: "b2", quantity: 1 }]), 11_000);
+    assert.equal(gross([{ productId: "b1", quantity: 3 }]), 14_300);
+    assert.equal(gross([{ productId: "b2", quantity: 1 }, { productId: "k", quantity: 3 }]), 7_700);
+    assert.equal(gross([{ productId: "k", quantity: 8 }]), 15_400);
+  });
+
+  test("хайрцаг нэг ширхэгт тооцогдож шатлалд орно", () => {
+    assert.deepEqual(shippingUnits([{ productId: "b1", quantity: 4 }, { productId: "k", quantity: 7 }], box), {
+      count: 8,
+      extraBoxes: 3,
+    });
+    assert.deepEqual(shippingUnits([], box), { count: 0, extraBoxes: 0 });
   });
 });

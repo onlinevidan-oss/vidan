@@ -47,3 +47,14 @@ export async function getFruitProductIdsPublic(): Promise<string[]> {
   const { data } = brand?.id ? await q.eq("brand_id", brand.id) : await q.in("sku", FRUIT_SKUS);
   return (data ?? []).map((p) => p.id);
 }
+
+/** Бүтэн хайрцгийн id-нууд — хүргэлтийн тооцоонд (0054, shippingUnits) */
+export async function getShippingBoxIdsPublic(): Promise<string[]> {
+  const supabase = createPublicClient();
+  const { data } = await supabase
+    .from("products")
+    .select("id")
+    .eq("shipping_box", true)
+    .eq("is_active", true);
+  return (data ?? []).map((p) => p.id);
+}

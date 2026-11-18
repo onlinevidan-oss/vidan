@@ -55,6 +55,8 @@ export type CommerceSettings = {
   min_order_amount: number;
   /** Сагсан дахь ЖИМСНИЙ барааны дүн дангаараа хүрэх ёстой доод хэмжээ (0053) */
   fruit_min_order_amount: number;
+  /** 2 дахь хайрцгаас эхлэн хайрцаг бүрт нэмэгдэх хүргэлт, НӨАТ-гүй (0054) */
+  fruit_box_extra_fee: number;
   /** threshold ба түүнээс доош ширхэгт хүргэлт */
   shipping_base: number;
   /** threshold-с дээш, tier2_max хүртэл ширхэгт хүргэлт */
@@ -74,6 +76,7 @@ export type CommerceSettings = {
 export const COMMERCE_DEFAULTS: CommerceSettings = {
   min_order_amount: 20_000,
   fruit_min_order_amount: 40_000,
+  fruit_box_extra_fee: 3_000,
   shipping_base: 7_000,
   shipping_over: 14_000,
   shipping_qty_threshold: 7,
@@ -105,13 +108,16 @@ export function calculateOrderTotals(
   settings: CommerceSettings = COMMERCE_DEFAULTS,
   itemCount = 0,
   discount = 0,
+  /** Эхнийхээс бусад бүтэн хайрцгийн тоо (shippingUnits) — 0054 */
+  extraBoxes = 0,
 ): OrderTotals {
   // Хөнгөлөлтийг [0, subtotal] завсарт таслана — DB-ийн calc_order_totals дахь
   // greatest(0, least(discount, subtotal))-тэй яг ижил. Сөрөг утга нийт дүнг
   // нэмэгдүүлэх, дэд дүнгээс их утга хураангуйд буруу тоо харуулахаас сэргийлнэ.
   const clampedDiscount = Math.max(0, Math.min(discount, subtotal));
   const afterDiscount = subtotal - clampedDiscount;
-  let shipping = shippingForQty(itemCount, settings);
+  let shipping =
+    shippingForQty(itemCount, settings) + Math.max(0, extraBoxes) * settings.fruit_box_extra_fee;
   if (settings.free_shipping_enabled && afterDiscount >= settings.free_shipping_min) {
     shipping = 0;
   }
@@ -171,4 +177,23 @@ export function fruitShortfall(
   const shortfall =
     !isStaff && fruitSubtotal > 0 && fruitSubtotal < minAmount ? minAmount - fruitSubtotal : 0;
   return { fruitSubtotal, shortfall };
+}
+
+/**
+ * Хүргэлтэд тоологдох ширхэг (0054, place_order-той ижил): бүтэн
+ * хайрцгууд (products.shipping_box) нийлээд НЭГ ширхэгт тооцогдож
+ * ширхгийн шатлалд орно, үлдсэн хайрцаг бүр `extraBoxes`-д —
+ * calculateOrderTotals тэдгээрийг fruit_box_extra_fee-ээр нэмнэ.
+ */
+export function shippingUnits(
+  items: { productId: string; quantity: number }[],
+  boxIds: ReadonlySet<string>,
+): { count: number; extraBoxes: number } {
+  let pieces = 0;
+  let boxes = 0;
+  for (const i of items) {
+    if (boxIds.has(i.productId)) boxes += i.quantity;
+    else pieces += i.quantity;
+  }
+  return { count: pieces + (boxes > 0 ? 1 : 0), extraBoxes: Math.max(0, boxes - 1) };
 }

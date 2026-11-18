@@ -348,3 +348,50 @@ export async function moveFruitBanner(url: string, dir: -1 | 1): Promise<Result>
   [urls[i], urls[j]] = [urls[j], urls[i]];
   return saveBannerUrls(admin, urls, "Жимсний баннерын дараалал солив");
 }
+
+/**
+ * Жимсний худалдааны тохиргоо (site_settings.commerce-ийн жимсний хэсэг):
+ * жимсний доод дүн ба нэмэлт хайрцгийн хүргэлт (НӨАТ-гүй). VIDAN-ы
+ * бусад утгад хүрэхгүй — байгаа утгад нэмж хадгална.
+ */
+export async function saveFruitCommerce(input: {
+  fruit_min_order_amount: number;
+  fruit_box_extra_fee: number;
+}): Promise<Result> {
+  const guard = await requireFruitAccess();
+  if (!guard.ok) return { ok: false, error: guard.error };
+  const min = Math.round(Number(input.fruit_min_order_amount));
+  const fee = Math.round(Number(input.fruit_box_extra_fee));
+  if (!Number.isFinite(min) || min < 0 || min > 10_000_000) {
+    return { ok: false, error: "Доод дүн буруу байна" };
+  }
+  if (!Number.isFinite(fee) || fee < 0 || fee > 1_000_000) {
+    return { ok: false, error: "Хайрцгийн хүргэлтийн төлбөр буруу байна" };
+  }
+  const admin = createAdminClient();
+  const { data: current } = await admin
+    .from("site_settings")
+    .select("value")
+    .eq("key", "commerce")
+    .maybeSingle();
+  if (!current?.value) return { ok: false, error: "Худалдааны тохиргоо олдсонгүй" };
+  const value = {
+    ...(current.value as Record<string, unknown>),
+    fruit_min_order_amount: min,
+    fruit_box_extra_fee: fee,
+  };
+  const { error } = await admin
+    .from("site_settings")
+    .update({ value, updated_at: new Date().toISOString() })
+    .eq("key", "commerce");
+  if (error) return { ok: false, error: error.message };
+  await logStaffActivity({
+    action: "settings_fruit_commerce",
+    summary: `Жимсний доод дүн ${min.toLocaleString("en-US")}₮, нэмэлт хайрцаг ${fee.toLocaleString("en-US")}₮`,
+  });
+  revalidatePath("/brands/vidan-fruit");
+  revalidatePath("/cart");
+  revalidatePath("/checkout");
+  revalidatePath("/admin/fruit/settings");
+  return { ok: true };
+}
