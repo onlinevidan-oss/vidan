@@ -68,10 +68,11 @@ export function LoginForm({ next = "/" }: { next?: string }) {
       return;
     }
     setStep("success");
+    // "Амжилттай" дэлгэцийг богино харуулаад шилжинэ (өмнө 1.2с — удаан санагддаг байсан)
     setTimeout(() => {
       router.push(next);
       router.refresh();
-    }, 1200);
+    }, 300);
   }
 
   // Debounce: pending resend үед дахин дарж олон SMS илгээхээс сэргийлэх
