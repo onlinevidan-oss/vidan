@@ -302,3 +302,53 @@ export async function sendCourierEnteredSms(
     console.error(`[entered sms failed] order=${orderId}`, e);
   }
 }
+
+/**
+ * Байгууллагын нэхэмжлэл үүссэн даруйд захиалагчид сануулга (0052).
+ * Текст нь нэхэмжлэлийн хуудсан дээрх анхааруулгатай ижил (эзэн, 2026-11-17).
+ * Нэг захиалгад нэг л удаа — order_events_sms_invoice_once_idx.
+ */
+export function invoiceCreatedSmsText(orderNumber: string): string {
+  return (
+    `Захиалга ${orderNumber}: та 24 цагийн дотор төлбөрөө баталгаажуулна уу. ` +
+    `Баталгаажуулаагүй тохиолдолд захиалга цуцлагдахыг анхаарна уу.`
+  );
+}
+
+export async function sendInvoiceCreatedSms(orderId: string): Promise<void> {
+  try {
+    if (!process.env.SMS_API_KEY || !process.env.SMS_FROM_NUMBER) return;
+
+    const admin = createAdminClient();
+    const { data: order } = await admin
+      .from("orders")
+      .select("order_number, contact_phone, profiles:user_id(phone)")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const profile = Array.isArray(order.profiles) ? order.profiles[0] : order.profiles;
+    const phone = normalizePhone(order.contact_phone) || normalizePhone(profile?.phone);
+    if (!phone) return;
+
+    const eventType = "sms_invoice";
+    const { error: claimErr } = await admin.from("order_events").insert({
+      order_id: orderId,
+      event_type: eventType,
+      description: `SMS (нэхэмжлэл) → ${phone}`,
+    });
+    if (claimErr) {
+      if (claimErr.code !== "23505") console.error("[invoice sms claim insert failed]", claimErr);
+      return;
+    }
+
+    const result = await sendSms({ to: phone, text: invoiceCreatedSmsText(order.order_number) });
+    await admin
+      .from("order_events")
+      .update({ description: `SMS (нэхэмжлэл) → ${phone} [${result.message_id}]` })
+      .eq("order_id", orderId)
+      .eq("event_type", eventType);
+  } catch (e) {
+    console.error(`[invoice sms failed] order=${orderId}`, e);
+  }
+}

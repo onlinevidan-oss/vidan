@@ -7,6 +7,12 @@ import { vatBreakdown } from "@/lib/pricing";
 import { formatUbDateTime } from "@/lib/datetime";
 import { EBARIMT_CHECK_LABEL, ebarimtCheck } from "@/lib/ebarimt/check";
 import { OrderActions } from "@/components/admin/OrderActions";
+import {
+  PAYMENT_METHOD_LABEL,
+  invoiceNumber,
+  invoiceState,
+  invoiceTimeLeft,
+} from "@/lib/invoice";
 import { CourierEnterButton } from "@/components/admin/CourierEnterButton";
 import { STAFF_ROLE_LABEL, type StaffRole } from "@/lib/staff-rules";
 import {
@@ -76,7 +82,7 @@ export default async function AdminOrderDetail({
             </h1>
             <div className="mt-0.5 text-[13px] text-ink-500">
               {formatUbDateTime(order.created_at)} ·{" "}
-              {(order.payment_method ?? "—").toUpperCase()} ·{" "}
+              {PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? (order.payment_method ?? "—").toUpperCase()} ·{" "}
               <span className="font-bold">
                 {order.payment_status === "paid" ? "✓ Төлөгдсөн" : "⏳ Төлөгдөөгүй"}
               </span>
@@ -197,10 +203,23 @@ export default async function AdminOrderDetail({
 
           {/* Right */}
           <aside className="space-y-5">
+            {order.payment_method === "invoice" && (
+              <InvoiceBox
+                orderId={order.id}
+                orderNumber={order.order_number}
+                orgName={order.invoice_org_name}
+                tin={order.ebarimt_customer_tin}
+                email={order.invoice_email}
+                emailSent={events.some((e) => e.event_type === "email_invoice")}
+                dueAt={order.invoice_due_at}
+                state={invoiceState(order)}
+              />
+            )}
             <OrderActions
               orderId={order.id}
               currentStatus={order.status}
               paymentStatus={order.payment_status}
+              paymentMethod={order.payment_method}
               nextLabel={nextStatus ? NEXT_LABEL[order.status as OrderStatus] ?? null : null}
               nextStatus={nextStatus ?? null}
             />
@@ -406,6 +425,80 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="mb-1 flex justify-between">
       <span className="text-ink-500">{label}</span>
       <span className="font-semibold text-ink-900">{value}</span>
+    </div>
+  );
+}
+
+/** Байгууллагын нэхэмжлэлийн (0052) төлөв — баталгаажаагүй бол улаанаар */
+function InvoiceBox({
+  orderId,
+  orderNumber,
+  orgName,
+  tin,
+  email,
+  emailSent,
+  dueAt,
+  state,
+}: {
+  orderId: string;
+  orderNumber: string;
+  orgName: string | null;
+  tin: string | null;
+  email: string | null;
+  emailSent: boolean;
+  dueAt: string | null;
+  state: "unconfirmed" | "paid" | "cancelled";
+}) {
+  const no = invoiceNumber(orderNumber);
+  const left = state === "unconfirmed" ? invoiceTimeLeft(dueAt) : null;
+  const box =
+    state === "unconfirmed"
+      ? "border-brand-300 bg-brand-50"
+      : state === "paid"
+        ? "border-lime-300 bg-lime-50"
+        : "border-ink-200 bg-cream";
+  return (
+    <div className={`rounded-2xl border-[1.5px] p-5 ${box}`}>
+      <div
+        className={`font-display text-[15px] font-extrabold ${state === "unconfirmed" ? "text-brand-700" : "text-ink-900"}`}
+      >
+        🧾 Нэхэмжлэл №{no}{" "}
+        {state === "unconfirmed"
+          ? "баталгаажаагүй"
+          : state === "paid"
+            ? "— төлөгдсөн"
+            : "— цуцлагдсан"}
+      </div>
+      <div className="mt-2 space-y-1 text-[13px] text-ink-700">
+        <div>
+          Байгууллага: <strong>{orgName || "—"}</strong>
+        </div>
+        <div>
+          РД: <strong>{tin || "—"}</strong>
+        </div>
+        <div>
+          Имэйл: <strong>{email || "—"}</strong>
+          {email && (
+            <span className={`ml-1 text-[11px] font-bold ${emailSent ? "text-lime-700" : "text-ink-500"}`}>
+              {emailSent ? "✓ нэхэмжлэх илгээсэн" : "(илгээгдээгүй)"}
+            </span>
+          )}
+        </div>
+        {dueAt && (
+          <div>
+            Төлөх хугацаа: <strong>{formatUbDateTime(dueAt)}</strong>
+            {left && <span className="ml-1 font-bold text-brand-700">({left} үлдсэн)</span>}
+          </div>
+        )}
+        <div className="text-[11px] text-ink-500">И-баримтыг нягтлан гараар гаргана.</div>
+      </div>
+      <Link
+        href={`/invoice/${orderId}`}
+        target="_blank"
+        className="mt-3 inline-block rounded-[10px] border-[1.5px] border-ink-200 bg-white px-3.5 py-2 text-xs font-bold text-ink-700 transition hover:border-brand-500 hover:text-brand-700"
+      >
+        Нэхэмжлэл харах / хэвлэх ↗
+      </Link>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { formatUbDateTime } from "@/lib/datetime";
 import { msUntilExpiry } from "@/lib/order-hold";
 import { CourierEnterButton } from "./CourierEnterButton";
 import { canShowCourierEnter } from "@/lib/order-status";
+import { PAYMENT_METHOD_LABEL, invoiceNumber, invoiceTimeLeft } from "@/lib/invoice";
 
 /** Төлбөр хүлээгдэж буй захиалга цуцлагдтал үлдсэн хугацаа — "1ц 35м" */
 function timeLeft(createdAt: string): string | null {
@@ -36,7 +37,12 @@ export function OrderCard({
   const pieces = o.items.reduce((s, i) => s + i.quantity, 0);
   const unpaid = o.payment_status !== "paid";
   const waiting = o.payment_status === "pending" && o.status !== "cancelled";
-  const left = waiting ? timeLeft(o.created_at) : null;
+  const isInvoice = o.payment_method === "invoice";
+  const left = waiting
+    ? isInvoice
+      ? invoiceTimeLeft(o.invoice_due_at)
+      : timeLeft(o.created_at)
+    : null;
   const showEnter = canShowCourierEnter(o);
 
   return (
@@ -52,7 +58,16 @@ export function OrderCard({
           <span className="font-display text-[15px] font-extrabold text-ink-900">
             {o.order_number}
           </span>
-          {unpaid ? (
+          {unpaid && isInvoice ? (
+            // Байгууллагын нэхэмжлэл (0052) — баталгаажаагүй бол улаанаар
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${waiting ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-500"}`}
+            >
+              {waiting
+                ? `🧾 Нэхэмжлэл №${invoiceNumber(o.order_number)} баталгаажаагүй${left ? ` · ${left} үлдсэн` : ""}`
+                : `Нэхэмжлэл №${invoiceNumber(o.order_number)} төлөгдөөгүй, цуцлагдсан`}
+            </span>
+          ) : unpaid ? (
             // Төлөгдөөгүй захиалгад "Шинэ" гэсэн төлөв төөрөгдүүлнэ — төлбөрийн
             // байдлыг нь харуулна
             <span
@@ -72,7 +87,7 @@ export function OrderCard({
           )}
           {o.payment_method && (
             <span className="rounded-full border border-ink-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink-500">
-              {o.payment_method}
+              {PAYMENT_METHOD_LABEL[o.payment_method] ?? o.payment_method}
             </span>
           )}
           <span className="ml-auto font-display text-[15px] font-extrabold text-ink-900">
@@ -91,6 +106,9 @@ export function OrderCard({
         {/* Мөр 2 — хэрэглэгч, утас, хаяг */}
         <div className="mt-2 space-y-0.5 text-[13px]">
           <div className="font-semibold text-ink-900">
+            {isInvoice && o.invoice_org_name && (
+              <span className="mr-1.5 font-bold text-ink-900">🏢 {o.invoice_org_name} ·</span>
+            )}
             {o.customer_name || "Нэргүй хэрэглэгч"}
             {o.customer_phone ? (
               <span className="ml-2 font-bold text-brand-700">

@@ -111,7 +111,9 @@ async function createOrderInvoice(
   order: { id: string; order_number: string; total: number },
   p: { invoiceNo: string; description: string; callbackUrl: string },
 ) {
-  if (isEbarimtEnabled()) {
+  // Байгууллагын нэхэмжлэлийн (0052) и-баримтыг нягтлан ГАРААР гаргана —
+  // QPay давхар баримт гаргахгүйн тулд энгийн нэхэмжлэх үүсгэнэ.
+  if (isEbarimtEnabled() && !(await isOrgInvoiceOrder(order.id))) {
     try {
       const built = await buildOrderEbarimtLines(order.id);
       if (built?.matchesOrderTotal) {
@@ -156,6 +158,29 @@ async function createOrderInvoice(
   });
 }
 
+/** Байгууллагын нэхэмжлэлээр (0052) өгсөн захиалга уу */
+async function isOrgInvoiceOrder(orderId: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("orders")
+    .select("payment_method")
+    .eq("id", orderId)
+    .maybeSingle();
+  return data?.payment_method === "invoice";
+}
+
+/**
+ * Нэхэмжлэлийн захиалга төлөгдсөний дараах мэдэгдлүүд — QPay-ээр
+ * (verifyAndMarkPaid) ч, админ дансны шилжүүлгийг гараар баталсан ч
+ * ижил. И-баримт гаргахгүй (нягтлан гараар). Давхар дуудагдсан ч
+ * SMS-үүд order_events-ийн unique index-ээр нэг л удаа явна.
+ */
+export async function afterOrgInvoicePaid(orderId: string): Promise<void> {
+  await sendAdminOrderSms(orderId);
+  await sendOrderSms(orderId, "paid");
+  await sendPurchaseEvent(orderId);
+}
+
 export type PaidStatus = "paid" | "pending" | "not_found";
 
 /**
@@ -188,6 +213,11 @@ export async function verifyAndMarkPaid(orderId: string): Promise<PaidStatus> {
   });
   if (error) {
     throw new Error(`Төлбөр баталгаажуулахад алдаа: ${error.message}`);
+  }
+
+  if (await isOrgInvoiceOrder(orderId)) {
+    await afterOrgInvoicePaid(orderId);
+    return "paid";
   }
 
   // Админд шинэ захиалгын мэдэгдэл — best effort. И-баримтаас ӨМНӨ:

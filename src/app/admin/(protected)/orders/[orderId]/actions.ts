@@ -7,6 +7,7 @@ import { canTransition, type OrderStatus, ORDER_STATUSES, STATUS_LABEL } from "@
 import { sendCourierEnteredSms, sendOrderSms } from "@/lib/sms/notifications";
 import { logStaffActivity } from "@/lib/staff-activity";
 import type { Database } from "@/lib/supabase/database.types";
+import { afterOrgInvoicePaid } from "@/lib/qpay/orders";
 
 type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
@@ -96,30 +97,54 @@ export async function markAsPaid(orderId: string): Promise<{ ok: boolean; error?
   if (!guard.ok) return { ok: false, error: guard.error };
 
   const supabase = await createClient();
-  const { data: paidRow, error } = await supabase
+
+  // Байгууллагын нэхэмжлэл (0052): дансны шилжүүлгийг баталгаажуулна.
+  // Цуцлагдсан (нөөц нь буцсан) эсвэл аль хэдийн төлөгдсөн бол хөндөхгүй —
+  // давхар SMS, буруу үлдэгдлээс сэргийлнэ.
+  const { data: cur } = await supabase
     .from("orders")
-    .update({ payment_status: "paid" })
+    .select("payment_method, payment_status, status")
     .eq("id", orderId)
-    .select("order_number")
     .maybeSingle();
+  if (!cur) return { ok: false, error: "Захиалга олдсонгүй" };
+  const isInvoice = cur.payment_method === "invoice";
+  if (isInvoice && cur.status === "cancelled") {
+    return { ok: false, error: "Нэхэмжлэлийн захиалга цуцлагдсан байна" };
+  }
+  if (isInvoice && cur.payment_status === "paid") {
+    return { ok: false, error: "Аль хэдийн төлөгдсөн байна" };
+  }
+
+  let q = supabase.from("orders").update({ payment_status: "paid" }).eq("id", orderId);
+  if (isInvoice) q = q.eq("payment_status", "pending").neq("status", "cancelled");
+  const { data: paidRow, error } = await q.select("order_number").maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (isInvoice && !paidRow) {
+    return { ok: false, error: "Төлөв өөрчлөгдсөн байна — хуудсаа шинэчилнэ үү" };
+  }
 
   const { error: evtErr } = await supabase.from("order_events").insert({
     order_id: orderId,
     event_type: "paid",
-    description: "Төлбөр баталгаажсан",
+    description: isInvoice
+      ? "Нэхэмжлэлийн төлбөр (дансны шилжүүлэг) баталгаажсан"
+      : "Төлбөр баталгаажсан",
     created_by: guard.staff.id,
   });
   if (evtErr) console.error("[order event insert failed]", evtErr);
 
   await logStaffActivity({
     action: "order_paid",
-    summary: `${paidRow?.order_number ?? "Захиалга"} — гараар төлөгдсөн болгосон`,
+    summary: `${paidRow?.order_number ?? "Захиалга"} — ${isInvoice ? "нэхэмжлэлийн төлбөр баталгаажуулсан" : "гараар төлөгдсөн болгосон"}`,
     entityType: "order",
     entityId: orderId,
   });
 
+  if (isInvoice) await afterOrgInvoicePaid(orderId);
+
   revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
   return { ok: true };
 }
 

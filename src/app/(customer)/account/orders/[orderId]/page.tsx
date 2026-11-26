@@ -6,6 +6,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatMnt, formatMntCents } from "@/lib/utils";
 import { vatBreakdown } from "@/lib/pricing";
+import { PAYMENT_METHOD_LABEL } from "@/lib/invoice";
 import { type OrderStatus } from "@/lib/order-status";
 import { OrderStatusTracker } from "@/components/customer/OrderStatusTracker";
 import { formatUbDateTime } from "@/lib/datetime";
@@ -170,7 +171,10 @@ export default async function CustomerOrderDetail({
             <h3 className="font-display mb-3 text-sm font-extrabold uppercase tracking-wider text-ink-700">
               Төлбөр
             </h3>
-            <Row label="Арга" value={order.payment_method?.toUpperCase() ?? "—"} />
+            <Row
+              label="Арга"
+              value={PAYMENT_METHOD_LABEL[order.payment_method ?? ""] ?? order.payment_method?.toUpperCase() ?? "—"}
+            />
             <Row label="Төлөв" value={PAYMENT_STATUS_LABEL[order.payment_status] ?? order.payment_status} />
             {order.payment_method === "qpay" &&
               order.payment_status === "pending" &&
@@ -182,6 +186,18 @@ export default async function CustomerOrderDetail({
                   📱 QPay-ээр төлөх
                 </Link>
               )}
+            {order.payment_method === "invoice" && (
+              <Link
+                href={`/invoice/${order.id}`}
+                className={
+                  order.payment_status === "pending" && order.status !== "cancelled"
+                    ? "mt-3 flex items-center justify-center rounded-[10px] bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700"
+                    : "mt-3 flex items-center justify-center rounded-[10px] border-[1.5px] border-ink-200 bg-white px-5 py-2.5 text-sm font-bold text-ink-700 transition hover:border-brand-500"
+                }
+              >
+                🧾 Нэхэмжлэл харах
+              </Link>
+            )}
           </div>
         </aside>
       </div>

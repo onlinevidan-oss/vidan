@@ -9,6 +9,9 @@ import { formatMnt } from "@/lib/utils";
 import { normalizePhone } from "@/lib/sms/client";
 import { parseGaClientId } from "@/lib/ga4-mp";
 import { finalizeVoucherPaidOrder } from "@/lib/qpay/orders";
+import { sendInvoiceCreatedSms } from "@/lib/sms/notifications";
+import { validateInvoiceEmail, validateOrgName, validateOrgTin } from "@/lib/invoice";
+import { sendInvoiceEmail } from "@/lib/email/invoice";
 
 export type CheckoutPayload = {
   items: { productId: string; quantity: number }[];
@@ -25,8 +28,15 @@ export type CheckoutPayload = {
     khoroo: string;
     detail: string;
   };
-  paymentMethod: "qpay" | "card" | "cash";
+  /** "invoice" — байгууллагын нэхэмжлэл (0052), 24 цагт төлөгдөх ёстой */
+  paymentMethod: "qpay" | "card" | "cash" | "invoice";
+  /** Нэхэмжлэлийн төлөгч байгууллагын нэр (paymentMethod = "invoice" үед заавал) */
+  invoiceOrgName?: string;
+  /** Нэхэмжлэл автоматаар очих имэйл (paymentMethod = "invoice" үед заавал) */
+  invoiceEmail?: string;
   driverNotes?: string;
+  /** Ажилтан: өөрсдийн хүргэлтээр — хүргэлтийн төлбөргүй (0055, place_order шалгана) */
+  noShipping?: boolean;
   /** Баримт — хувь хүн (B2C) / байгууллага (B2B) */
   ebarimtType?: "B2C_RECEIPT" | "B2B_RECEIPT";
   ebarimtConsumerNo?: string; // B2C: иргэний ebarimt дугаар (заавал биш)
@@ -54,6 +64,7 @@ function translateError(message: string, minOrder: number, fruitMin = 40_000): s
   if (message.includes("INVALID_ADDRESS")) return "Хүргэх хаяг буруу байна";
   if (message.includes("INVALID_PAYMENT_METHOD")) return "Төлбөрийн арга буруу";
   if (message.includes("INVALID_QUANTITY")) return "Барааны тоо буруу";
+  if (message.includes("NO_SHIPPING_FORBIDDEN")) return "Хүргэлтгүй захиалга зөвхөн ажилтанд";
   // FRUIT_… нь MIN_ORDER_NOT_MET-ийг агуулдаг тул түрүүлж шалгана (0053)
   if (message.includes("FRUIT_MIN_ORDER_NOT_MET")) {
     return `Жимсний захиалгын доод дүн ${formatMnt(fruitMin)} — сагсандаа жимс нэмнэ үү`;
@@ -100,6 +111,19 @@ export async function placeOrder(
     return { ok: false, error: "Нэмэлт утасны дугаар буруу байна" };
   }
 
+  // Нэхэмжлэл зөвхөн байгууллагад — РД, нэрийг захиалга үүсгэхээс ӨМНӨ шалгана
+  const isInvoice = payload.paymentMethod === "invoice";
+  if (isInvoice) {
+    if (payload.ebarimtType !== "B2B_RECEIPT") {
+      return { ok: false, error: "Нэхэмжлэл зөвхөн байгууллагад үүснэ" };
+    }
+    const bad =
+      validateOrgTin(payload.ebarimtCustomerTin ?? "") ??
+      validateOrgName(payload.invoiceOrgName ?? "") ??
+      validateInvoiceEmail(payload.invoiceEmail ?? "");
+    if (bad) return { ok: false, error: bad };
+  }
+
   // 1) Шинэ хаяг бол үүсгэх (энэ нь RLS-аар self-only)
   let addressId = payload.addressId;
   if (!addressId && payload.newAddress) {
@@ -133,6 +157,7 @@ export async function placeOrder(
     })),
     p_driver_notes: payload.driverNotes,
     p_promo_code: payload.promoCode?.trim() || undefined,
+    p_no_shipping: payload.noShipping === true,
   });
 
   if (error) {
@@ -182,6 +207,8 @@ export async function placeOrder(
           ebarimtType === "B2B_RECEIPT"
             ? payload.ebarimtCustomerTin?.trim() || null
             : null,
+        invoice_org_name: isInvoice ? payload.invoiceOrgName?.trim() || null : null,
+        invoice_email: isInvoice ? payload.invoiceEmail?.trim().toLowerCase() || null : null,
       })
       .eq("id", row.order_id);
   } catch (e) {
@@ -217,6 +244,11 @@ export async function placeOrder(
     } catch (e) {
       console.error("[voucher order finalize failed]", e);
     }
+  }
+
+  // Нэхэмжлэл үүссэн сануулга SMS (0₮ бол дээр төлөгдсөн тул хэрэггүй)
+  if (isInvoice && Number(row.total) > 0) {
+    await Promise.all([sendInvoiceCreatedSms(row.order_id), sendInvoiceEmail(row.order_id)]);
   }
 
   revalidatePath("/admin/orders");

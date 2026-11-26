@@ -8,12 +8,15 @@ export function OrderActions({
   orderId,
   currentStatus,
   paymentStatus,
+  paymentMethod = null,
   nextLabel,
   nextStatus,
 }: {
   orderId: string;
   currentStatus: string;
   paymentStatus: string;
+  /** "invoice" бол дансны шилжүүлгийг баталгаажуулахаас өмнө асууна */
+  paymentMethod?: string | null;
   nextLabel: string | null;
   nextStatus: string | null;
 }) {
@@ -21,6 +24,7 @@ export function OrderActions({
   const [pending, startTransition] = useTransition();
   const [showCancel, setShowCancel] = useState(false);
   const [reason, setReason] = useState("");
+  const [payError, setPayError] = useState<string | null>(null);
 
   const isFinal = currentStatus === "delivered" || currentStatus === "cancelled";
 
@@ -41,8 +45,18 @@ export function OrderActions({
   }
 
   function pay() {
+    if (
+      paymentMethod === "invoice" &&
+      !window.confirm(
+        "Нэхэмжлэлийн мөнгө дансанд орсныг шалгасан уу? Баталгаажуулмагц захиалагчид SMS очиж, захиалга хүргэлтэнд бэлэн болно.",
+      )
+    ) {
+      return;
+    }
+    setPayError(null);
     startTransition(async () => {
-      await markAsPaid(orderId);
+      const res = await markAsPaid(orderId);
+      if (!res.ok) setPayError(res.error ?? "Алдаа гарлаа");
       router.refresh();
     });
   }
@@ -54,7 +68,12 @@ export function OrderActions({
       </h3>
 
       <div className="space-y-2">
-        {paymentStatus !== "paid" && (
+        {payError && (
+          <div className="rounded-lg bg-brand-50 p-2.5 text-xs font-semibold text-brand-700">
+            ⚠️ {payError}
+          </div>
+        )}
+        {paymentStatus !== "paid" && !(paymentMethod === "invoice" && currentStatus === "cancelled") && (
           <button
             onClick={pay}
             disabled={pending}

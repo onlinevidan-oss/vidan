@@ -65,14 +65,33 @@ export async function GET(request: NextRequest) {
     ...((cfgRow?.value ?? {}) as Partial<SmsSettings>),
   };
 
-  if (!cfg.unpaid_enabled) {
-    return NextResponse.json({ ok: true, skipped: "сануулга унтраалттай" });
-  }
-
   // Шөнө хүний утсыг дуугаргахгүй
   const nowHour = ubHour(new Date());
   if (nowHour >= SMS_QUIET_START_HOUR || nowHour < SMS_QUIET_END_HOUR) {
     return NextResponse.json({ ok: true, skipped: "шөнийн чимээгүй цаг" });
+  }
+
+  // Байгууллагын нэхэмжлэл (0052): 24 цагт төлөгдөөгүй тул release_stale_orders
+  // (pg_cron) цуцалсан захиалгад "цуцлагдлаа" SMS. Сүүлийн 2 хоногийнхыг л —
+  // хуучин захиалгад хожуу SMS очихгүй. Давхардлаас unique index (0024) хамгаална.
+  const { data: lapsed } = await admin
+    .from("orders")
+    .select("id")
+    .eq("payment_method", "invoice")
+    .eq("status", "cancelled")
+    .neq("payment_status", "paid")
+    .like("cancelled_reason", "Нэхэмжлэлийн төлбөр%")
+    .gte("cancelled_at", new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString());
+  for (const o of lapsed ?? []) {
+    await sendOrderSms(o.id, "cancelled");
+  }
+
+  if (!cfg.unpaid_enabled) {
+    return NextResponse.json({
+      ok: true,
+      skipped: "сануулга унтраалттай",
+      invoiceCancelled: lapsed?.length ?? 0,
+    });
   }
 
   const after = Math.min(Math.max(cfg.unpaid_after_minutes, 5), HOLD_MINUTES - 5);
@@ -84,6 +103,8 @@ export async function GET(request: NextRequest) {
     .select("id, order_number, created_at")
     .eq("payment_status", "pending")
     .neq("status", "cancelled")
+    // Нэхэмжлэлд 2 цагийн сануулга хамаарахгүй — тэд 24 цагтай, үүсэхдээ SMS авсан
+    .or("payment_method.is.null,payment_method.neq.invoice")
     .lte("created_at", readyBefore);
 
   if (error) {
@@ -125,6 +146,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ok: true,
     candidates: orders?.length ?? 0,
+    invoiceCancelled: lapsed?.length ?? 0,
     sent,
     skippedExpiring: expired,
   });

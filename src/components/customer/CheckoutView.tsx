@@ -20,6 +20,7 @@ import {
 import { ADDRESS_LABELS, UB_DISTRICTS, khoroosOf } from "@/lib/ub-address";
 import type { Database } from "@/lib/supabase/database.types";
 import { ecommerceItems, trackEvent } from "@/lib/analytics";
+import { validateInvoiceEmail, validateOrgName, validateOrgTin } from "@/lib/invoice";
 
 type Address = Database["public"]["Tables"]["addresses"]["Row"];
 
@@ -43,6 +44,7 @@ function toLocalPhone(raw: string | null | undefined): string {
 // QPay төлбөрийн хуудас руу шилжинэ.
 
 export function CheckoutView({
+  user,
   profile,
   addresses,
   settings = COMMERCE_DEFAULTS,
@@ -104,6 +106,12 @@ export function CheckoutView({
   );
   const [consumerNo, setConsumerNo] = useState("");
   const [customerTin, setCustomerTin] = useState("");
+  // Байгууллага: QPay-ээр одоо төлөх эсвэл нэхэмжлэлээр (24 цаг) — 0052
+  const [payByInvoice, setPayByInvoice] = useState(false);
+  // Ажилтан: өөрсдийн хүргэлтээр хүргэх захиалга — хүргэлтгүй (0055)
+  const [noShipping, setNoShipping] = useState(false);
+  const [orgName, setOrgName] = useState("");
+  const [invoiceEmail, setInvoiceEmail] = useState(user.email ?? "");
   const [error, setError] = useState<string | null>(null);
 
   // Доод талын жинхэнэ товч нүдэнд харагдаж байна уу — наалдсан мөр
@@ -172,18 +180,20 @@ export function CheckoutView({
   const discount = promoDiscount + cardOff;
   // Бүтэн хайрцаг: эхнийх нь нэг ширхэг, бусад нь хайрцаг тутамд нэмэгдэнэ (0054)
   const ship = shippingUnits(items, new Set(boxIds));
-  const { shipping, tax, total: orderTotal } = calculateOrderTotals(
-    subtotal,
-    settings,
-    ship.count,
-    discount,
-    ship.extraBoxes,
-  );
+  const calc = calculateOrderTotals(subtotal, settings, ship.count, discount, ship.extraBoxes);
+  // "Хүргэлтгүй" зөвхөн ажилтанд — place_order ч мөн шалгана (0055)
+  const noShip = isStaff && noShipping;
+  const shipping = noShip ? 0 : calc.shipping;
+  const tax = noShip ? 0 : calc.tax;
+  const orderTotal = noShip ? calc.total - calc.shipping - calc.tax : calc.total;
   // Эрхийн бичиг (place_order-той ижил): үлдэгдлээс нийт дүн хүртэл
   const voucherAmount =
     promo?.kind === "voucher" ? Math.min(promo.balance, orderTotal) : 0;
   // Хэрэглэгчийн QPay-ээр төлөх дүн
   const total = orderTotal - voucherAmount;
+  // Нэхэмжлэл: зөвхөн байгууллагын баримттай, төлөх дүнтэй үед (0₮ бол эрхийн бичгээр төлөгдөнө)
+  const invoiceMode =
+    ebarimtEnabled && ebarimtType === "B2B_RECEIPT" && payByInvoice && total > 0;
   // Хүргэлтийг НӨАТ-тай нь (7,000 + 700 = 7,700) барааны доор нэг мөрөөр
   const shippingGross = shipping + tax;
   const { net, vat } = vatBreakdown(total);
@@ -256,6 +266,16 @@ export function CheckoutView({
       setError("Байгууллагын баримтад ТТД/регистрийн дугаар (7 орон) шаардлагатай");
       return;
     }
+    if (invoiceMode) {
+      const bad =
+        validateOrgTin(customerTin) ??
+        validateOrgName(orgName) ??
+        validateInvoiceEmail(invoiceEmail);
+      if (bad) {
+        setError(bad);
+        return;
+      }
+    }
     const analyticsItems = ecommerceItems(items);
     trackEvent("add_shipping_info", {
       currency: "MNT",
@@ -266,7 +286,7 @@ export function CheckoutView({
     trackEvent("add_payment_info", {
       currency: "MNT",
       value: total,
-      payment_type: "QPay",
+      payment_type: invoiceMode ? "Нэхэмжлэл" : "QPay",
       items: analyticsItems,
     });
     startTransition(async () => {
@@ -277,11 +297,14 @@ export function CheckoutView({
           addressId === "new"
             ? { ...newAddr, district: `${newAddr.district} дүүрэг` }
             : undefined,
-        paymentMethod: "qpay",
+        paymentMethod: invoiceMode ? "invoice" : "qpay",
+        invoiceOrgName: invoiceMode ? orgName : undefined,
+        invoiceEmail: invoiceMode ? invoiceEmail : undefined,
         contactPhone: phone,
         contactPhone2: phone2,
         promoCode: promo?.code,
         driverNotes: notes,
+        noShipping: noShip,
         ebarimtType,
         ebarimtConsumerNo: consumerNo,
         ebarimtCustomerTin: customerTin,
@@ -296,7 +319,9 @@ export function CheckoutView({
       // ингэснээр "Сагс хоосон" төлөв огт харагдахгүй.
       setRedirecting(true);
       clearCart();
-      router.push(`/checkout/payment/${result.orderId}`);
+      router.push(
+        invoiceMode ? `/invoice/${result.orderId}` : `/checkout/payment/${result.orderId}`,
+      );
     });
   }
 
@@ -649,6 +674,63 @@ export function CheckoutView({
                 <p className="mt-1.5 text-[11px] text-ink-500">
                   Байгууллагын НӨАТ суутгах баримт үүснэ.
                 </p>
+
+                <div className="mt-4 text-xs font-bold text-ink-700">Төлөх арга</div>
+                <div className="mt-1.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setPayByInvoice(false)}
+                    className={
+                      !payByInvoice
+                        ? "rounded-xl border-[1.5px] border-brand-600 bg-brand-50 p-3.5 text-left"
+                        : "rounded-xl border-[1.5px] border-ink-200 bg-white p-3.5 text-left transition hover:border-brand-200"
+                    }
+                  >
+                    <div className="font-bold text-ink-900">QPay-ээр одоо төлөх</div>
+                    <div className="mt-0.5 text-xs text-ink-500">Банкны апп, QR</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayByInvoice(true)}
+                    className={
+                      payByInvoice
+                        ? "rounded-xl border-[1.5px] border-brand-600 bg-brand-50 p-3.5 text-left"
+                        : "rounded-xl border-[1.5px] border-ink-200 bg-white p-3.5 text-left transition hover:border-brand-200"
+                    }
+                  >
+                    <div className="font-bold text-ink-900">Нэхэмжлэлээр төлөх</div>
+                    <div className="mt-0.5 text-xs text-ink-500">Данс эсвэл QR, 24 цагийн дотор</div>
+                  </button>
+                </div>
+
+                {payByInvoice && (
+                  <div className="mt-3">
+                    <Field
+                      label="Байгууллагын нэр"
+                      value={orgName}
+                      onChange={(v) => setOrgName(v.slice(0, 200))}
+                      placeholder="Жнь: Сэнтрал фүүдс ХХК"
+                      required
+                    />
+                    <div className="mt-3">
+                      <Field
+                        label="Нэхэмжлэл хүлээн авах имэйл"
+                        value={invoiceEmail}
+                        onChange={(v) => setInvoiceEmail(v.slice(0, 254).trim())}
+                        placeholder="Жнь: nyagtlan@company.mn"
+                        type="email"
+                        required
+                      />
+                      <p className="mt-1 text-[11px] text-ink-500">
+                        Захиалга хийгдмэгц нэхэмжлэх энэ хаяг руу автоматаар очно.
+                      </p>
+                    </div>
+                    <p className="mt-2 rounded-lg bg-[#fff3d6] p-2.5 text-[11px] font-semibold text-[#9a6200]">
+                      Захиалга шивсний дараа та 24 цагийн дотор төлбөрөө баталгаажуулна уу.
+                      Баталгаажуулаагүй тохиолдолд захиалга цуцлагдахыг анхаарна уу.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </Section>
@@ -675,10 +757,24 @@ export function CheckoutView({
               <div className="flex justify-between gap-2 text-xs">
                 <span className="truncate text-ink-700">Хүргэлт</span>
                 <span className="shrink-0 font-bold text-ink-900">
-                  {shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
+                  {noShip ? "Хүргэлтгүй" : shippingGross === 0 ? "Үнэгүй" : formatMnt(shippingGross)}
                 </span>
               </div>
             </div>
+            {isStaff && (
+              <label className="mb-3 flex cursor-pointer items-start gap-2.5 rounded-xl border border-dashed border-ink-300 bg-cream-100 p-3 text-xs text-ink-700">
+                <input
+                  type="checkbox"
+                  checked={noShipping}
+                  onChange={(e) => setNoShipping(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-brand-600"
+                />
+                <span>
+                  <b className="text-ink-900">Хүргэлтгүй</b> — өөрсдийн хүргэлтээр хүргэнэ.
+                  <span className="block text-[11px] text-ink-500">Зөвхөн ажилтанд харагдана.</span>
+                </span>
+              </label>
+            )}
             <div className="my-3 h-px bg-ink-100" />
             {promoDiscount > 0 && (
               <Row
@@ -744,7 +840,9 @@ export function CheckoutView({
             <p className="mt-2.5 text-center text-[11px] text-ink-500">
               {total === 0
                 ? "Эрхийн бичгээр бүрэн төлөгдөнө — QPay төлбөр шаардлагагүй"
-                : "Баталгаажуулсны дараа QPay төлбөрийн хуудас руу шилжинэ"}
+                : invoiceMode
+                  ? "Баталгаажуулсны дараа нэхэмжлэл гарна — 24 цагийн дотор төлнө"
+                  : "Баталгаажуулсны дараа QPay төлбөрийн хуудас руу шилжинэ"}
             </p>
             <Link
               href="/cart"
@@ -858,13 +956,14 @@ function Info({ label, value }: { label: string; value: string }) {
 }
 
 function Field({
-  label, value, onChange, placeholder, required,
+  label, value, onChange, placeholder, required, type = "text",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   required?: boolean;
+  type?: "text" | "email";
 }) {
   return (
     <label className="block">
@@ -872,7 +971,9 @@ function Field({
         {label} {required && <span className="text-brand-600">*</span>}
       </div>
       <input
-        type="text"
+        type={type}
+        inputMode={type === "email" ? "email" : undefined}
+        autoComplete={type === "email" ? "email" : undefined}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}

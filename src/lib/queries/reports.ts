@@ -117,7 +117,8 @@ export async function getReports(period: ReportPeriod): Promise<ReportsData> {
   const raw = (orders ?? []) as unknown as (ReportOrder & { user_id: string | null })[];
   const list: ReportOrder[] = raw.map((o) => ({
     ...o,
-    is_internal: !!o.user_id && staffIds.has(o.user_id),
+    // Ажилтан байгууллагын өмнөөс шивсэн нэхэмжлэлийн захиалга бол жинхэнэ борлуулалт
+    is_internal: !!o.user_id && staffIds.has(o.user_id) && o.payment_method !== "invoice",
   }));
   // Санхүүгийн тоонд БҮХ захиалга орно; ажилтных нь тусдаа мөрөөр харагдана
   const internalOrders = list.filter((o) => o.is_internal);

@@ -23,6 +23,7 @@ const PAYMENT_LABEL: Record<string, string> = {
   cash: "Бэлэн",
   toki: "Toki",
   socialpay: "SocialPay",
+  invoice: "Нэхэмжлэл",
 };
 
 /** Хүснэгтийн нүдний нийтлэг класс */

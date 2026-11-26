@@ -1251,6 +1251,7 @@ export type Database = {
           p_address_id: string
           p_driver_notes?: string
           p_items: Json
+          p_no_shipping?: boolean
           p_payment_method: string
           p_promo_code?: string
         }

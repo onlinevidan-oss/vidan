@@ -46,6 +46,11 @@ export default async function PaymentPage({
     redirect(`/checkout/success/${orderId}`);
   }
 
+  // Байгууллагын нэхэмжлэл (0052) — QR нь нэхэмжлэл дээр байна
+  if (order.payment_method === "invoice") {
+    redirect(`/invoice/${orderId}`);
+  }
+
   // qPay-аар бус захиалга энд орох ёсгүй
   if (order.payment_method !== "qpay") {
     redirect(`/checkout/success/${orderId}`);
